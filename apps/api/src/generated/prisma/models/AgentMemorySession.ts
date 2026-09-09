@@ -48,6 +48,7 @@ export type AgentMemorySessionCountAggregateOutputType = {
   sessionId: number
   userId: number
   metadata: number
+  compactionState: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -78,6 +79,7 @@ export type AgentMemorySessionCountAggregateInputType = {
   sessionId?: true
   userId?: true
   metadata?: true
+  compactionState?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -161,6 +163,7 @@ export type AgentMemorySessionGroupByOutputType = {
   sessionId: string
   userId: string | null
   metadata: runtime.JsonValue
+  compactionState: runtime.JsonValue | null
   createdAt: Date
   updatedAt: Date
   _count: AgentMemorySessionCountAggregateOutputType | null
@@ -192,6 +195,7 @@ export type AgentMemorySessionWhereInput = {
   sessionId?: Prisma.StringFilter<"AgentMemorySession"> | string
   userId?: Prisma.StringNullableFilter<"AgentMemorySession"> | string | null
   metadata?: Prisma.JsonFilter<"AgentMemorySession">
+  compactionState?: Prisma.JsonNullableFilter<"AgentMemorySession">
   createdAt?: Prisma.DateTimeFilter<"AgentMemorySession"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AgentMemorySession"> | Date | string
   messages?: Prisma.AgentMemoryMessageListRelationFilter
@@ -204,6 +208,7 @@ export type AgentMemorySessionOrderByWithRelationInput = {
   sessionId?: Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrder
+  compactionState?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   messages?: Prisma.AgentMemoryMessageOrderByRelationAggregateInput
@@ -219,6 +224,7 @@ export type AgentMemorySessionWhereUniqueInput = Prisma.AtLeast<{
   sessionId?: Prisma.StringFilter<"AgentMemorySession"> | string
   userId?: Prisma.StringNullableFilter<"AgentMemorySession"> | string | null
   metadata?: Prisma.JsonFilter<"AgentMemorySession">
+  compactionState?: Prisma.JsonNullableFilter<"AgentMemorySession">
   createdAt?: Prisma.DateTimeFilter<"AgentMemorySession"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"AgentMemorySession"> | Date | string
   messages?: Prisma.AgentMemoryMessageListRelationFilter
@@ -231,6 +237,7 @@ export type AgentMemorySessionOrderByWithAggregationInput = {
   sessionId?: Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
   metadata?: Prisma.SortOrder
+  compactionState?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.AgentMemorySessionCountOrderByAggregateInput
@@ -247,6 +254,7 @@ export type AgentMemorySessionScalarWhereWithAggregatesInput = {
   sessionId?: Prisma.StringWithAggregatesFilter<"AgentMemorySession"> | string
   userId?: Prisma.StringNullableWithAggregatesFilter<"AgentMemorySession"> | string | null
   metadata?: Prisma.JsonWithAggregatesFilter<"AgentMemorySession">
+  compactionState?: Prisma.JsonNullableWithAggregatesFilter<"AgentMemorySession">
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"AgentMemorySession"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"AgentMemorySession"> | Date | string
 }
@@ -257,6 +265,7 @@ export type AgentMemorySessionCreateInput = {
   sessionId: string
   userId?: string | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.AgentMemoryMessageCreateNestedManyWithoutMemorySessionInput
@@ -269,6 +278,7 @@ export type AgentMemorySessionUncheckedCreateInput = {
   sessionId: string
   userId?: string | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.AgentMemoryMessageUncheckedCreateNestedManyWithoutMemorySessionInput
@@ -281,6 +291,7 @@ export type AgentMemorySessionUpdateInput = {
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.AgentMemoryMessageUpdateManyWithoutMemorySessionNestedInput
@@ -293,6 +304,7 @@ export type AgentMemorySessionUncheckedUpdateInput = {
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.AgentMemoryMessageUncheckedUpdateManyWithoutMemorySessionNestedInput
@@ -305,6 +317,7 @@ export type AgentMemorySessionCreateManyInput = {
   sessionId: string
   userId?: string | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -315,6 +328,7 @@ export type AgentMemorySessionUpdateManyMutationInput = {
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -325,6 +339,7 @@ export type AgentMemorySessionUncheckedUpdateManyInput = {
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -335,6 +350,7 @@ export type AgentMemorySessionCountOrderByAggregateInput = {
   sessionId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   metadata?: Prisma.SortOrder
+  compactionState?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -408,6 +424,7 @@ export type AgentMemorySessionCreateWithoutMessagesInput = {
   sessionId: string
   userId?: string | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   errors?: Prisma.AgentMemoryErrorCreateNestedManyWithoutMemorySessionInput
@@ -419,6 +436,7 @@ export type AgentMemorySessionUncheckedCreateWithoutMessagesInput = {
   sessionId: string
   userId?: string | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   errors?: Prisma.AgentMemoryErrorUncheckedCreateNestedManyWithoutMemorySessionInput
@@ -446,6 +464,7 @@ export type AgentMemorySessionUpdateWithoutMessagesInput = {
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   errors?: Prisma.AgentMemoryErrorUpdateManyWithoutMemorySessionNestedInput
@@ -457,6 +476,7 @@ export type AgentMemorySessionUncheckedUpdateWithoutMessagesInput = {
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   errors?: Prisma.AgentMemoryErrorUncheckedUpdateManyWithoutMemorySessionNestedInput
@@ -468,6 +488,7 @@ export type AgentMemorySessionCreateWithoutErrorsInput = {
   sessionId: string
   userId?: string | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.AgentMemoryMessageCreateNestedManyWithoutMemorySessionInput
@@ -479,6 +500,7 @@ export type AgentMemorySessionUncheckedCreateWithoutErrorsInput = {
   sessionId: string
   userId?: string | null
   metadata: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
   messages?: Prisma.AgentMemoryMessageUncheckedCreateNestedManyWithoutMemorySessionInput
@@ -506,6 +528,7 @@ export type AgentMemorySessionUpdateWithoutErrorsInput = {
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.AgentMemoryMessageUpdateManyWithoutMemorySessionNestedInput
@@ -517,6 +540,7 @@ export type AgentMemorySessionUncheckedUpdateWithoutErrorsInput = {
   sessionId?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   metadata?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  compactionState?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   messages?: Prisma.AgentMemoryMessageUncheckedUpdateManyWithoutMemorySessionNestedInput
@@ -568,6 +592,7 @@ export type AgentMemorySessionSelect<ExtArgs extends runtime.Types.Extensions.In
   sessionId?: boolean
   userId?: boolean
   metadata?: boolean
+  compactionState?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   messages?: boolean | Prisma.AgentMemorySession$messagesArgs<ExtArgs>
@@ -581,6 +606,7 @@ export type AgentMemorySessionSelectCreateManyAndReturn<ExtArgs extends runtime.
   sessionId?: boolean
   userId?: boolean
   metadata?: boolean
+  compactionState?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["agentMemorySession"]>
@@ -591,6 +617,7 @@ export type AgentMemorySessionSelectUpdateManyAndReturn<ExtArgs extends runtime.
   sessionId?: boolean
   userId?: boolean
   metadata?: boolean
+  compactionState?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["agentMemorySession"]>
@@ -601,11 +628,12 @@ export type AgentMemorySessionSelectScalar = {
   sessionId?: boolean
   userId?: boolean
   metadata?: boolean
+  compactionState?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type AgentMemorySessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "scopeKey" | "sessionId" | "userId" | "metadata" | "createdAt" | "updatedAt", ExtArgs["result"]["agentMemorySession"]>
+export type AgentMemorySessionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "scopeKey" | "sessionId" | "userId" | "metadata" | "compactionState" | "createdAt" | "updatedAt", ExtArgs["result"]["agentMemorySession"]>
 export type AgentMemorySessionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   messages?: boolean | Prisma.AgentMemorySession$messagesArgs<ExtArgs>
   errors?: boolean | Prisma.AgentMemorySession$errorsArgs<ExtArgs>
@@ -626,6 +654,7 @@ export type $AgentMemorySessionPayload<ExtArgs extends runtime.Types.Extensions.
     sessionId: string
     userId: string | null
     metadata: runtime.JsonValue
+    compactionState: runtime.JsonValue | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["agentMemorySession"]>
@@ -1058,6 +1087,7 @@ export interface AgentMemorySessionFieldRefs {
   readonly sessionId: Prisma.FieldRef<"AgentMemorySession", 'String'>
   readonly userId: Prisma.FieldRef<"AgentMemorySession", 'String'>
   readonly metadata: Prisma.FieldRef<"AgentMemorySession", 'Json'>
+  readonly compactionState: Prisma.FieldRef<"AgentMemorySession", 'Json'>
   readonly createdAt: Prisma.FieldRef<"AgentMemorySession", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"AgentMemorySession", 'DateTime'>
 }

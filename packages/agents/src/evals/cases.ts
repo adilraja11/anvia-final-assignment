@@ -10,6 +10,7 @@ export type CaseCategory =
 export type MetricName = "gEval" | "exactMatch" | "abstention";
 
 export type HandbookEvalCase = EvalCase<string, string> & {
+	expected: string;
 	metadata: {
 		category: CaseCategory;
 		metric: MetricName;

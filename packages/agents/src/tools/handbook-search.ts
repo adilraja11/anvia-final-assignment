@@ -1,17 +1,37 @@
 import { createTool } from "@anvia/core";
-import { QdrantVectorStore } from "@anvia/qdrant";
-import { createTransformersEmbeddingModel } from "@anvia/transformers";
+import {
+	type RetrieveDocumentsOptions,
+	retrieveDocuments,
+} from "@anvia/core/vector-store";
+import { QdrantVectorClient } from "@anvia/qdrant";
+import {
+	DEFAULT_TRANSFORMERS_EMBEDDING_MODEL,
+	loadTransformersEmbeddingModel,
+} from "@anvia/transformers";
 import { z } from "zod";
 
 const COLLECTION_NAME = "devscale_employee_handbook_v2";
 
-const model = await createTransformersEmbeddingModel();
-const store = await QdrantVectorStore.connect<string>({
-	collectionName: COLLECTION_NAME,
-	vectorSize: 384,
+const model = await loadTransformersEmbeddingModel({
+	modelId: DEFAULT_TRANSFORMERS_EMBEDDING_MODEL,
 });
+const qdrant = new QdrantVectorClient({
+	url: process.env.QDRANT_URL,
+	apiKey: process.env.QDRANT_API_KEY,
+});
+const store = qdrant.vectorStore<string>({
+	collectionName: COLLECTION_NAME,
+	dimensions: 384,
+});
+await store.ensure();
 
-export const handbookIndex = store.index(model);
+export const handbookIndex = {
+	search: ({
+		query,
+		...request
+	}: Omit<RetrieveDocumentsOptions<string>, "store" | "model">) =>
+		retrieveDocuments({ store, model, query, ...request }),
+};
 
 export function normalizeTerm(term: string) {
 	if (term.length <= 3) return term;
@@ -203,7 +223,7 @@ export const handbookSearch = createTool({
 	name: "handbookSearch",
 	description:
 		"Search the Devscale employee handbook. Returns ranked source evidence and provenance; base factual answers only on the returned source text.",
-	input: z.object({
+	inputSchema: z.object({
 		query: z.string().describe("The handbook question or policy to look up."),
 		topK: z.number().int().positive().optional(),
 	}),

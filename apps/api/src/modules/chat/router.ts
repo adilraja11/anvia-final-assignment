@@ -1,12 +1,17 @@
 import { randomUUID } from "node:crypto";
 import {
-	createPrismaMemoryScopeKey,
-	createPrismaMemoryStore,
-} from "@anvia/memory-prisma";
-import { createEventStream } from "@anvia/server";
+	agentToClientStream,
+	type ClientStreamRequest,
+	parseClientStreamRequest,
+} from "@anvia/client";
+import { createMemoryScopeKey } from "@anvia/core/memory";
+import { PrismaMemoryStore } from "@anvia/memory-prisma";
+import { createClientStreamResponse } from "@anvia/server";
 import { createAgent, flushAgentTracing } from "@repo/agents";
 import { Hono } from "hono";
 import { prisma } from "../../lib/prisma.js";
+
+const memory = new PrismaMemoryStore({ client: prisma });
 
 export const chatRouter = new Hono()
 	.get("/sessions", async (c) => {
@@ -46,7 +51,7 @@ export const chatRouter = new Hono()
 
 		await prisma.agentMemorySession.create({
 			data: {
-				scopeKey: createPrismaMemoryScopeKey({ sessionId }),
+				scopeKey: createMemoryScopeKey({ scope: { sessionId } }),
 				sessionId,
 				metadata: { title: prompt.trim().slice(0, 60) },
 			},
@@ -55,50 +60,60 @@ export const chatRouter = new Hono()
 		return c.json({ id: sessionId }, 201);
 	})
 	.get("/:sessionId", async (c) => {
-		const memory = createPrismaMemoryStore(prisma);
 		const messages = await memory.load({
-			sessionId: c.req.param("sessionId"),
+			scope: { sessionId: c.req.param("sessionId") },
 		});
 
 		return c.json(messages);
 	})
 	.post("/:sessionId", async (c) => {
-		const body = await c.req.json();
-		const lastMessage = body.messages.at(-1);
-		const prompt = lastMessage.content.at(-1).text;
+		let body: ClientStreamRequest;
+		try {
+			body = parseClientStreamRequest(await c.req.json());
+		} catch {
+			return c.json({ error: "Invalid chat request" }, 400);
+		}
+		if (body.type !== "messages") {
+			return c.json({ error: "Interaction responses are not enabled" }, 400);
+		}
+		const prompt = body.messages.findLast((message) => message.role === "user");
+		if (prompt?.role !== "user") {
+			return c.json({ error: "A user message is required" }, 400);
+		}
 		const sessionId = c.req.param("sessionId");
-		const memory = createPrismaMemoryStore(prisma);
 		const agent = createAgent({
 			agentId: "personal-assistant",
 			memory,
 		});
 
-		const stream = (async function* () {
+		const events = (async function* () {
 			try {
-				yield* agent
-					.session(sessionId)
-					.prompt(prompt)
-					.withTrace({
-						name: "employee-handbook-chat",
-						sessionId,
-						metadata: {
-							agentId: "personal-assistant",
+				yield* agentToClientStream({
+					events: agent.stream({
+						prompt,
+						session: { sessionId },
+						abortSignal: c.req.raw.signal,
+						retries: {},
+						trace: {
+							name: "employee-handbook-chat",
+							sessionId,
+							metadata: {
+								agentId: "personal-assistant",
+							},
+							tags: ["chat", "employee-handbook"],
 						},
-						tags: ["chat", "employee-handbook"],
-					})
-					.withCompletionRetries()
-					.stream();
+					}),
+				});
 			} finally {
 				await flushAgentTracing();
 			}
 		})();
 
-		return createEventStream(stream, { format: "jsonl" });
+		return createClientStreamResponse({ events, format: "jsonl" });
 	})
 	.delete("/:sessionId", async (c) => {
 		const sessionId = c.req.param("sessionId");
-		const memory = createPrismaMemoryStore(prisma);
-		await memory.clear({ sessionId });
+		await memory.clear({ scope: { sessionId } });
 
 		return c.body(null, 204);
 	});

@@ -1,22 +1,22 @@
 import {
-	AgentBuilder,
+	Agent,
 	type AnyTool,
 	type CompletionModel,
 	type MemoryStore,
 } from "@anvia/core";
 import type { AgentObserver } from "@anvia/core/observability";
-import { lens } from "@anvia/lens";
+import { LensClient } from "@anvia/lens";
 import { createLoggerObserver, createPinoLogger } from "@anvia/logger";
 import { BASE_INSTRUCTIONS } from "./prompts/base-instructions.js";
 import { defaultModel } from "./providers/openai.js";
 import { handbookSearch } from "./tools/handbook-search.js";
 import { createWebTools } from "./tools/web-search.js";
 
-const tracing = lens.createFromEnv({
+const lens = new LensClient({
 	optional: true,
 	serviceName: "rag-agent",
-	captureMode: "full",
 });
+const tracing = lens.observer({ captureMode: "full" });
 
 const logger = createPinoLogger({
 	name: "rag-agent",
@@ -32,10 +32,10 @@ const logger = createPinoLogger({
 	},
 });
 
-const logging = createLoggerObserver(logger);
+const logging = createLoggerObserver({ logger });
 
 export function flushAgentTracing() {
-	return tracing.flush();
+	return lens.flush();
 }
 
 interface CreateAgentOptions {
@@ -44,39 +44,38 @@ interface CreateAgentOptions {
 	additionalTools?: AnyTool[];
 	additionalInstructions?: string[];
 	memory?: MemoryStore;
-	observers?: AgentObserver[];
+	observers?: Record<string, AgentObserver>;
 	productionTracing?: boolean;
 	includeWebTools?: boolean;
 }
 
 export function createAgent(opts: CreateAgentOptions) {
-	const agent = new AgentBuilder(opts.agentId, opts.model ?? defaultModel)
-		.instructions(BASE_INSTRUCTIONS)
-		.tools([
+	const includeProductionTracing = opts.productionTracing !== false;
+	const observers: Record<string, AgentObserver> = {
+		logger: logging,
+		...(includeProductionTracing ? { lens: tracing } : {}),
+		...opts.observers,
+	};
+
+	return new Agent({
+		id: opts.agentId,
+		model: opts.model ?? defaultModel,
+		instructions: [
+			BASE_INSTRUCTIONS,
+			...(opts.additionalInstructions ?? []),
+		].join("\n\n"),
+		tools: [
 			...(opts.includeWebTools ? createWebTools() : []),
 			handbookSearch,
 			...(opts.additionalTools ?? []),
-		])
-		.temperature(0)
-		.maxTokens(180)
-		.defaultMaxTurns(4)
-		.observe(logging);
-
-	if (opts.productionTracing !== false) {
-		agent.observe(tracing);
-	}
-
-	for (const observer of opts.observers ?? []) {
-		agent.observe(observer);
-	}
-
-	for (const instruction of opts.additionalInstructions ?? []) {
-		agent.instructions(instruction);
-	}
-
-	if (opts.memory) {
-		agent.memory(opts.memory);
-	}
-
-	return agent.build();
+		],
+		temperature: 0,
+		maxTokens: 180,
+		maxTurns: 4,
+		observability: {
+			observers,
+			...(observers.lens ? { primaryTrace: "lens" } : {}),
+		},
+		...(opts.memory ? { memory: { store: opts.memory } } : {}),
+	});
 }

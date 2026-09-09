@@ -1,8 +1,17 @@
-import { lens } from "@anvia/lens";
+import { LensClient } from "@anvia/lens";
 
-export const lensEval = lens.evals({
+const client = new LensClient({
+	optional: true,
 	serviceName: "rag-agent-evals",
-	captureMode: "safe",
-	includePayloads: true,
-	onMissingTrace: "emit",
 });
+
+export const lensEval = {
+	observer: client.observer({ captureMode: "safe" }),
+	reporter: client.evalReporter({
+		traceObserver: "lens",
+		includePayloads: true,
+		onMissingTrace: "emit",
+	}),
+	flush: () => client.flush(),
+	shutdown: () => client.close(),
+};

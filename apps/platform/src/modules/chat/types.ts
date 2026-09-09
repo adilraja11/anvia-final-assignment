@@ -1,7 +1,7 @@
-import type { initialMessagesFromMemory, UIMessagePart } from "@anvia/react";
+import type { messagesToUIMessages, UIToolMessagePart } from "@anvia/client";
 
-export type MemoryMessages = Parameters<typeof initialMessagesFromMemory>[0];
-export type ToolPart = Extract<UIMessagePart, { type: "tool" }>;
+export type MemoryMessages = Parameters<typeof messagesToUIMessages>[0];
+export type ToolPart = UIToolMessagePart;
 
 export interface ChatSession {
 	id: string;

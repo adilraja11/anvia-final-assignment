@@ -1,8 +1,11 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { embedDocuments } from "@anvia/core/embeddings";
-import { QdrantVectorStore } from "@anvia/qdrant";
-import { createTransformersEmbeddingModel } from "@anvia/transformers";
+import { QdrantVectorClient } from "@anvia/qdrant";
+import {
+	DEFAULT_TRANSFORMERS_EMBEDDING_MODEL,
+	loadTransformersEmbeddingModel,
+} from "@anvia/transformers";
 
 const COLLECTION_NAME = "devscale_employee_handbook_v2";
 const DOCUMENT_ID = "devscale-employee-handbook";
@@ -110,31 +113,38 @@ const contentHash = createHash("sha256").update(markdown).digest("hex");
 const chunks = chunkMarkdown(markdown);
 console.log(`Embedding ${chunks.length} handbook chunks...`);
 
-const model = await createTransformersEmbeddingModel();
-const documents = await embedDocuments(
-	model,
-	chunks.map((chunk) => chunk.text),
-	{
-		id: (_, index) => `${DOCUMENT_ID}-${chunks[index].chunkId}`,
-		content: (text) => text,
-		metadata: (_, index) => ({
-			documentId: DOCUMENT_ID,
-			source: "devscale-employee-handbook.md",
-			contentType: "policy",
-			sectionId: chunks[index].sectionId,
-			chunkId: chunks[index].chunkId,
-			headingPath: chunks[index].headingPath,
-			startOffset: chunks[index].startOffset,
-			endOffset: chunks[index].endOffset,
-			contentHash,
-			ingestionVersion: INGESTION_VERSION,
-		}),
-	},
-);
-
-const store = await QdrantVectorStore.connect({
-	collectionName: COLLECTION_NAME,
-	vectorSize: 384,
+const model = await loadTransformersEmbeddingModel({
+	modelId: DEFAULT_TRANSFORMERS_EMBEDDING_MODEL,
 });
-await store.upsertDocuments(documents);
+const { documents } = await embedDocuments({
+	model,
+	documents: chunks,
+	id: (_, index) => `${DOCUMENT_ID}-${chunks[index].chunkId}`,
+	content: (chunk) => chunk.text,
+	metadata: (_, index) => ({
+		documentId: DOCUMENT_ID,
+		source: "devscale-employee-handbook.md",
+		contentType: "policy",
+		sectionId: chunks[index].sectionId,
+		chunkId: chunks[index].chunkId,
+		headingPath: chunks[index].headingPath,
+		startOffset: chunks[index].startOffset,
+		endOffset: chunks[index].endOffset,
+		contentHash,
+		ingestionVersion: INGESTION_VERSION,
+	}),
+});
+
+const qdrant = new QdrantVectorClient({
+	url: process.env.QDRANT_URL,
+	apiKey: process.env.QDRANT_API_KEY,
+});
+const store = qdrant.vectorStore<Chunk>({
+	collectionName: COLLECTION_NAME,
+	dimensions: 384,
+});
+await store.ensure();
+await store.upsert({ documents, providerOptions: { wait: true } });
 console.log(`Inserted ${documents.length} chunks into ${COLLECTION_NAME}.`);
+await qdrant.close();
+await model.close();

@@ -13,8 +13,9 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@anvia/react": "^0.11.2",
-		"@anvia/react-ui": "^0.7.0",
+		"@anvia/client": "^1.1.3",
+		"@anvia/react": "^1.1.3",
+		"@anvia/react-ui": "^1.1.3",
 		"@tailwindcss/vite": "^4.1.18",
 		"@tanstack/react-devtools": "latest",
 		"@tanstack/react-router": "latest",

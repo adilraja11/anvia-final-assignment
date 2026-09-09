@@ -1,7 +1,8 @@
-import type { PromptResponse } from "@anvia/core";
-import type { EvalMetric } from "@anvia/core/evals";
+import type { AgentResponse, JsonValue, ToolResultOutput } from "@anvia/core";
+import type { EvalMetric, EvalMetricArgs } from "@anvia/core/evals";
 import {
 	abstention,
+	agentEvalTarget,
 	EvalOutcome,
 	exactMatch,
 	gEval,
@@ -15,53 +16,76 @@ import { lensEval } from "./lens.js";
 const agent = createAgent({
 	agentId: "employee-handbook-eval",
 	productionTracing: false,
-	observers: [lensEval.observer],
+	observers: { lens: lensEval.observer },
 });
 
-async function runAgent(input: string): Promise<PromptResponse> {
-	return agent.prompt(input).withCompletionRetries().send();
-}
+const runAgent = agentEvalTarget<string>({
+	agent,
+	request: ({ input }) => ({ prompt: input, retries: {} }),
+});
 
 function casesFor(metric: MetricName) {
-	return cases.filter((testCase) => testCase.metadata.metric === metric);
+	return cases
+		.filter((testCase) => testCase.metadata.metric === metric)
+		.map((testCase) => ({
+			...testCase,
+			context: testCase.context ?? [],
+			retrievalContext: testCase.retrievalContext ?? [],
+		}));
 }
 
 /** Read only handbookSearch tool-result payloads from this agent run. */
-function handbookEvidenceFrom(messages: PromptResponse["messages"]): string[] {
+function parseToolOutput(output: ToolResultOutput): JsonValue | undefined {
+	if (output.type === "json") return output.value;
+	if (output.type !== "text") return undefined;
+	try {
+		return JSON.parse(output.value) as JsonValue;
+	} catch {
+		return undefined;
+	}
+}
+
+function handbookEvidenceFrom(messages: AgentResponse["messages"]): string[] {
 	const evidence: string[] = [];
 	for (const message of messages) {
 		if (message.role !== "tool") continue;
 		for (const content of message.content) {
 			if (
-				content.type !== "tool_result" ||
+				content.type !== "tool-result" ||
 				content.toolName !== "handbookSearch"
 			)
 				continue;
-			for (const item of content.content) {
-				if (item.type !== "text") continue;
-				try {
-					const results: unknown = JSON.parse(item.text);
-					if (!Array.isArray(results)) continue;
-					for (const result of results) {
-						if (
-							typeof result === "object" &&
-							result !== null &&
-							"sourceText" in result &&
-							typeof result.sourceText === "string" &&
-							result.sourceText.trim()
-						)
-							evidence.push(result.sourceText);
-					}
-				} catch {
-					// A malformed tool payload is not evidence.
-				}
+			const results = parseToolOutput(content.output);
+			if (!Array.isArray(results)) continue;
+			for (const result of results) {
+				if (
+					typeof result === "object" &&
+					result !== null &&
+					"sourceText" in result &&
+					typeof result.sourceText === "string" &&
+					result.sourceText.trim()
+				)
+					evidence.push(result.sourceText);
 			}
 		}
 	}
 	return [...new Set(evidence)];
 }
 
-const groundedAnswerQuality = gEval<string, PromptResponse, string>({
+type HandbookEvidenceSelector = (
+	args: EvalMetricArgs<string, AgentResponse, string>,
+) => string[];
+
+const groundedAnswerQuality = gEval<
+	string,
+	AgentResponse,
+	string,
+	"grounded-answer-quality",
+	readonly ["input", "actualOutput", "expectedOutput", "retrievalContext"],
+	undefined,
+	undefined,
+	HandbookEvidenceSelector
+>({
 	name: "grounded-answer-quality",
 	model: judgeModel,
 	threshold: 0.8,
@@ -70,7 +94,7 @@ const groundedAnswerQuality = gEval<string, PromptResponse, string>({
 		"actualOutput",
 		"expectedOutput",
 		"retrievalContext",
-	],
+	] as const,
 	retrievalContext: ({ output }) => {
 		const evidence = handbookEvidenceFrom(output.messages);
 		return evidence.length > 0
@@ -87,7 +111,7 @@ const groundedAnswerQuality = gEval<string, PromptResponse, string>({
 
 const handbookSearchInvocation: EvalMetric<
 	string,
-	PromptResponse,
+	AgentResponse,
 	boolean,
 	string,
 	"handbook-search-invocation"
@@ -102,7 +126,7 @@ const handbookSearchInvocation: EvalMetric<
 				message.role === "tool" &&
 				message.content.some(
 					(content) =>
-						content.type === "tool_result" &&
+						content.type === "tool-result" &&
 						content.toolName === "handbookSearch",
 				),
 		);
@@ -138,7 +162,7 @@ try {
 		cases: casesFor("abstention"),
 		target: runAgent,
 		metrics: [
-			abstention<string, PromptResponse, string>({
+			abstention<string, AgentResponse, string>({
 				model: judgeModel,
 				shouldAbstain: ({ case: testCase }) =>
 					testCase.metadata?.shouldAbstain === true,

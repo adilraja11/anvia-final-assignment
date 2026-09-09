@@ -9,7 +9,7 @@ export function createWebTools() {
 		name: "webSearch",
 		description:
 			"Use only for external or current information when the user explicitly asks for it. Never use for a Devscale handbook-policy question.",
-		input: z.object({
+		inputSchema: z.object({
 			query: z.string().meta({ description: "The query to search" }),
 		}),
 		execute: ({ query }) => {
@@ -24,7 +24,7 @@ export function createWebTools() {
 		name: "webExtract",
 		description:
 			"Use only to extract external or current information after the user explicitly asks for it. Never use for a Devscale handbook-policy question.",
-		input: z.object({
+		inputSchema: z.object({
 			url: z.url().meta({ description: "The URL to extract" }),
 		}),
 		execute: ({ url }) => tavilyClient.extract([url]),

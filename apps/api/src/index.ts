@@ -3,7 +3,9 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { chatRouter } from "./modules/chat/router.js";
 
-const app = new Hono().use(cors()).route("/api/chat", chatRouter);
+const app = new Hono()
+	.use(cors({ exposeHeaders: ["x-anvia-stream-protocol"] }))
+	.route("/api/chat", chatRouter);
 
 serve(
 	{
