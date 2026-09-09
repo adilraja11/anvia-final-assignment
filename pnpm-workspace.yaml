@@ -1,0 +1,20 @@
+packages:
+  - apps/*
+  - packages/*
+
+overrides:
+  "@qdrant/js-client-rest": 1.18.0
+
+allowBuilds:
+  esbuild: true
+  lightningcss: true
+  prisma: true
+  "@prisma/engines": true
+  onnxruntime-node: true
+  protobufjs: true
+  sharp: false
+
+minimumReleaseAgeExclude:
+  - '@anvia/core@0.25.1'
+  - '@anvia/lens@0.5.1'
+  - '@anvia/otel@0.7.1'

@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Devscale Indonesia — Sample Employee Handbook</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 18mm 20mm;
+      @bottom-center {
+        content: "Devscale Indonesia · Sample Employee Handbook · Not official policy";
+        color: #7a8496;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 8pt;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #172033;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.48;
+    }
+    h1, h2, h3 { color: #101828; page-break-after: avoid; }
+    h1 { margin: 0 0 12px; font-size: 28pt; line-height: 1.08; }
+    h2 { margin: 0 0 14px; font-size: 20pt; border-bottom: 2px solid #b7ed55; padding-bottom: 8px; }
+    h3 { margin: 18px 0 6px; font-size: 12.5pt; }
+    p { margin: 0 0 9px; }
+    ul, ol { margin: 6px 0 12px; padding-left: 22px; }
+    li { margin: 0 0 5px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; }
+    th { background: #101828; color: white; text-align: left; }
+    th, td { border: 1px solid #d9deea; padding: 8px; vertical-align: top; }
+    tr:nth-child(even) td { background: #f7f9fc; }
+    .page { page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    .cover {
+      background: #101828;
+      color: white;
+      margin: -18mm -18mm -20mm;
+      min-height: 297mm;
+      padding: 34mm 24mm;
+    }
+    .cover h1 { color: white; font-size: 38pt; max-width: 145mm; }
+    .cover .brand { color: #b7ed55; font-size: 16pt; font-weight: bold; letter-spacing: 0.04em; }
+    .cover .subtitle { color: #c9d2e3; font-size: 15pt; max-width: 135mm; margin-top: 18px; }
+    .cover .meta { margin-top: 72mm; border-left: 5px solid #b7ed55; padding-left: 16px; }
+    .badge {
+      display: inline-block;
+      background: #b7ed55;
+      color: #101828;
+      padding: 6px 10px;
+      font-size: 9pt;
+      font-weight: bold;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .notice { background: #fff7d6; border-left: 4px solid #e8b931; padding: 12px 14px; margin: 12px 0 18px; }
+    .callout { background: #eef8df; border-left: 4px solid #80b52f; padding: 12px 14px; margin: 12px 0; }
+    .small { color: #59657a; font-size: 9pt; }
+    .toc td { border-width: 0 0 1px; padding: 7px 2px; }
+    .toc td:last-child { text-align: right; width: 16mm; }
+    .footer { display: none; }
+    .kicker { color: #5f7f26; font-size: 9pt; font-weight: bold; letter-spacing: 0.08em; text-transform: uppercase; }
+    .two-column { column-count: 2; column-gap: 18mm; }
+    .avoid-break { page-break-inside: avoid; }
+  </style>
+</head>
+<body>
+  <section class="page cover">
+    <div class="brand">DEVScale.</div>
+    <div style="margin-top: 28mm" class="badge">Sample training document</div>
+    <h1 style="margin-top: 16px">Employee Handbook</h1>
+    <p class="subtitle">A fictional people-operations handbook prepared as seed content for retrieval-augmented generation exercises.</p>
+    <div class="meta">
+      <p><strong>Company:</strong> Devscale Indonesia</p>
+      <p><strong>Version:</strong> 0.1 Mock</p>
+      <p><strong>Effective date:</strong> 8 August 2026</p>
+      <p><strong>Classification:</strong> Public training data</p>
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Read this first</div>
+    <h2>Document status and purpose</h2>
+    <div class="notice">
+      <strong>This is not an official Devscale policy.</strong> Every employment rule, allowance, deadline, contact, and process in this handbook is fictional. It exists only as realistic sample content for software demonstrations, RAG pipelines, search evaluation, and classroom exercises.
+    </div>
+    <p>This mock handbook uses limited public context about Devscale Indonesia as a software-engineering education and mentorship brand. It does not describe Devscale's real employment terms or internal operations.</p>
+
+    <h3>How to use this document</h3>
+    <ul>
+      <li>Use it as a source document for chunking, embedding, retrieval, reranking, citation, and evaluation exercises.</li>
+      <li>Use the exact fictional facts to write deterministic RAG questions and expected answers.</li>
+      <li>Do not give this document to employees as policy or use it for legal, payroll, or HR decisions.</li>
+    </ul>
+
+    <h3>Interpretation rule</h3>
+    <p>In a real organization, applicable law, signed employment agreements, and formally issued policies would override a handbook. Questions about real Devscale employment should be directed to Devscale through its official channels.</p>
+
+    <h3>Document owner</h3>
+    <table>
+      <tr><th>Field</th><th>Mock value</th></tr>
+      <tr><td>Owner</td><td>People Operations</td></tr>
+      <tr><td>Review cycle</td><td>Every 12 months</td></tr>
+      <tr><td>Next mock review</td><td>8 August 2027</td></tr>
+      <tr><td>Questions</td><td>people@example.devscale.id (fictional)</td></tr>
+    </table>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Navigation</div>
+    <h2>Contents</h2>
+    <table class="toc">
+      <tr><td>1. Welcome and company context</td><td>3</td></tr>
+      <tr><td>2. Employment basics</td><td>4</td></tr>
+      <tr><td>3. Remote work and working hours</td><td>5</td></tr>
+      <tr><td>4. Pay, benefits, and expenses</td><td>6</td></tr>
+      <tr><td>5. Time off and wellbeing</td><td>7</td></tr>
+      <tr><td>6. Performance and growth</td><td>8</td></tr>
+      <tr><td>7. Engineering and product practices</td><td>9</td></tr>
+      <tr><td>8. Responsible AI use</td><td>10</td></tr>
+      <tr><td>9. Security and data handling</td><td>11</td></tr>
+      <tr><td>10. Conduct, reporting, and safety</td><td>12</td></tr>
+      <tr><td>11. Onboarding and offboarding</td><td>13</td></tr>
+      <tr><td>12. Quick-reference FAQ</td><td>14</td></tr>
+      <tr><td>Appendix: RAG provenance and sample questions</td><td>15</td></tr>
+    </table>
+
+    <div class="callout">
+      <strong>RAG design note:</strong> headings use stable, descriptive language and policies contain distinct numbers, owners, and deadlines. This makes retrieval quality easier to evaluate.
+    </div>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Section 1</div>
+    <h2>Welcome and company context</h2>
+    <p>Welcome to the fictional internal team behind Devscale Indonesia. Publicly, Devscale focuses on helping students build strong software-engineering fundamentals, learn through practical projects, receive mentor feedback, and use modern AI tools responsibly.</p>
+
+    <h3>Our mock internal mission</h3>
+    <p>Help people become practical software engineers for the AI era by combining clear instruction, realistic building experience, thoughtful feedback, and sound technical judgment.</p>
+
+    <h3>Values used in this handbook</h3>
+    <table>
+      <tr><th>Value</th><th>What it looks like at work</th></tr>
+      <tr><td><strong>Clarity</strong></td><td>Write decisions down, explain the reason, define the next action, and reduce avoidable confusion.</td></tr>
+      <tr><td><strong>Momentum</strong></td><td>Prefer small, reviewable progress and short feedback loops over large invisible efforts.</td></tr>
+      <tr><td><strong>Craft</strong></td><td>Treat code, teaching, communication, and product judgment as connected professional skills.</td></tr>
+      <tr><td><strong>Care</strong></td><td>Respect learners and colleagues, protect their data, and give feedback without humiliation.</td></tr>
+    </table>
+
+    <h3>How decisions are made</h3>
+    <ol>
+      <li>The directly responsible individual proposes a decision in writing.</li>
+      <li>Affected teammates comment within the stated review window.</li>
+      <li>The owner records the final choice, reason, date, and follow-up action.</li>
+      <li>Reversible decisions should move quickly; security, legal, and learner-safety decisions require explicit review.</li>
+    </ol>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Section 2</div>
+    <h2>Employment basics</h2>
+    <h3>Employment records</h3>
+    <p>Employees are responsible for keeping their legal name, address, emergency contact, bank account, and tax information current. Mock changes should be submitted to People Operations within five working days.</p>
+
+    <h3>Introductory period</h3>
+    <p>The sample introductory period is three months. Managers hold check-ins at the end of weeks 2, 6, and 10. The purpose is alignment and support, not surprise evaluation.</p>
+
+    <h3>Employee classifications</h3>
+    <table>
+      <tr><th>Classification</th><th>Definition in this mock handbook</th></tr>
+      <tr><td>Full-time</td><td>A regular role scheduled for 40 hours per week.</td></tr>
+      <tr><td>Part-time</td><td>A regular role with a documented schedule below 40 hours per week.</td></tr>
+      <tr><td>Fixed-term</td><td>A role with a written end date or defined project period.</td></tr>
+      <tr><td>Contractor</td><td>An independent service provider governed by a services agreement, not this handbook.</td></tr>
+    </table>
+
+    <h3>Conflicts of interest</h3>
+    <p>Employees must disclose outside work, investments, close personal relationships, or gifts that could influence a Devscale decision. Teaching, open-source work, and public speaking are encouraged when they do not use confidential information or interfere with agreed responsibilities.</p>
+
+    <h3>Personnel information</h3>
+    <p>Access to personnel records is limited to the employee, People Operations, and managers with a legitimate need. Employee information must not be copied into public chat channels or unapproved AI services.</p>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Section 3</div>
+    <h2>Remote work and working hours</h2>
+    <h3>Remote-first model</h3>
+    <p>This fictional workplace is remote-first within Indonesia. Employees may work from a safe location with reliable internet and reasonable privacy. Working from another country for up to 20 calendar days requires written manager and People Operations approval before travel.</p>
+
+    <h3>Standard schedule</h3>
+    <ul>
+      <li>Normal workload: 40 hours per week, Monday through Friday.</li>
+      <li>Core collaboration hours: 10:00–15:00 WIB, Monday through Thursday.</li>
+      <li>Friday focus period: no recurring internal meetings after 13:00 WIB.</li>
+      <li>Employees arrange the remaining hours with their manager and document any recurring alternative schedule.</li>
+    </ul>
+
+    <h3>Availability and attendance</h3>
+    <p>Employees should update their calendar and team status when unavailable for more than 60 minutes during core hours. Unexpected absence should be reported to the manager by 09:30 WIB whenever reasonably possible.</p>
+
+    <h3>Meeting standards</h3>
+    <ol>
+      <li>Every meeting needs an owner, purpose, and expected decision or outcome.</li>
+      <li>Default meeting lengths are 25 or 50 minutes.</li>
+      <li>Notes and actions are posted within one working day.</li>
+      <li>Attendance is optional when an employee can contribute asynchronously.</li>
+    </ol>
+
+    <h3>Overtime and after-hours work</h3>
+    <p>Planned work outside an employee's normal schedule requires manager approval. Production incidents may require urgent response; the incident lead records participants and arranges appropriate recovery time under the applicable agreement.</p>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Section 4</div>
+    <h2>Pay, benefits, and expenses</h2>
+    <h3>Payroll</h3>
+    <p>For this mock policy, monthly payroll is processed on the 25th calendar day. If the 25th falls on a weekend or public holiday, payment is processed on the preceding banking day. Payroll questions should be raised within five working days of receiving the payslip.</p>
+
+    <h3>Sample benefits</h3>
+    <table>
+      <tr><th>Benefit</th><th>Mock allowance</th><th>Key rule</th></tr>
+      <tr><td>Work equipment</td><td>Up to IDR 15,000,000 every 36 months</td><td>Manager approval before purchase; company-owned items are returned at offboarding.</td></tr>
+      <tr><td>Learning budget</td><td>Up to IDR 6,000,000 per calendar year</td><td>Must support the employee's role or agreed growth plan.</td></tr>
+      <tr><td>Internet support</td><td>IDR 500,000 per month</td><td>Paid with payroll; no receipt required in this mock policy.</td></tr>
+      <tr><td>Co-working</td><td>Up to IDR 750,000 per month</td><td>Receipt required; cannot be exchanged for cash.</td></tr>
+    </table>
+
+    <h3>Expense reimbursement</h3>
+    <p>Approved business expenses must be submitted within 10 calendar days of purchase. A submission includes the receipt, business purpose, project or cost center, and approving manager. Finance targets reimbursement within seven working days after approval.</p>
+
+    <h3>Travel</h3>
+    <p>Travel requires written approval before booking. Employees should choose reasonable economy transport and practical accommodation. Personal upgrades are paid by the employee. Travel advances must be reconciled within five working days after return.</p>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Section 5</div>
+    <h2>Time off and wellbeing</h2>
+    <table>
+      <tr><th>Leave type</th><th>Mock entitlement</th><th>Notice</th></tr>
+      <tr><td>Annual leave</td><td>15 working days per calendar year</td><td>Request 5 working days ahead when taking 3 or more consecutive days.</td></tr>
+      <tr><td>Personal wellbeing leave</td><td>3 working days per year</td><td>Same-day notice is allowed.</td></tr>
+      <tr><td>Sick leave</td><td>As documented in the employee's agreement</td><td>Notify manager by 09:30 WIB; supporting documentation after the third consecutive day.</td></tr>
+      <tr><td>Compassionate leave</td><td>5 working days per event</td><td>Notify manager as soon as practical.</td></tr>
+      <tr><td>Volunteer day</td><td>1 working day per year</td><td>Request 10 working days ahead.</td></tr>
+    </table>
+
+    <h3>Annual leave planning</h3>
+    <p>Managers should approve leave unless there is a specific coverage risk. Teams maintain a shared coverage plan. No employee should be expected to monitor routine messages while on approved leave.</p>
+
+    <h3>Carry-over</h3>
+    <p>Up to five unused annual-leave days may carry into the next calendar year in this mock policy. Carried days should be used by 31 March or they expire, unless People Operations grants a written exception.</p>
+
+    <h3>Wellbeing and boundaries</h3>
+    <p>Employees may mute non-urgent notifications outside their working schedule. Managers must not treat immediate after-hours replies as a performance signal. Anyone experiencing sustained overload should raise it during the weekly check-in or directly with People Operations.</p>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Section 6</div>
+    <h2>Performance and growth</h2>
+    <h3>Performance rhythm</h3>
+    <ul>
+      <li>Weekly manager check-in: priorities, blockers, workload, and feedback.</li>
+      <li>Quarterly growth conversation: progress against role expectations and learning goals.</li>
+      <li>Semiannual review: written self-reflection, manager assessment, and next-period goals.</li>
+    </ul>
+
+    <h3>What performance includes</h3>
+    <p>Performance is evaluated across outcomes, reliability, collaboration, communication, craft, and learning. Visible activity, message volume, and hours online are not standalone measures of impact.</p>
+
+    <h3>Feedback</h3>
+    <p>Useful feedback is specific, timely, and connected to an observable behavior or outcome. The receiver should understand what happened, why it matters, and what could be tried next. Sensitive feedback is delivered privately.</p>
+
+    <h3>Learning budget process</h3>
+    <ol>
+      <li>Employee submits the learning goal, resource, cost, and expected application.</li>
+      <li>Manager responds within five working days.</li>
+      <li>After completion, the employee shares a short note, demo, or team lesson.</li>
+    </ol>
+
+    <h3>Role changes and promotion</h3>
+    <p>Promotion is based on sustained work at the next level, not tenure alone. A promotion proposal includes evidence from at least two projects and feedback from relevant collaborators. Compensation changes are confirmed in writing by People Operations.</p>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Section 7</div>
+    <h2>Engineering and product practices</h2>
+    <h3>Definition of done</h3>
+    <p>Work is done when the agreed behavior is implemented, relevant checks pass, documentation is updated, operational impact is considered, and the change is reviewable by another team member.</p>
+
+    <h3>Code review</h3>
+    <ul>
+      <li>Normal changes require at least one approving reviewer.</li>
+      <li>Authentication, billing, permissions, migrations, or destructive data operations require two approving reviewers.</li>
+      <li>Authors should keep changes focused and explain the problem, approach, verification, and risk.</li>
+      <li>Reviewers comment on correctness and user impact before personal style preferences.</li>
+    </ul>
+
+    <h3>Testing</h3>
+    <p>Every bug fix should include a regression check when practical. High-risk user flows need automated coverage or a documented manual verification plan. Tests must not depend on production customer data.</p>
+
+    <h3>Production changes</h3>
+    <p>Deployments should be observable and reversible. The owner monitors the release, records material issues, and prepares a rollback path for high-risk changes. Feature flags are preferred when a staged release reduces risk.</p>
+
+    <h3>Documentation</h3>
+    <p>Architecture decisions, runbooks, setup instructions, and recurring operational knowledge belong in the shared documentation system—not only in private messages. Owners review critical runbooks every six months.</p>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Section 8</div>
+    <h2>Responsible AI use</h2>
+    <p>AI tools can accelerate exploration, drafting, coding, and review, but the employee remains responsible for the final work. AI output is a proposal to verify, not evidence that a task is correct.</p>
+
+    <h3>Information classification for AI tools</h3>
+    <table>
+      <tr><th>Class</th><th>Examples</th><th>AI rule</th></tr>
+      <tr><td><strong>Green</strong></td><td>Public documentation, synthetic examples, published marketing content</td><td>May be used with approved AI tools.</td></tr>
+      <tr><td><strong>Yellow</strong></td><td>Internal plans, unpublished lessons, private source code without secrets</td><td>Use only approved enterprise tools with retention controls.</td></tr>
+      <tr><td><strong>Red</strong></td><td>Passwords, API keys, payment data, government identifiers, private learner records</td><td>Never submit to a generative AI tool.</td></tr>
+    </table>
+
+    <h3>Required verification</h3>
+    <ul>
+      <li>Run and review AI-generated code before merging it.</li>
+      <li>Verify factual claims against primary sources.</li>
+      <li>Check licenses and attribution before using generated or retrieved material.</li>
+      <li>Use human review for decisions affecting access, employment, assessment, or learner safety.</li>
+    </ul>
+
+    <h3>Disclosure</h3>
+    <p>Material AI assistance should be disclosed in the pull request, document note, or project record when it affects implementation or content. Disclosure can be short: tool used, purpose, and verification performed.</p>
+
+    <div class="callout"><strong>Never paste secrets into prompts.</strong> If a secret is exposed, rotate it immediately and report a security incident; deleting the conversation is not sufficient.</div>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Section 9</div>
+    <h2>Security and data handling</h2>
+    <h3>Account security</h3>
+    <ul>
+      <li>Use the company password manager and a unique password for every service.</li>
+      <li>Enable multi-factor authentication wherever available.</li>
+      <li>Never share individual accounts or authentication codes.</li>
+      <li>Lock devices when unattended and install required security updates within seven days.</li>
+    </ul>
+
+    <h3>Access control</h3>
+    <p>Access follows least privilege. Managers review privileged access every quarter. Temporary access must have an owner and expiration date. Access that is no longer needed should be removed within one working day.</p>
+
+    <h3>Data handling</h3>
+    <table>
+      <tr><th>Data type</th><th>Example handling</th></tr>
+      <tr><td>Public</td><td>May be shared externally after normal content review.</td></tr>
+      <tr><td>Internal</td><td>Share only with team members and approved collaborators.</td></tr>
+      <tr><td>Confidential</td><td>Encrypt in transit and at rest; limit access to named roles.</td></tr>
+      <tr><td>Restricted</td><td>Do not copy to personal devices, public links, or unapproved services.</td></tr>
+    </table>
+
+    <h3>Security incidents</h3>
+    <p>Report suspected account compromise, leaked secrets, unauthorized access, lost devices, or accidental data sharing immediately in the fictional <strong>#security-incident</strong> channel and by email to <strong>security@example.devscale.id</strong>. Do not wait to confirm the full impact before reporting.</p>
+
+    <h3>Backups</h3>
+    <p>Business records belong in approved systems with managed backups. Local files and chat messages are not a backup strategy.</p>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Section 10</div>
+    <h2>Conduct, reporting, and safety</h2>
+    <h3>Respectful workplace</h3>
+    <p>Harassment, discrimination, bullying, retaliation, threats, and deliberate humiliation are not acceptable in meetings, messages, code review, teaching, events, or social spaces connected to work.</p>
+
+    <h3>Working with learners</h3>
+    <ul>
+      <li>Use clear expectations and evaluate work consistently.</li>
+      <li>Give corrective feedback privately unless a shared lesson can be discussed without identifying or embarrassing anyone.</li>
+      <li>Keep professional boundaries and use approved communication channels.</li>
+      <li>Escalate safety, safeguarding, or serious wellbeing concerns to the program lead.</li>
+    </ul>
+
+    <h3>Reporting concerns</h3>
+    <p>Employees may report concerns to their manager, People Operations, or the fictional confidential address <strong>report@example.devscale.id</strong>. Reports should include what happened, when, who was involved, available evidence, and any immediate safety concern. Anonymous reports may be reviewed when sufficient details are provided.</p>
+
+    <h3>Non-retaliation</h3>
+    <p>Retaliation against someone who raises a good-faith concern or participates in a review is prohibited. A knowingly false allegation may itself be addressed as misconduct, but an unproven good-faith report is not a false allegation.</p>
+
+    <h3>Emergency response</h3>
+    <p>Personal safety comes first. Contact local emergency services for immediate danger, then notify the manager when safe. For a service incident, the incident commander coordinates response, communication, and the retrospective.</p>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Section 11</div>
+    <h2>Onboarding and offboarding</h2>
+    <h3>Before day one</h3>
+    <ul>
+      <li>Confirm signed documents, payroll information, equipment, accounts, and first-week calendar.</li>
+      <li>Assign a manager and onboarding buddy.</li>
+      <li>Grant only the minimum access required for the first week.</li>
+    </ul>
+
+    <h3>30–60–90 day plan</h3>
+    <table>
+      <tr><th>Period</th><th>Expected focus</th></tr>
+      <tr><td>Days 1–30</td><td>Learn the product, users, tools, standards, and team operating rhythm. Complete one small supported contribution.</td></tr>
+      <tr><td>Days 31–60</td><td>Own a bounded project, participate in reviews, and document one improvement opportunity.</td></tr>
+      <tr><td>Days 61–90</td><td>Deliver independently at role scope and agree on the next two quarterly growth goals.</td></tr>
+    </table>
+
+    <h3>Offboarding</h3>
+    <p>The manager creates a transition plan covering work status, owners, documentation, and stakeholder communication. Company property must be returned by the final working day unless another written arrangement is approved.</p>
+
+    <h3>Access removal</h3>
+    <p>People Operations confirms the final date with IT. Standard access is removed by the end of the final working day. High-risk or privileged access may be removed earlier based on the transition plan. Shared credentials must be rotated.</p>
+
+    <h3>Knowledge transfer</h3>
+    <p>Departing employees update runbooks, identify open decisions, transfer owned accounts, and record the next action for active work. Confidential information remains protected after employment ends.</p>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Section 12</div>
+    <h2>Quick-reference FAQ</h2>
+    <div class="avoid-break"><h3>When is mock payroll processed?</h3><p>On the 25th calendar day, or the preceding banking day when the 25th is a weekend or public holiday.</p></div>
+    <div class="avoid-break"><h3>What are core collaboration hours?</h3><p>10:00–15:00 WIB, Monday through Thursday.</p></div>
+    <div class="avoid-break"><h3>How much annual leave may carry over?</h3><p>Up to five days, normally used by 31 March of the following year.</p></div>
+    <div class="avoid-break"><h3>What is the annual mock learning budget?</h3><p>Up to IDR 6,000,000 per calendar year.</p></div>
+    <div class="avoid-break"><h3>How quickly should expenses be submitted?</h3><p>Within 10 calendar days of purchase.</p></div>
+    <div class="avoid-break"><h3>Can restricted data be entered into AI tools?</h3><p>No. Red-class information must never be submitted to a generative AI tool.</p></div>
+    <div class="avoid-break"><h3>How many reviewers are required?</h3><p>One for normal changes; two for authentication, billing, permissions, migrations, or destructive data operations.</p></div>
+    <div class="avoid-break"><h3>Where are mock security incidents reported?</h3><p>In #security-incident and to security@example.devscale.id.</p></div>
+    <div class="avoid-break"><h3>How long is the introductory period?</h3><p>Three months, with check-ins after weeks 2, 6, and 10.</p></div>
+    <div class="avoid-break"><h3>Is this handbook official?</h3><p>No. It is fictional training data and must not be used for real employment decisions.</p></div>
+    <div class="footer">Devscale Indonesia · Sample Employee Handbook · Not official policy</div>
+  </section>
+
+  <section class="page">
+    <div class="kicker">Appendix</div>
+    <h2>RAG provenance and evaluation ideas</h2>
+    <h3>Public context used</h3>
+    <p>The company overview is lightly informed by public Devscale pages describing its focus on software-engineering fundamentals, practical projects, mentorship, feedback, and responsible use of AI tools. Values named Clarity, Momentum, and Craft are adapted from the public About page.</p>
+
+    <h3>Fictional content</h3>
+    <p>All employment classifications, schedules, benefits, leave allowances, review cycles, technical rules, contact addresses, and operational processes were invented for this sample. The example.devscale.id addresses are intentionally non-operational.</p>
+
+    <h3>Suggested retrieval questions</h3>
+    <ol>
+      <li>How much can an employee spend on equipment, and how often?</li>
+      <li>What should happen when the payroll date falls on a holiday?</li>
+      <li>Which code changes require two reviewers?</li>
+      <li>What are the three AI information classes?</li>
+      <li>How should an employee report a leaked API key?</li>
+      <li>What is expected during days 31–60 of onboarding?</li>
+      <li>When do carried annual-leave days expire?</li>
+      <li>What documentation is required for an expense?</li>
+    </ol>
+
+    <h3>Evaluation guidance</h3>
+    <ul>
+      <li>Require answers to cite the relevant section or retrieved chunk.</li>
+      <li>Test numerical precision, especially dates, monetary amounts, and review counts.</li>
+      <li>Include a refusal test: “Is this Devscale's official employee policy?” The correct answer is no.</li>
+      <li>Include an unanswerable question and verify that the model does not invent a policy.</li>
+    </ul>
+
+    <p class="small">Source context retrieved from devscale.id public pages on 8 August 2026. Generated as an original mock document for educational use.</p>
+    <div class="footer">End of sample handbook · Not official policy</div>
+  </section>
+</body>
+</html>

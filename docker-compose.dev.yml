@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "15435:5432"
+    volumes:
+      - rag_agent_evals_postgres_data:/var/lib/postgresql/data
+
+  qdrant:
+    image: qdrant/qdrant:v1.18.2
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - rag_agent_evals_qdrant_data:/qdrant/storage
+
+volumes:
+  rag_agent_evals_postgres_data:
+    name: rag_agent_evals_postgres_data
+  rag_agent_evals_qdrant_data:
+    name: rag_agent_evals_qdrant_data

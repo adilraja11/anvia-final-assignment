@@ -1,0 +1,24 @@
+{
+  "name": "rag-agent-evals",
+  "private": true,
+  "scripts": {
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "dev": "dotenv -e .env -- pnpm --parallel --filter @repo/agents --filter @repo/platform --filter @repo/api dev",
+    "dev:platform": "dotenv -e .env -- pnpm --filter @repo/platform dev",
+    "dev:api": "dotenv -e .env -- pnpm --filter @repo/api dev",
+    "build": "dotenv -e .env -- pnpm -r --if-present build",
+    "typecheck": "dotenv -e .env -- pnpm -r --if-present typecheck",
+    "db:generate": "dotenv -e .env -- pnpm --filter @repo/api prisma:generate",
+    "db:migrate": "dotenv -e .env -- pnpm --filter @repo/api prisma:migrate",
+    "db:deploy": "dotenv -e .env -- pnpm --filter @repo/api prisma:deploy",
+    "db:studio": "dotenv -e .env -- pnpm --filter @repo/api prisma:studio",
+    "ingest:handbook": "pnpm --filter @repo/agents ingest:handbook",
+    "eval": "dotenv -e .env -- pnpm --filter @repo/agents eval"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.7",
+    "dotenv-cli": "^11.0.0"
+  },
+  "packageManager": "pnpm@11.9.0"
+}
