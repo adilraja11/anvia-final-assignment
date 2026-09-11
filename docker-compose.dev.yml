@@ -8,7 +8,7 @@ services:
     ports:
       - "15435:5432"
     volumes:
-      - rag_agent_evals_postgres_data:/var/lib/postgresql/data
+      - exploration_final_project_postgres_data:/var/lib/postgresql/data
 
   qdrant:
     image: qdrant/qdrant:v1.18.2
@@ -16,10 +16,10 @@ services:
       - "6333:6333"
       - "6334:6334"
     volumes:
-      - rag_agent_evals_qdrant_data:/qdrant/storage
+      - exploration_final_project_qdrant_data:/qdrant/storage
 
 volumes:
-  rag_agent_evals_postgres_data:
-    name: rag_agent_evals_postgres_data
-  rag_agent_evals_qdrant_data:
-    name: rag_agent_evals_qdrant_data
+  exploration_final_project_postgres_data:
+    name: exploration_final_project_postgres_data
+  exploration_final_project_qdrant_data:
+    name: exploration_final_project_qdrant_data
