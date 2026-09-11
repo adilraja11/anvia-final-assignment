@@ -1,5 +1,5 @@
 {
-	"name": "rag-agent-evals",
+	"name": "exploration-final-project",
 	"private": true,
 	"scripts": {
 		"check": "biome check .",
@@ -14,7 +14,8 @@
 		"db:deploy": "dotenv -e .env -- pnpm --filter @repo/api prisma:deploy",
 		"db:studio": "dotenv -e .env -- pnpm --filter @repo/api prisma:studio",
 		"ingest:handbook": "pnpm --filter @repo/agents ingest:handbook",
-		"eval": "dotenv -e .env -- pnpm --filter @repo/agents eval"
+		"eval": "dotenv -e .env -- pnpm --filter @repo/agents eval",
+		"studio": "dotenv -e .env -- pnpm --filter @repo/agents studio"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.7",
