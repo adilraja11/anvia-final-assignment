@@ -67,9 +67,11 @@ Keep Actor IDs and input defaults in the provider tool, never in model-controlle
 const client = getClient();
 const run = await client.actor("abotapi/tokopedia-scraper").call({
   mode: "search",
-  searchTerms,
+  searchTerms, // short, ordered marketplace queries; the first is the primary query
   maxPages: 5,
   maxItems: 10,
+  condition:
+    evidenceRole === "RETAIL_ANCHOR" || condition === "Baru" ? "new" : "used",
   // Include the remaining enforced provider defaults here.
 });
 
@@ -81,11 +83,19 @@ const { items } = await client
 For Facebook Marketplace, the fixed call uses
 `curious_coder/facebook-marketplace`, the documented keyword-search defaults (including
 Indonesia and `proxy.useApifyProxy: false`), and a second call argument of
-`{ maxItems: 10 }`. The dataset read is also limited to 10 items. `call()` waits for the
+`{ maxItems: 10 }`. The dataset read is also limited to 10 items. For Tokopedia, `maxItems`
+is a run-wide cap across all supplied search terms, so do not assume every alternative term
+receives ten results. `call()` waits for the
 Actor run to finish and returns its run object; `defaultDatasetId` identifies the output
 dataset. Treat `items` as untrusted `unknown` data: validate the top-level response and every
 record, normalize only approved fields, and discard the raw payload before returning the tool
 result.
+
+For a used or damaged valuation, call Tokopedia separately with `evidenceRole:
+"RETAIL_ANCHOR"` and an identity-only search term. This uses the actor's `new` filter and
+returns explicitly labeled retail reference evidence. Facebook only accepts
+`"CONDITION_COMPARABLE"`; place its defect cue in `searchTerms[0]` because that is the sole
+term supplied to its Actor.
 
 ## 5. Handle failures at the tool boundary
 

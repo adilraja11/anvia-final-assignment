@@ -91,6 +91,7 @@ Both tools accept only this bounded input shape:
 {
   searchTerms: string[]; // 1–5 terms, each 1–160 characters
   condition: Condition;
+  evidenceRole?: "CONDITION_COMPARABLE" | "RETAIL_ANCHOR";
   region?: "Indonesia"; // defaults to "Indonesia"
 }
 ```
@@ -99,8 +100,47 @@ Both tools accept only this bounded input shape:
 `Tidak diketahui`. The tools normalize and validate their own inputs with Zod before
 calling Apify.
 
+`evidenceRole` defaults to `CONDITION_COMPARABLE`. Such evidence must match the requested
+product condition. `RETAIL_ANCHOR` is supported by Tokopedia only and is a separate new/retail
+reference population; it must never be treated as a comparable listing for a used or damaged
+product. The tool output includes this role on both the envelope and every evidence record.
+Facebook Marketplace rejects `RETAIL_ANCHOR` requests.
+
 The tools must not accept actor IDs, arbitrary URLs, `maxItems`, `maxPages`, proxy options,
 credentials, or raw actor configuration from the model.
+
+### Tokopedia query guidance
+
+Tokopedia receives the provider's coarse `new` filter for `Baru` and `used` filter for every
+other valuation condition. The requested valuation condition is still applied after retrieval
+because the provider cannot distinguish `Seperti baru`, `Baik`, `Cukup`, and `Rusak`. A
+successful result with empty `evidence` and empty `rejected` is an actor-level empty dataset,
+before local condition or title validation ran.
+
+For a used or damaged product, call Tokopedia separately as a `RETAIL_ANCHOR`: use an
+identity-only query such as `PS5 Fat Disc`, and retain the user's product condition in the
+tool input. The tool then retrieves only the provider's `new` stock and labels it as an anchor.
+Call Facebook Marketplace as `CONDITION_COMPARABLE` with a condition-specific first query such
+as `PS5 Fat Disc rusak`. Present the resulting populations separately. The current agent may
+explain the difference but must not calculate a numeric adjustment, blended estimate, or
+verdict from the two roles.
+
+Generate short, title-like search terms and order them by expected usefulness. `maxItems: 10`
+caps the entire Tokopedia Actor run across all terms, so a long list of alternatives is not a
+reliable way to obtain ten candidates per alternative. For damaged products, use the core
+identity plus a concise damage cue, for example `PS5 Fat Disc rusak`; add `Jepang` only when
+that market variant is price-critical. Do not include incidental symptoms such as `safe mode`
+or bundle omissions such as `tanpa stik` unless they are essential to the comparison. Every
+token of at least one submitted term must occur in an accepted listing title, so terms must be
+plausible title fragments rather than full narrative descriptions.
+
+Tokopedia search results are retrieval candidates, not price evidence by themselves. Broad
+console queries commonly include accessories (stands, holders, docks, dust plugs) and empty
+`dus`/`kardus` listings, while a missing provider condition cannot establish comparability
+with `Rusak`.
+Reject those records and do not estimate a damaged-item price from the remaining new or
+unknown-condition retail listings. Treat `PS5`, `PS 5`, and `PlayStation 5` as the same
+identity alias during title matching, while retaining all other price-critical tokens.
 
 Use `APIFY_API_TOKEN` server-side. Actor IDs and limits are constants in code. Never expose
 credentials or raw Apify responses to the model, browser, or logs.
@@ -108,10 +148,11 @@ credentials or raw Apify responses to the model, browser, or logs.
 ### Provider selection
 
 - `Baru`: Tokopedia only.
-- `Seperti baru`, `Baik`, `Cukup`, `Rusak`: Tokopedia and Facebook Marketplace.
+- `Seperti baru`, `Baik`, `Cukup`, `Rusak`: a separate Tokopedia `RETAIL_ANCHOR` and a
+  Facebook Marketplace `CONDITION_COMPARABLE` search.
 - `Tidak diketahui`: second-hand evidence from both providers only. A future deterministic
-  valuation engine must cap confidence at `MEDIUM`; the current agent does not calculate
-  confidence.
+  valuation engine must cap confidence at `MEDIUM`; both searches use
+  `CONDITION_COMPARABLE` and the current agent does not calculate confidence.
 
 ## Studio and manual validation
 

@@ -99,13 +99,17 @@ const conditionSchema = z.enum([
 	"Tidak diketahui",
 ]);
 
+const evidenceRoleSchema = z.literal("CONDITION_COMPARABLE");
+
 const inputSchema = z.object({
 	searchTerms: z.array(z.string().trim().min(1).max(160)).min(1).max(5),
 	condition: conditionSchema,
+	evidenceRole: evidenceRoleSchema.default("CONDITION_COMPARABLE"),
 	region: z.literal("Indonesia").default("Indonesia"),
 });
 
 type Condition = z.infer<typeof conditionSchema>;
+type EvidenceRole = z.infer<typeof evidenceRoleSchema>;
 type NormalizedCondition =
 	| "NEW"
 	| "LIKE_NEW"
@@ -121,6 +125,7 @@ type Evidence = {
 	title: string;
 	price_idr: number;
 	condition: NormalizedCondition;
+	evidence_role: EvidenceRole;
 	city?: string;
 	seller_type?: string;
 	product_attributes: Record<string, string>;
@@ -140,6 +145,7 @@ type Success = {
 	source: "FACEBOOK_MARKETPLACE";
 	search_terms: string[];
 	condition: Condition;
+	evidence_role: EvidenceRole;
 	region: "Indonesia";
 	fetched_at: string;
 	cache_hit: boolean;
@@ -420,6 +426,7 @@ function cacheKey(input: z.infer<typeof inputSchema>) {
 	return JSON.stringify({
 		searchTerms: input.searchTerms.map(normalizeText).sort(),
 		condition: input.condition,
+		evidenceRole: input.evidenceRole,
 		region: "Indonesia",
 	});
 }
@@ -515,6 +522,7 @@ function normalizeRecord(
 			title,
 			price_idr: priceIdr,
 			condition: detected.condition,
+			evidence_role: input.evidenceRole,
 			...(city ? { city } : {}),
 			product_attributes: {},
 			listing_status: "LIVE",
@@ -552,6 +560,7 @@ async function fetch(input: z.infer<typeof inputSchema>): Promise<Success> {
 		source: "FACEBOOK_MARKETPLACE",
 		search_terms: input.searchTerms,
 		condition: input.condition,
+		evidence_role: input.evidenceRole,
 		region: "Indonesia",
 		fetched_at: new Date().toISOString(),
 		cache_hit: false,
@@ -619,7 +628,7 @@ async function executeSearch(
 export const facebookMarketplaceSearch = createTool({
 	name: "facebookMarketplaceSearch",
 	description:
-		"Cari listing barang bekas di Facebook Marketplace untuk bukti harga. Gunakan hanya untuk kondisi selain Baru setelah identitas, kondisi, dan istilah pencarian produk jelas. URL pencarian, actor, batas hasil, dan konfigurasi provider dikunci oleh aplikasi.",
+		"Cari listing barang bekas yang sebanding di Facebook Marketplace. Hanya mendukung evidenceRole CONDITION_COMPARABLE; untuk kondisi Rusak, letakkan cue kerusakan di searchTerms pertama. URL pencarian, actor, batas hasil, dan konfigurasi provider dikunci oleh aplikasi.",
 	inputSchema,
 	execute: executeSearch,
 });

@@ -15,13 +15,20 @@ const conditionSchema = z.enum([
 	"Tidak diketahui",
 ]);
 
+const evidenceRoleSchema = z.enum([
+	"CONDITION_COMPARABLE",
+	"RETAIL_ANCHOR",
+]);
+
 const inputSchema = z.object({
 	searchTerms: z.array(z.string().trim().min(1).max(160)).min(1).max(5),
 	condition: conditionSchema,
+	evidenceRole: evidenceRoleSchema.default("CONDITION_COMPARABLE"),
 	region: z.literal("Indonesia").default("Indonesia"),
 });
 
 type Condition = z.infer<typeof conditionSchema>;
+type EvidenceRole = z.infer<typeof evidenceRoleSchema>;
 type NormalizedCondition =
 	| "NEW"
 	| "LIKE_NEW"
@@ -37,6 +44,7 @@ type Evidence = {
 	title: string;
 	price_idr: number;
 	condition: NormalizedCondition;
+	evidence_role: EvidenceRole;
 	city?: string;
 	seller_type?: string;
 	product_attributes: Record<string, string>;
@@ -56,6 +64,7 @@ type Success = {
 	source: "TOKOPEDIA";
 	search_terms: string[];
 	condition: Condition;
+	evidence_role: EvidenceRole;
 	region: "Indonesia";
 	fetched_at: string;
 	cache_hit: boolean;
@@ -117,6 +126,7 @@ function normalizeText(value: string) {
 		.replace(/(\p{N})(?=\p{L})/gu, "$1 ")
 		.replace(/(\p{L})(?=\p{N})/gu, "$1 ")
 		.replace(/[^\p{L}\p{N}]+/gu, " ")
+		.replace(/\bps\s*([345])\b/gu, "playstation $1")
 		.trim();
 }
 
@@ -161,7 +171,10 @@ function comparableCondition(
 	condition: NormalizedCondition,
 	requested: Condition,
 	secondHand: boolean,
+	evidenceRole: EvidenceRole,
 ) {
+	if (evidenceRole === "RETAIL_ANCHOR")
+		return condition === "NEW" || (condition === "UNKNOWN" && !secondHand);
 	if (requested === "Baru")
 		return condition === "NEW" || condition === "UNKNOWN";
 	if (requested === "Seperti baru") return condition === "LIKE_NEW";
@@ -174,8 +187,8 @@ function comparableCondition(
 function isRejectedTitle(title: string) {
 	const normalized = normalizeText(title);
 	return [
-		/\b(accessory|accessories|case|casing|cover|charger|kabel|cable|adapter|headset|earphone|strap|mouse|keyboard|tas|bag|tempered|screen protector|pelindung)\b/,
-		/\b(lcd|display|baterai|battery|sparepart|suku cadang|service|servis|repair|perbaikan|for parts)\b/,
+		/\b(accessory|accessories|case|casing|cover|charger|kabel|cable|adapter|headset|earphone|strap|mouse|keyboard|tas|bag|tempered|screen protector|pelindung|stand|holder|dock|base|dudukan|plug|dust proof|anti debu)\b/,
+		/\b(lcd|display|baterai|battery|sparepart|suku cadang|service|servis|repair|perbaikan|for parts|kardus|dus)\b/,
 		/\b(bundle|paket|borongan|sepasang|\d+\s*(unit|pcs))\b/,
 	].some((pattern) => pattern.test(normalized));
 }
@@ -239,6 +252,7 @@ function cacheKey(input: z.infer<typeof inputSchema>) {
 	return JSON.stringify({
 		searchTerms: input.searchTerms.map(normalizeText).sort(),
 		condition: input.condition,
+		evidenceRole: input.evidenceRole,
 		region: "Indonesia",
 	});
 }
@@ -295,12 +309,29 @@ function normalizeRecord(
 	const status = statusRejection(record);
 	if (status) return reject(status);
 
-	const detected = classifyCondition(record.condition);
+	// Tokopedia exposes only a coarse source condition (normally new/used). When it
+	// cannot classify the requested condition, use an explicit title cue to distinguish
+	// damaged listings such as "PS5 Fat Disc rusak" from ordinary used stock. A source
+	// classification still takes precedence over a contradictory title.
+	const sourceCondition = classifyCondition(record.condition);
+	const titleCondition = classifyCondition(title);
+	const detected =
+		sourceCondition.condition !== "UNKNOWN"
+			? sourceCondition
+			: titleCondition.condition !== "UNKNOWN"
+				? titleCondition
+				: {
+						condition: "UNKNOWN" as const,
+						explicitSecondHand:
+							sourceCondition.explicitSecondHand ||
+							titleCondition.explicitSecondHand,
+					};
 	if (
 		!comparableCondition(
 			detected.condition,
 			input.condition,
 			detected.explicitSecondHand,
+			input.evidenceRole,
 		)
 	) {
 		return reject("condition_not_comparable");
@@ -317,6 +348,7 @@ function normalizeRecord(
 			title,
 			price_idr: record.price,
 			condition: detected.condition,
+			evidence_role: input.evidenceRole,
 			...(city ? { city } : {}),
 			product_attributes: allowedAttributes(record),
 			listing_status: "ACTIVE",
@@ -354,6 +386,7 @@ async function fetch(input: z.infer<typeof inputSchema>): Promise<Success> {
 		source: "TOKOPEDIA",
 		search_terms: input.searchTerms,
 		condition: input.condition,
+		evidence_role: input.evidenceRole,
 		region: "Indonesia",
 		fetched_at: new Date().toISOString(),
 		cache_hit: false,
@@ -372,7 +405,12 @@ export function buildTokopediaActorInput(input: z.infer<typeof inputSchema>) {
 		maxPages: 5,
 		maxItems: MAX_ITEMS,
 		sortBy: "relevance",
-		condition: "any",
+		// Tokopedia only supports a coarse new/used retrieval filter. Detailed
+		// comparability is still enforced during record normalization.
+		condition:
+			input.evidenceRole === "RETAIL_ANCHOR" || input.condition === "Baru"
+				? "new"
+				: "used",
 		shopTier: "any",
 		urls: [],
 		proxy: { useApifyProxy: true },
@@ -414,7 +452,7 @@ async function executeSearch(
 export const tokopediaSearch = createTool({
 	name: "tokopediaSearch",
 	description:
-		"Cari listing produk di Tokopedia untuk bukti harga. Gunakan hanya setelah identitas, kondisi, dan istilah pencarian produk sudah jelas. Actor, batas hasil, proxy, dan konfigurasi provider dikunci oleh aplikasi.",
+		"Cari listing produk di Tokopedia. Gunakan evidenceRole CONDITION_COMPARABLE untuk listing dengan kondisi yang sama, atau RETAIL_ANCHOR untuk referensi harga baru yang harus dilaporkan terpisah. Actor, batas hasil, proxy, dan konfigurasi provider dikunci oleh aplikasi.",
 	inputSchema,
 	execute: executeSearch,
 });
