@@ -9,17 +9,18 @@ import { LensClient } from "@anvia/lens";
 import { createLoggerObserver, createPinoLogger } from "@anvia/logger";
 import { BASE_INSTRUCTIONS } from "./prompts/base-instructions.js";
 import { defaultModel } from "./providers/openai.js";
-import { handbookSearch } from "./tools/handbook-search.js";
+import { facebookMarketplaceSearch } from "./tools/facebook-search.js";
+import { tokopediaSearch } from "./tools/tokopedia-search.js";
 import { createWebTools } from "./tools/web-search.js";
 
 const lens = new LensClient({
 	optional: true,
-	serviceName: "rag-agent",
+	serviceName: "asli-segini-agent",
 });
 const tracing = lens.observer({ captureMode: "full" });
 
 const logger = createPinoLogger({
-	name: "rag-agent",
+	name: "asli-segini-agent",
 	level: "info",
 	pinoOptions: {
 		transport: {
@@ -66,16 +67,26 @@ export function createAgent(opts: CreateAgentOptions) {
 		].join("\n\n"),
 		tools: [
 			...(opts.includeWebTools ? createWebTools() : []),
-			handbookSearch,
+			tokopediaSearch,
+			facebookMarketplaceSearch,
 			...(opts.additionalTools ?? []),
 		],
 		temperature: 0,
-		maxTokens: 180,
-		maxTurns: 4,
+		maxTokens: 1_500,
+		maxTurns: 6,
 		observability: {
 			observers,
 			...(observers.lens ? { primaryTrace: "lens" } : {}),
 		},
 		...(opts.memory ? { memory: { store: opts.memory } } : {}),
+	});
+}
+
+export function createValuationAgent(
+	options: Omit<CreateAgentOptions, "agentId"> & { agentId?: string } = {},
+) {
+	return createAgent({
+		...options,
+		agentId: options.agentId ?? "asli-segini-valuation",
 	});
 }
