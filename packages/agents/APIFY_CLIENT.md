@@ -78,12 +78,14 @@ const { items } = await client
   .listItems({ limit: 10 });
 ```
 
-For Facebook Marketplace, the fixed call uses a single Indonesia Marketplace `startUrls`
-entry, `resultsLimit: 10`, the documented provider defaults, and a second call argument of
-`{ maxItems: 10 }`. `call()` waits for the Actor run to finish and returns its run object;
-`defaultDatasetId` identifies the output dataset. Treat `items` as untrusted `unknown` data:
-validate the top-level response and every record, normalize only approved fields, and discard
-the raw payload before returning the tool result.
+For Facebook Marketplace, the fixed call uses
+`curious_coder/facebook-marketplace`, the documented keyword-search defaults (including
+Indonesia and `proxy.useApifyProxy: false`), and a second call argument of
+`{ maxItems: 10 }`. The dataset read is also limited to 10 items. `call()` waits for the
+Actor run to finish and returns its run object; `defaultDatasetId` identifies the output
+dataset. Treat `items` as untrusted `unknown` data: validate the top-level response and every
+record, normalize only approved fields, and discard the raw payload before returning the tool
+result.
 
 ## 5. Handle failures at the tool boundary
 

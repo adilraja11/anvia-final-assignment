@@ -56,15 +56,15 @@ Use these enforced values:
 
 ```json
 {
-  "startUrls": [
-    { "url": "https://www.facebook.com/marketplace/indonesia/search/?query=<first search term>" }
-  ],
-  "resultsLimit": 10,
   "getAllListingPhotos": false,
   "getListingDetails": true,
   "location": "Indonesia",
   "maxPagesPerUrl": 1,
   "onlyNewListings": false,
+  "proxy": {
+    "useApifyProxy": false
+  },
+  "searchKeyword": "<first search term>",
   "strictFiltering": false,
   "sortBy": "",
   "daysSinceListed": "",
@@ -73,9 +73,10 @@ Use these enforced values:
 }
 ```
 
-The Actor search URL uses the first `searchTerms` entry. All supplied terms are still used
-for local title matching during normalization. The Actor call also passes
-`{ "maxItems": 10 }` as run options, and the dataset read is limited to 10 items.
+Use the fixed `curious_coder/facebook-marketplace` Actor. Its `searchKeyword` uses the first
+`searchTerms` entry. All supplied terms are still used for local title matching during
+normalization. The Actor call also passes `{ "maxItems": 10 }` as run options, and the
+dataset read is limited to 10 items.
 
 Use `region: "Indonesia"` as the fixed nationwide search scope. A user's city is product
 context only; accepted evidence may come from any Indonesian city. Do not apply a mathematical
@@ -92,8 +93,8 @@ Normalize the response as follows:
   rejected.
 - condition-bearing fields nested under `attribute_data` → normalized condition.
 - `creation_time` → `posted_at`.
-- Live, sold, hidden, pending, and draft flags → a status; only `LIVE` is accepted and the
-  normalized record has `listing_status: "LIVE"`.
+- `is_live`, `is_sold`, `is_hidden`, `is_pending`, and `is_draft` → a status; only `LIVE` is
+  accepted and the normalized record has `listing_status: "LIVE"`.
 - Facebook records currently expose no product attributes or seller type in the normalized
   result.
 
@@ -133,8 +134,8 @@ machine-readable exclusion reason. Raw actor payloads must not be returned or pe
 
 ## Limits, retries, and caching
 
-- Request and return no more than 10 records per actor. Facebook must enforce `resultsLimit: 10`
-  in the Actor input because a dataset read limit alone does not cap Actor scraping or cost.
+- Request and return no more than 10 records per actor. Facebook must pass `maxItems: 10` as
+  Actor run options; a dataset read limit alone does not cap Actor scraping or cost.
 - The tool boundary makes at most one additional Actor call after a non-configuration
   failure, including timeout, network, Apify, unknown, or malformed top-level errors. The
   `ApifyClient` itself is also configured with `maxRetries: 1`, so individual API requests

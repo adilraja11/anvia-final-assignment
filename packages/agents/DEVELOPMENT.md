@@ -83,7 +83,7 @@ categories must produce `UNSUPPORTED_CATEGORY`.
 Use two separate model-callable tools with fixed actor IDs:
 
 - `tokopediaSearch` using `abotapi/tokopedia-scraper`.
-- `facebookMarketplaceSearch` using `apify/facebook-marketplace-scraper`.
+- `facebookMarketplaceSearch` using `curious_coder/facebook-marketplace`.
 
 Both tools accept only this bounded input shape:
 

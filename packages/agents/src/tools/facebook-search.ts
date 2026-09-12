@@ -2,7 +2,7 @@ import { createTool } from "@anvia/core";
 import { ApifyApiError, ApifyClient } from "apify-client";
 import { z } from "zod";
 
-const ACTOR_ID = "apify/facebook-marketplace-scraper";
+const ACTOR_ID = "curious_coder/facebook-marketplace";
 const MAX_ITEMS = 10;
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
@@ -524,10 +524,6 @@ function normalizeRecord(
 	};
 }
 
-function marketplaceSearchUrl(term: string) {
-	return `https://www.facebook.com/marketplace/indonesia/search/?query=${encodeURIComponent(term)}`;
-}
-
 async function fetch(input: z.infer<typeof inputSchema>): Promise<Success> {
 	const client = getClient();
 	const run = await client
@@ -566,13 +562,13 @@ async function fetch(input: z.infer<typeof inputSchema>): Promise<Success> {
 
 export function buildFacebookActorInput(input: z.infer<typeof inputSchema>) {
 	return {
-		startUrls: [{ url: marketplaceSearchUrl(input.searchTerms[0]) }],
-		resultsLimit: MAX_ITEMS,
 		getAllListingPhotos: false,
 		getListingDetails: true,
 		location: "Indonesia",
 		maxPagesPerUrl: 1,
 		onlyNewListings: false,
+		proxy: { useApifyProxy: false },
+		searchKeyword: input.searchTerms[0],
 		strictFiltering: false,
 		sortBy: "",
 		daysSinceListed: "",
