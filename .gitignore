@@ -8,11 +8,3 @@ dist/
 
 *.local
 .DS_Store
-
-archive/
-
-PRD*.md
-ANVIA_*.md
-APIFY_*.md
-DEVELOPMENT.md
-finding/agents

@@ -1,0 +1,19 @@
+{
+  "startUrls": [
+    {
+      "url": "https://www.facebook.com/marketplace/indonesia/search/?query=Sony%20PlayStation%205%20Slim%20Digital%20Edition%201TB%20CFI-2018%20resmi%20Indonesia%20bekas%20lengkap%201%20stik"
+    }
+  ],
+  "resultsLimit": 10,
+  "getAllListingPhotos": false,
+  "getListingDetails": true,
+  "location": "Indonesia",
+  "maxPagesPerUrl": 1,
+  "onlyNewListings": false,
+  "strictFiltering": false,
+  "sortBy": "",
+  "daysSinceListed": "",
+  "availability": "",
+  "deliveryMethod": "",
+  "includeListingDetails": false
+}
