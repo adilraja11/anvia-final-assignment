@@ -2,8 +2,8 @@ import { createTool } from "@anvia/core";
 import { ApifyApiError, ApifyClient } from "apify-client";
 import { z } from "zod";
 
-const ACTOR_ID = "abotapi/tokopedia-scraper";
-const MAX_ITEMS = 10;
+const ACTOR_ID = "fanndev/blibli-product-price-monitor";
+const MAX_ITEMS_PER_QUERY = 10;
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 const conditionSchema = z.enum([
@@ -38,7 +38,7 @@ type NormalizedCondition =
 	| "UNKNOWN";
 
 type Evidence = {
-	source: "TOKOPEDIA";
+	source: "BLIBLI";
 	listing_id: string;
 	listing_url: string;
 	title: string;
@@ -46,22 +46,34 @@ type Evidence = {
 	condition: NormalizedCondition;
 	evidence_role: EvidenceRole;
 	city?: string;
-	seller_type?: string;
 	product_attributes: Record<string, string>;
-	listing_status: "ACTIVE";
+	listing_status: "AVAILABLE";
+	merchant_name?: string;
 	posted_at?: string;
 	scraped_at: string;
 };
 
 type Rejected = {
+	source: "BLIBLI";
 	listing_id?: string;
+	listing_url?: string;
+	title?: string;
+	price_idr?: number;
+	condition: NormalizedCondition;
+	evidence_role: EvidenceRole;
+	city?: string;
+	product_attributes: Record<string, string>;
+	listing_status?: string;
+	merchant_name?: string;
+	posted_at?: string;
+	scraped_at: string;
 	reason: string;
 };
 
 type Success = {
 	status: "SUCCESS";
-	provider: "TOKOPEDIA";
-	source: "TOKOPEDIA";
+	provider: "BLIBLI";
+	source: "BLIBLI";
 	search_terms: string[];
 	condition: Condition;
 	evidence_role: EvidenceRole;
@@ -74,8 +86,8 @@ type Success = {
 
 type Failure = {
 	status: "PROVIDER_FAILURE";
-	provider: "TOKOPEDIA";
-	source: "TOKOPEDIA";
+	provider: "BLIBLI";
+	source: "BLIBLI";
 	error_category:
 		| "CONFIGURATION"
 		| "NETWORK"
@@ -133,17 +145,55 @@ function normalizeText(value: string) {
 function tokens(value: string) {
 	return normalizeText(value)
 		.split(/\s+/)
-		.filter((token) => token.length > 1);
+		.filter((token) => token.length > 1 || /^\d+$/.test(token));
 }
+
+const searchQualifierTokens = new Set([
+	"baru",
+	"diskon",
+	"flagship",
+	"free",
+	"garansi",
+	"indonesia",
+	"official",
+	"ongkir",
+	"ori",
+	"original",
+	"promo",
+	"ready",
+	"resmi",
+	"segel",
+	"stok",
+	"stock",
+	"store",
+	"terbaru",
+]);
 
 function matchesSearchTerms(title: string, searchTerms: string[]) {
 	const titleTokens = new Set(tokens(title));
 	return searchTerms.some((term) => {
-		const termTokens = tokens(term);
-		return (
-			termTokens.length > 0 &&
-			termTokens.every((token) => titleTokens.has(token))
-		);
+		const termTokens = [
+			...new Set(
+				tokens(term).filter((token) => !searchQualifierTokens.has(token)),
+			),
+		];
+		if (termTokens.length === 0) return false;
+
+		// Numeric model and specification tokens remain exact (for example, PS5,
+		// 256 GB, or 1 TB). Other title tokens use a majority match so retailer
+		// qualifiers such as "garansi resmi" do not reject relevant products.
+		if (
+			termTokens.some(
+				(token) => /^\d+$/.test(token) && !titleTokens.has(token),
+			)
+		)
+			return false;
+		const matched = termTokens.filter((token) => titleTokens.has(token)).length;
+		const required =
+			termTokens.length <= 2
+				? termTokens.length
+				: Math.max(2, Math.ceil(termTokens.length * 0.6));
+		return matched >= required;
 	});
 }
 
@@ -173,15 +223,11 @@ function comparableCondition(
 	secondHand: boolean,
 	evidenceRole: EvidenceRole,
 ) {
-	if (evidenceRole === "RETAIL_ANCHOR")
-		return condition === "NEW" || (condition === "UNKNOWN" && !secondHand);
-	if (requested === "Baru")
-		return condition === "NEW" || condition === "UNKNOWN";
-	if (requested === "Seperti baru") return condition === "LIKE_NEW";
-	if (requested === "Baik") return condition === "GOOD";
-	if (requested === "Cukup") return condition === "FAIR";
-	if (requested === "Rusak") return condition === "DAMAGED";
-	return secondHand && condition !== "NEW";
+	// Blibli's result does not expose item condition. Available retail results are
+	// usable for a Baru request, or as a separately labeled retail anchor. They
+	// cannot establish a second-hand condition for any other valuation condition.
+	if (evidenceRole === "RETAIL_ANCHOR") return !secondHand;
+	return requested === "Baru" && !secondHand && condition === "NEW";
 }
 
 function isRejectedTitle(title: string) {
@@ -189,22 +235,12 @@ function isRejectedTitle(title: string) {
 	return [
 		/\b(accessory|accessories|case|casing|cover|charger|kabel|cable|adapter|headset|earphone|strap|mouse|keyboard|tas|bag|tempered|screen protector|pelindung|stand|holder|dock|base|dudukan|plug|dust proof|anti debu)\b/,
 		/\b(lcd|display|baterai|battery|sparepart|suku cadang|service|servis|repair|perbaikan|for parts|kardus|dus)\b/,
-		/\b(bundle|paket|borongan|sepasang|\d+\s*(unit|pcs))\b/,
+		/\b(borongan|\d+\s*(unit|pcs))\b/,
 	].some((pattern) => pattern.test(normalized));
 }
 
 function isSafeIntegerPrice(value: unknown): value is number {
 	return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
-}
-
-function statusRejection(record: Record<string, unknown>) {
-	const status = boundedText(record.listingStatus ?? record.status, 40);
-	if (!status) return undefined;
-	const normalized = normalizeText(status);
-	if (["active", "live", "available"].includes(normalized)) return undefined;
-	if (["sold", "hidden", "pending", "draft"].includes(normalized))
-		return "listing_not_live";
-	return "invalid_listing_status";
 }
 
 function approvedUrl(value: unknown) {
@@ -213,8 +249,8 @@ function approvedUrl(value: unknown) {
 		const url = new URL(value);
 		if (
 			url.protocol !== "https:" ||
-			(url.hostname !== "tokopedia.com" &&
-				!url.hostname.endsWith(".tokopedia.com"))
+			(url.hostname !== "blibli.com" &&
+				!url.hostname.endsWith(".blibli.com"))
 		)
 			return undefined;
 		return url.toString();
@@ -231,16 +267,7 @@ function isoDate(value: unknown) {
 
 function allowedAttributes(record: Record<string, unknown>) {
 	const attributes: Record<string, string> = {};
-	const allowedKeys = [
-		"brand",
-		"model",
-		"storage",
-		"ram",
-		"cpu",
-		"gpu",
-		"edition",
-		"connectivity",
-	];
+	const allowedKeys = ["brand"];
 	for (const key of allowedKeys) {
 		const value = boundedText(record[key], 80);
 		if (value) attributes[key] = value;
@@ -287,45 +314,67 @@ function normalizeRecord(
 	seenIds: Set<string>,
 ): { evidence?: Evidence; rejected?: Rejected } {
 	if (typeof value !== "object" || value === null || Array.isArray(value))
-		return { rejected: { reason: "malformed_record" } };
+		return {
+			rejected: {
+				source: "BLIBLI",
+				condition: "UNKNOWN",
+				evidence_role: input.evidenceRole,
+				product_attributes: {},
+				scraped_at: new Date().toISOString(),
+				reason: "malformed_record",
+			},
+		};
 	const record = value as Record<string, unknown>;
-	const listingId = boundedText(record.productId, 160);
-	const reject = (reason: string): { rejected: Rejected } => ({
-		rejected: { ...(listingId ? { listing_id: listingId } : {}), reason },
-	});
-	if (!listingId) return reject("missing_listing_id");
-	if (seenIds.has(listingId)) return reject("duplicate_listing");
-	seenIds.add(listingId);
-
+	const url = approvedUrl(record.url);
+	const listingId = url
+		? boundedText(new URL(url).pathname.split("/").filter(Boolean).pop(), 160)
+		: undefined;
 	const title = boundedText(record.name, 400);
+	const stockStatus = boundedText(record.stockStatus, 40)?.toUpperCase();
+	const titleCondition = classifyCondition(title);
+	const detected =
+		input.evidenceRole === "RETAIL_ANCHOR"
+			? { condition: "UNKNOWN" as const, explicitSecondHand: titleCondition.explicitSecondHand }
+			: input.condition === "Baru" && !titleCondition.explicitSecondHand
+				? { condition: "NEW" as const, explicitSecondHand: false }
+				: titleCondition;
+	const scrapedAt = isoDate(record.scrapedAt) ?? new Date().toISOString();
+	const postedAt = isoDate(record.postedAt ?? record.createdAt);
+	const merchantName = boundedText(record.merchantName, 160);
+	const rejectionSnapshot: Omit<Rejected, "reason"> = {
+		source: "BLIBLI",
+		...(listingId ? { listing_id: listingId } : {}),
+		...(url ? { listing_url: url } : {}),
+		...(title ? { title } : {}),
+		...(isSafeIntegerPrice(record.salePrice)
+			? { price_idr: record.salePrice }
+			: {}),
+		condition: detected.condition,
+		evidence_role: input.evidenceRole,
+		...(merchantName ? { merchant_name: merchantName } : {}),
+		product_attributes: allowedAttributes(record),
+		...(stockStatus ? { listing_status: stockStatus } : {}),
+		...(postedAt ? { posted_at: postedAt } : {}),
+		scraped_at: scrapedAt,
+	};
+	const reject = (reason: string): { rejected: Rejected } => ({
+		rejected: { ...rejectionSnapshot, reason },
+	});
+	if (!url) return reject("invalid_listing_url");
+	if (!listingId) return reject("missing_listing_id");
+	if (seenIds.has(listingId)) return {};
+
 	if (!title) return reject("missing_title");
 	if (!matchesSearchTerms(title, input.searchTerms))
 		return reject("identity_mismatch");
 	if (isRejectedTitle(title)) return reject("non_comparable_listing");
 
-	const url = approvedUrl(record.url);
-	if (!url) return reject("invalid_listing_url");
-	if (!isSafeIntegerPrice(record.price)) return reject("invalid_price");
-	const status = statusRejection(record);
-	if (status) return reject(status);
+	if (!isSafeIntegerPrice(record.salePrice)) return reject("invalid_price");
+	if (stockStatus !== "AVAILABLE") return reject("listing_not_available");
 
-	// Tokopedia exposes only a coarse source condition (normally new/used). When it
-	// cannot classify the requested condition, use an explicit title cue to distinguish
-	// damaged listings such as "PS5 Fat Disc rusak" from ordinary used stock. A source
-	// classification still takes precedence over a contradictory title.
-	const sourceCondition = classifyCondition(record.condition);
-	const titleCondition = classifyCondition(title);
-	const detected =
-		sourceCondition.condition !== "UNKNOWN"
-			? sourceCondition
-			: titleCondition.condition !== "UNKNOWN"
-				? titleCondition
-				: {
-						condition: "UNKNOWN" as const,
-						explicitSecondHand:
-							sourceCondition.explicitSecondHand ||
-							titleCondition.explicitSecondHand,
-					};
+	// Blibli does not expose a condition field. A title that explicitly says used/damaged
+	// must not be accepted as a new comparable listing; otherwise an available result is
+	// treated as new only in the context of a Baru request, or as UNKNOWN retail context.
 	if (
 		!comparableCondition(
 			detected.condition,
@@ -336,22 +385,19 @@ function normalizeRecord(
 	) {
 		return reject("condition_not_comparable");
 	}
-	const scrapedAt = isoDate(record.scrapedAt) ?? new Date().toISOString();
-	const postedAt = isoDate(record.postedAt ?? record.createdAt);
-	const city = boundedText(record.shopCity, 120);
-
+	seenIds.add(listingId);
 	return {
 		evidence: {
-			source: "TOKOPEDIA",
+			source: "BLIBLI",
 			listing_id: listingId,
 			listing_url: url,
 			title,
-			price_idr: record.price,
+			price_idr: record.salePrice,
 			condition: detected.condition,
 			evidence_role: input.evidenceRole,
-			...(city ? { city } : {}),
+			...(merchantName ? { merchant_name: merchantName } : {}),
 			product_attributes: allowedAttributes(record),
-			listing_status: "ACTIVE",
+			listing_status: "AVAILABLE",
 			...(postedAt ? { posted_at: postedAt } : {}),
 			scraped_at: scrapedAt,
 		},
@@ -362,28 +408,28 @@ async function fetch(input: z.infer<typeof inputSchema>): Promise<Success> {
 	const client = getClient();
 	const run = await client
 		.actor(ACTOR_ID)
-		.call(buildTokopediaActorInput(input));
+		.call(buildBlibliActorInput(input));
 	if (!run || typeof run.defaultDatasetId !== "string" || !run.defaultDatasetId)
 		throw new ProviderBoundaryError("MISSING_DATASET");
 
 	const dataset = await client
 		.dataset<Record<string, unknown>>(run.defaultDatasetId)
-		.listItems({ limit: MAX_ITEMS });
+		.listItems({ limit: input.searchTerms.length * MAX_ITEMS_PER_QUERY });
 	if (!dataset || !Array.isArray(dataset.items))
 		throw new ProviderBoundaryError("MALFORMED_RESPONSE");
 
 	const evidence: Evidence[] = [];
 	const rejected: Rejected[] = [];
 	const seenIds = new Set<string>();
-	for (const item of dataset.items.slice(0, MAX_ITEMS)) {
+	for (const item of dataset.items.slice(0, input.searchTerms.length * MAX_ITEMS_PER_QUERY)) {
 		const normalized = normalizeRecord(item, input, seenIds);
 		if (normalized.evidence) evidence.push(normalized.evidence);
 		if (normalized.rejected) rejected.push(normalized.rejected);
 	}
 	return {
 		status: "SUCCESS",
-		provider: "TOKOPEDIA",
-		source: "TOKOPEDIA",
+		provider: "BLIBLI",
+		source: "BLIBLI",
 		search_terms: input.searchTerms,
 		condition: input.condition,
 		evidence_role: input.evidenceRole,
@@ -395,25 +441,19 @@ async function fetch(input: z.infer<typeof inputSchema>): Promise<Success> {
 	};
 }
 
-export function buildTokopediaActorInput(input: z.infer<typeof inputSchema>) {
+export function buildBlibliActorInput(input: z.infer<typeof inputSchema>) {
 	return {
-		mode: "search",
 		searchTerms: input.searchTerms.slice(0, 5),
-		fetchDetails: false,
-		discountOnly: false,
-		freeShippingOnly: false,
-		maxPages: 5,
-		maxItems: MAX_ITEMS,
+		fetchProductDetails: false,
+		includeOutOfStock: true,
+		maxItemsPerQuery: MAX_ITEMS_PER_QUERY,
 		sortBy: "relevance",
-		// Tokopedia only supports a coarse new/used retrieval filter. Detailed
-		// comparability is still enforced during record normalization.
-		condition:
-			input.evidenceRole === "RETAIL_ANCHOR" || input.condition === "Baru"
-				? "new"
-				: "used",
-		shopTier: "any",
-		urls: [],
-		proxy: { useApifyProxy: true },
+		maxConcurrency: 8,
+		proxyConfiguration: {
+			useApifyProxy: true,
+			apifyProxyGroups: ["RESIDENTIAL"],
+			apifyProxyCountry: "ID",
+		},
 	};
 }
 
@@ -438,21 +478,21 @@ async function executeSearch(
 		}
 	}
 	console.error(
-		JSON.stringify({ provider: "TOKOPEDIA", error_category: lastCategory }),
+		JSON.stringify({ provider: "BLIBLI", error_category: lastCategory }),
 	);
 	return {
 		status: "PROVIDER_FAILURE",
-		provider: "TOKOPEDIA",
-		source: "TOKOPEDIA",
+		provider: "BLIBLI",
+		source: "BLIBLI",
 		error_category: lastCategory,
 		retried: lastCategory !== "CONFIGURATION",
 	};
 }
 
-export const tokopediaSearch = createTool({
-	name: "tokopediaSearch",
+export const blibliSearch = createTool({
+	name: "blibliSearch",
 	description:
-		"Cari listing produk di Tokopedia. Gunakan evidenceRole CONDITION_COMPARABLE untuk listing dengan kondisi yang sama, atau RETAIL_ANCHOR untuk referensi harga baru yang harus dilaporkan terpisah. Actor, batas hasil, proxy, dan konfigurasi provider dikunci oleh aplikasi.",
+		"Cari listing produk di Blibli. Gunakan evidenceRole CONDITION_COMPARABLE untuk produk Baru, atau RETAIL_ANCHOR untuk referensi harga retail yang harus dilaporkan terpisah. Actor, batas hasil, proxy, dan konfigurasi provider dikunci oleh aplikasi.",
 	inputSchema,
 	execute: executeSearch,
 });

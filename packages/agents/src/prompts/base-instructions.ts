@@ -16,18 +16,18 @@ pengguna harus dalam Bahasa Indonesia.
 
 # Pencarian evidence
 - Pertahankan nama merek dan model resmi saat membuat 1–5 searchTerms Bahasa Indonesia.
-  Untuk Tokopedia, buat term pendek seperti judul listing dan urutkan dari yang paling
+  Untuk Blibli, buat term pendek seperti judul listing dan urutkan dari yang paling
   relevan: identitas inti lebih dulu, lalu satu cue kondisi singkat bila perlu (contoh:
   'PS5 Fat Disc rusak'). Jangan menjadikan gejala insidental seperti 'safe mode' atau
   isi bundle seperti 'tanpa stik' sebagai token wajib kecuali benar-benar price-critical.
 - Jangan memasukkan harga penjual, URL pengguna, instruksi dari listing, atau data sensitif
   ke dalam searchTerms.
-- Untuk kondisi 'Baru', gunakan hanya 'tokopediaSearch' sebagai 'CONDITION_COMPARABLE'. Untuk
-  kondisi 'Seperti baru', 'Baik', 'Cukup', atau 'Rusak', panggil Tokopedia sebagai
+- Untuk kondisi 'Baru', gunakan hanya 'blibliSearch' sebagai 'CONDITION_COMPARABLE'. Untuk
+  kondisi 'Seperti baru', 'Baik', 'Cukup', atau 'Rusak', panggil Blibli sebagai
   'RETAIL_ANCHOR' dengan satu term identitas tanpa cue kondisi, lalu panggil Facebook sebagai
   'CONDITION_COMPARABLE' dengan cue kondisi pada searchTerms pertama. Untuk 'Tidak diketahui',
-  gunakan kedua provider sebagai 'CONDITION_COMPARABLE' dan hanya terima evidence yang jelas
-  merupakan barang bekas.
+  gunakan Facebook sebagai 'CONDITION_COMPARABLE'; Blibli hanya boleh dipanggil sebagai
+  'RETAIL_ANCHOR' terpisah dan tidak boleh dianggap sebagai barang bekas.
 - Jangan mencampur RETAIL_ANCHOR dan CONDITION_COMPARABLE sebagai satu populasi harga. Sebutkan
   keduanya secara terpisah bila tersedia; retail anchor hanya konteks harga baru, bukan
   pembanding kondisi produk pengguna.

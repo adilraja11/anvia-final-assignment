@@ -15,7 +15,7 @@ schema values, and tool names may remain in English.
 Implement and manually validate:
 
 - A standalone product-valuation agent.
-- `src/tools/tokopedia-search.ts`.
+- `src/tools/blibli-search.ts`.
 - `src/tools/facebook-search.ts`.
 - Real Apify integration through `apify-client`.
 - Studio registration for the valuation agent and both marketplace tools.
@@ -37,7 +37,7 @@ The agent may:
 
 - Validate whether the provided product identity has the required fields.
 - Generate normalized marketplace search terms while preserving official brand and model names.
-- Call the fixed Tokopedia and Facebook Marketplace tools when applicable.
+- Call the fixed Blibli and Facebook Marketplace tools when applicable.
 - Reference accepted evidence IDs.
 - Produce grounded Bahasa Indonesia explanations, pros, and cons.
 
@@ -82,7 +82,7 @@ categories must produce `UNSUPPORTED_CATEGORY`.
 
 Use two separate model-callable tools with fixed actor IDs:
 
-- `tokopediaSearch` using `abotapi/tokopedia-scraper`.
+- `blibliSearch` using `fanndev/blibli-product-price-monitor`.
 - `facebookMarketplaceSearch` using `curious_coder/facebook-marketplace`.
 
 Both tools accept only this bounded input shape:
@@ -101,43 +101,46 @@ Both tools accept only this bounded input shape:
 calling Apify.
 
 `evidenceRole` defaults to `CONDITION_COMPARABLE`. Such evidence must match the requested
-product condition. `RETAIL_ANCHOR` is supported by Tokopedia only and is a separate new/retail
+product condition. `RETAIL_ANCHOR` is supported by Blibli only and is a separate new/retail
 reference population; it must never be treated as a comparable listing for a used or damaged
 product. The tool output includes this role on both the envelope and every evidence record.
 Facebook Marketplace rejects `RETAIL_ANCHOR` requests.
 
-The tools must not accept actor IDs, arbitrary URLs, `maxItems`, `maxPages`, proxy options,
-credentials, or raw actor configuration from the model.
+The tools must not accept actor IDs, arbitrary URLs, `maxItemsPerQuery`, `maxItems`, pagination,
+proxy options, credentials, or raw actor configuration from the model.
 
-### Tokopedia query guidance
+### Blibli query guidance
 
-Tokopedia receives the provider's coarse `new` filter for `Baru` and `used` filter for every
-other valuation condition. The requested valuation condition is still applied after retrieval
-because the provider cannot distinguish `Seperti baru`, `Baik`, `Cukup`, and `Rusak`. A
-successful result with empty `evidence` and empty `rejected` is an actor-level empty dataset,
-before local condition or title validation ran.
+Blibli receives the submitted `searchTerms` without a condition filter. The tested Actor input
+uses `fetchProductDetails: false`, `includeOutOfStock: true`, `maxItemsPerQuery: 10`,
+`sortBy: "relevance"`, `maxConcurrency: 8`, and Apify Residential proxies in Indonesia. The
+Actor response does not provide a listing condition, so its records cannot establish `Seperti
+baru`, `Baik`, `Cukup`, or `Rusak` comparability. A successful result with empty `evidence` and
+empty `rejected` is an actor-level empty dataset, before local title or availability validation
+ran.
 
-For a used or damaged product, call Tokopedia separately as a `RETAIL_ANCHOR`: use an
-identity-only query such as `PS5 Fat Disc`, and retain the user's product condition in the
-tool input. The tool then retrieves only the provider's `new` stock and labels it as an anchor.
+For a used or damaged product, call Blibli separately as a `RETAIL_ANCHOR`: use an identity-only
+query such as `PS5 Fat Disc`, and retain the user's product condition in the tool input. The
+tool labels the available retail results as an anchor; it must not relabel them as condition-
+comparable used or damaged evidence.
 Call Facebook Marketplace as `CONDITION_COMPARABLE` with a condition-specific first query such
 as `PS5 Fat Disc rusak`. Present the resulting populations separately. The current agent may
 explain the difference but must not calculate a numeric adjustment, blended estimate, or
 verdict from the two roles.
 
-Generate short, title-like search terms and order them by expected usefulness. `maxItems: 10`
-caps the entire Tokopedia Actor run across all terms, so a long list of alternatives is not a
-reliable way to obtain ten candidates per alternative. For damaged products, use the core
+Generate short, title-like search terms and order them by expected usefulness.
+`maxItemsPerQuery: 10` caps each submitted Blibli query, so a long list of alternatives can
+increase retrieval and validation work. For damaged products, use the core
 identity plus a concise damage cue, for example `PS5 Fat Disc rusak`; add `Jepang` only when
 that market variant is price-critical. Do not include incidental symptoms such as `safe mode`
 or bundle omissions such as `tanpa stik` unless they are essential to the comparison. Every
 token of at least one submitted term must occur in an accepted listing title, so terms must be
 plausible title fragments rather than full narrative descriptions.
 
-Tokopedia search results are retrieval candidates, not price evidence by themselves. Broad
-console queries commonly include accessories (stands, holders, docks, dust plugs) and empty
-`dus`/`kardus` listings, while a missing provider condition cannot establish comparability
-with `Rusak`.
+Blibli search results are retrieval candidates, not price evidence by themselves. Broad console
+queries commonly include accessories (stands, holders, docks, dust plugs, and console covers)
+and empty `dus`/`kardus` listings, while a missing provider condition cannot establish
+comparability with `Rusak`.
 Reject those records and do not estimate a damaged-item price from the remaining new or
 unknown-condition retail listings. Treat `PS5`, `PS 5`, and `PlayStation 5` as the same
 identity alias during title matching, while retaining all other price-critical tokens.
@@ -147,12 +150,14 @@ credentials or raw Apify responses to the model, browser, or logs.
 
 ### Provider selection
 
-- `Baru`: Tokopedia only.
-- `Seperti baru`, `Baik`, `Cukup`, `Rusak`: a separate Tokopedia `RETAIL_ANCHOR` and a
+- `Baru`: Blibli only. Treat an `AVAILABLE` Blibli result with no explicit condition as a
+  new/retail result for this request, and retain the request context in its normalized condition.
+- `Seperti baru`, `Baik`, `Cukup`, `Rusak`: a separate Blibli `RETAIL_ANCHOR` and a
   Facebook Marketplace `CONDITION_COMPARABLE` search.
-- `Tidak diketahui`: second-hand evidence from both providers only. A future deterministic
-  valuation engine must cap confidence at `MEDIUM`; both searches use
-  `CONDITION_COMPARABLE` and the current agent does not calculate confidence.
+- `Tidak diketahui`: Facebook Marketplace supplies second-hand `CONDITION_COMPARABLE`
+  evidence. Blibli may be called only as a separately labeled `RETAIL_ANCHOR`, never as
+  condition-comparable evidence. A future deterministic valuation engine must cap confidence at
+  `MEDIUM`; the current agent does not calculate confidence.
 
 ## Studio and manual validation
 
@@ -172,7 +177,7 @@ around the agent.
 This milestone is complete when the package builds, typechecks, Studio starts, and live manual
 tests can run with valid Apify credentials. Manually verify at least:
 
-- A successful Tokopedia search.
+- A successful Blibli search.
 - A successful Facebook Marketplace search.
 - A successful empty result.
 - A provider failure or malformed response.

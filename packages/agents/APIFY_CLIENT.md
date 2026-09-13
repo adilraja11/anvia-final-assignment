@@ -35,7 +35,7 @@ never reach an agent response or browser bundle.
 ## 3. Create the server-side client in each provider tool
 
 The current implementation keeps the client factory private in both
-`src/tools/tokopedia-search.ts` and `src/tools/facebook-search.ts`. There is no shared
+`src/tools/blibli-search.ts` and `src/tools/facebook-search.ts`. There is no shared
 `src/providers/apify.ts` module yet, so both factories must retain the same configuration:
 
 ```ts
@@ -65,35 +65,39 @@ Keep Actor IDs and input defaults in the provider tool, never in model-controlle
 
 ```ts
 const client = getClient();
-const run = await client.actor("abotapi/tokopedia-scraper").call({
-  mode: "search",
-  searchTerms, // short, ordered marketplace queries; the first is the primary query
-  maxPages: 5,
-  maxItems: 10,
-  condition:
-    evidenceRole === "RETAIL_ANCHOR" || condition === "Baru" ? "new" : "used",
-  // Include the remaining enforced provider defaults here.
+const run = await client.actor("fanndev/blibli-product-price-monitor").call({
+  fetchProductDetails: false,
+  includeOutOfStock: true,
+  maxItemsPerQuery: 10,
+  searchTerms,
+  sortBy: "relevance",
+  maxConcurrency: 8,
+  proxyConfiguration: {
+    useApifyProxy: true,
+    apifyProxyGroups: ["RESIDENTIAL"],
+    apifyProxyCountry: "ID",
+  },
 });
 
 const { items } = await client
   .dataset(run.defaultDatasetId)
-  .listItems({ limit: 10 });
+  .listItems({ limit: searchTerms.length * 10 });
 ```
 
 For Facebook Marketplace, the fixed call uses
 `curious_coder/facebook-marketplace`, the documented keyword-search defaults (including
 Indonesia and `proxy.useApifyProxy: false`), and a second call argument of
-`{ maxItems: 10 }`. The dataset read is also limited to 10 items. For Tokopedia, `maxItems`
-is a run-wide cap across all supplied search terms, so do not assume every alternative term
-receives ten results. `call()` waits for the
+`{ maxItems: 10 }`. The dataset read is also limited to 10 items. For Blibli,
+`maxItemsPerQuery: 10` applies to each submitted term, so the bounded dataset read must allow
+up to ten records per term. `call()` waits for the
 Actor run to finish and returns its run object; `defaultDatasetId` identifies the output
 dataset. Treat `items` as untrusted `unknown` data: validate the top-level response and every
 record, normalize only approved fields, and discard the raw payload before returning the tool
 result.
 
-For a used or damaged valuation, call Tokopedia separately with `evidenceRole:
-"RETAIL_ANCHOR"` and an identity-only search term. This uses the actor's `new` filter and
-returns explicitly labeled retail reference evidence. Facebook only accepts
+For a used or damaged valuation, call Blibli separately with `evidenceRole:
+"RETAIL_ANCHOR"` and an identity-only search term. Blibli has no condition field in this Actor
+output, so it returns explicitly labeled retail reference evidence. Facebook only accepts
 `"CONDITION_COMPARABLE"`; place its defect cue in `searchTerms[0]` because that is the sole
 term supplied to its Actor.
 

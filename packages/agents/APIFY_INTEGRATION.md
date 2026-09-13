@@ -1,59 +1,57 @@
 # Apify Marketplace Integration Guide
 
 This guide defines the provider-specific request configuration, normalization, validation, and
-failure behavior for the Tokopedia and Facebook Marketplace tools in `packages/agents`.
+failure behavior for the Blibli and Facebook Marketplace tools in `packages/agents`.
 
 For installing and using the JavaScript client in this workspace, see
 `packages/agents/APIFY_CLIENT.md`.
 
-## Tokopedia request defaults
+## Blibli request defaults
 
 Keep the tested search configuration with these enforced values:
 
 ```json
 {
-  "mode": "search",
-  "fetchDetails": false,
-  "discountOnly": false,
-  "freeShippingOnly": false,
-  "maxPages": 5,
-  "maxItems": 10,
+  "fetchProductDetails": false,
+  "includeOutOfStock": true,
+  "maxItemsPerQuery": 10,
+  "searchTerms": ["<search term>"],
   "sortBy": "relevance",
-  "condition": "<derived coarse condition>",
-  "shopTier": "any",
-  "urls": [],
-  "proxy": { "useApifyProxy": true }
+  "maxConcurrency": 8,
+  "proxyConfiguration": {
+    "useApifyProxy": true,
+    "apifyProxyGroups": ["RESIDENTIAL"],
+    "apifyProxyCountry": "ID"
+  }
 }
 ```
 
 `searchTerms` is supplied by the tool input and is limited to 1–5 bounded terms. The
 Actor receives no model-controlled actor ID, URL, limit, proxy, or other configuration.
-The actor searches each keyword independently, but `maxItems` is a single cap for the
-whole run, not a cap per keyword. Terms therefore must be ordered from most useful to
-least useful and must not be treated as equally sampled alternatives.
+`maxItemsPerQuery` is a cap per submitted query. Terms must therefore be ordered from most
+useful to least useful and kept short; more terms increase the maximum dataset size and the
+subsequent validation work.
 
-Derive the actor's coarse condition from the valuation input for `CONDITION_COMPARABLE`:
-send `new` for `Baru` and `used` for every other condition. The provider filter is only a
-retrieval narrowing step; the valuation condition remains an application-side comparability
-rule. This is necessary because Tokopedia distinguishes only `any`, `new`, and `used`,
-whereas the product contract also distinguishes `Seperti baru`, `Baik`, `Cukup`, and `Rusak`.
-In particular, `used` is not evidence that an item is damaged.
+The Actor output has no provider condition field. `stockStatus` establishes availability, not
+condition: `AVAILABLE` does not establish that a product is used, like new, good, fair, or
+damaged. For a `Baru` request, an available result may be retained as new/retail evidence using
+the request context. For every other condition, Blibli records are `RETAIL_ANCHOR` only.
 
-`RETAIL_ANCHOR` is Tokopedia-only. It always sends `new`, uses an identity-only retrieval
-query, and accepts only new or unknown-condition retail records. Its output is explicitly
-labeled `RETAIL_ANCHOR`; it is not condition-comparable evidence and must not be included in
-the same price calculation as used or damaged listings. Consequently, a successful response
-with both `evidence` and `rejected` empty means the actor returned no dataset items, before
-local condition or title validation ran.
+`RETAIL_ANCHOR` is Blibli-only. It uses an identity-only retrieval query and accepts only
+available retail records. Its output is explicitly labeled `RETAIL_ANCHOR`; it is not
+condition-comparable evidence and must not be included in the same price calculation as used
+or damaged listings. Consequently, a successful response with both `evidence` and `rejected`
+empty means the actor returned no dataset items, before local title or availability validation
+ran.
 
-### Tokopedia search-term construction
+### Blibli search-term construction
 
 Use search terms as short marketplace queries, not prose descriptions or complete defect
 reports. Start with one primary query containing the decisive product identity and, when
 the requested condition is `Rusak`, one concise damage cue. Add at most a few distinct
 variants only when they retrieve a materially different naming convention. Do not put
-several broad alternatives ahead of the primary query because the first query can exhaust
-the ten-item run cap.
+several broad alternatives unless they are necessary, because each query can return up to ten
+items.
 
 For example, prefer `PS5 Fat Disc rusak` (and, only if useful, `PS5 Fat Disc Jepang rusak`)
 over phrases such as `Sony PlayStation 5 PS5 Fat Disc Edition Jepang safe mode rusak`.
@@ -68,27 +66,27 @@ model, edition, or storage tokens.
 
 Normalize the response as follows:
 
-- `productId` → `listing_id`.
+- The final non-empty pathname segment of `url` (for example, `ps--INP-60040-00438`) →
+  `listing_id`; reject a URL without a usable segment.
 - `name` → `title`.
-- Positive safe-integer numeric `price` → `price_idr`; ignore `priceText` and promotional
-  prices.
+- Positive safe-integer numeric `salePrice` → `price_idr`. Do not use `listPrice` as the
+  current price; retain it only if a later schema explicitly needs a reference price.
 - `url` → `listing_url`.
-- `shopCity` → `city`.
-- `scrapedAt` → `scraped_at`.
-- `condition` and the title's explicit condition cues → one of `NEW`, `LIKE_NEW`, `GOOD`,
-  `FAIR`, `DAMAGED`, or `UNKNOWN` when they can be classified. Title cues are used only
-  when the actor's coarse `new`/`used` value cannot express the requested condition.
+- `stockStatus: "AVAILABLE"` → `listing_status: "AVAILABLE"`; reject every other, missing,
+  or unrecognized stock status. `includeOutOfStock: true` is retained in the Actor input so
+  those records can be classified and rejected locally.
+- `merchantName` → bounded optional merchant name. It is marketplace context, not a seller
+  verification signal.
+- `brand` → bounded `product_attributes.brand`; do not infer missing attributes from the
+  product name.
+- `query` may be used for diagnostics only; it must not replace the submitted search terms.
+- The normalized condition comes from the requested evidence role and request context, not
+  from an absent Actor field: use `NEW` for an accepted `Baru` request and `UNKNOWN` for a
+  `RETAIL_ANCHOR` request.
+- `rating`, `reviewCount`, `soldCount`, `discountPercentage`, and `listPrice` are not price
+  evidence and are not required in the normalized output.
 - `evidenceRole` → `CONDITION_COMPARABLE` or `RETAIL_ANCHOR`. Copy the role to every
   normalized evidence record and the success envelope.
-- `brand`, `model`, `storage`, `ram`, `cpu`, `gpu`, `edition`, and `connectivity` are the
-  only copied product attributes, each with a bounded string length.
-- A valid Tokopedia record is returned with `listing_status: "ACTIVE"`; an omitted source
-  status is accepted because the actor does not always provide one. Explicit sold, hidden,
-  pending, draft, or unknown statuses are rejected.
-
-For a `Baru` search, a missing Tokopedia condition may be used as a retail anchor. For used
-valuations, a record with unknown condition must be rejected unless the response explicitly
-establishes that it is second-hand.
 
 ## Facebook request defaults
 
@@ -151,16 +149,17 @@ messaging data, descriptions, or legal-reporting payloads.
 
 Each normalized listing should use strict internal types:
 
-- `source`: `TOKOPEDIA` or `FACEBOOK_MARKETPLACE`.
+- `source`: `BLIBLI` or `FACEBOOK_MARKETPLACE`.
 - Non-empty string listing ID.
 - HTTPS URL from an approved marketplace domain.
 - Positive safe-integer `price_idr`.
 - Condition: `NEW`, `LIKE_NEW`, `GOOD`, `FAIR`, `DAMAGED`, or `UNKNOWN`.
-- Optional city; the current normalized output does not include seller identity or seller type.
+- Optional city and bounded merchant name when the provider supplies them; neither establishes
+  seller identity or seller type.
 - Bounded product attributes.
 - Listing status and ISO timestamps.
 
-Accepted URLs are limited to HTTPS Tokopedia URLs and Facebook Marketplace item URLs. Reject
+Accepted URLs are limited to HTTPS `blibli.com` product URLs and Facebook Marketplace item URLs. Reject
 redirects, external seller links, and arbitrary domains.
 
 Reject accessories, components, repair-only listings, unrelated products, bundles,
@@ -180,8 +179,9 @@ machine-readable exclusion reason. Raw actor payloads must not be returned or pe
 
 ## Limits, retries, and caching
 
-- Request and return no more than 10 records per actor. Facebook must pass `maxItems: 10` as
-  Actor run options; a dataset read limit alone does not cap Actor scraping or cost.
+- Blibli must send `maxItemsPerQuery: 10`; its bounded dataset read may contain up to ten
+  records for each submitted query. Facebook must pass `maxItems: 10` as Actor run options; a
+  dataset read limit alone does not cap Actor scraping or cost.
 - The tool boundary makes at most one additional Actor call after a non-configuration
   failure, including timeout, network, Apify, unknown, or malformed top-level errors. The
   `ApifyClient` itself is also configured with `maxRetries: 1`, so individual API requests

@@ -10,7 +10,7 @@ import { createLoggerObserver, createPinoLogger } from "@anvia/logger";
 import { BASE_INSTRUCTIONS } from "./prompts/base-instructions.js";
 import { defaultModel } from "./providers/openai.js";
 import { facebookMarketplaceSearch } from "./tools/facebook-search.js";
-import { tokopediaSearch } from "./tools/tokopedia-search.js";
+import { blibliSearch } from "./tools/blibli-search.js";
 import { createWebTools } from "./tools/web-search.js";
 
 const lens = new LensClient({
@@ -67,7 +67,7 @@ export function createAgent(opts: CreateAgentOptions) {
 		].join("\n\n"),
 		tools: [
 			...(opts.includeWebTools ? createWebTools() : []),
-			tokopediaSearch,
+			blibliSearch,
 			facebookMarketplaceSearch,
 			...(opts.additionalTools ?? []),
 		],
