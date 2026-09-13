@@ -77,8 +77,8 @@ function UploadScreen({ error, onSelect }: { error: string; onSelect: (file?: Fi
 	return <section className="flow-card upload-card">
 		<div className="card-eyebrow"><span>●</span> Langkah 1 dari 3</div><p className="step-name">UPLOAD FOTO</p>
 		<h1>Upload <em>foto barang</em> kamu</h1><p className="lede">Foto yang jelas paling cocok, biar AI bisa mengenali jenis, merek, dan modelnya dengan akurat.</p>
-		<label className="camera-button" htmlFor="product-photo">▣ &nbsp; Pilih foto barang</label><input id="product-photo" className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => onSelect(event.target.files?.[0])} />
-		<div className="divider"><span>ATAU</span></div><label className="upload-dropzone" htmlFor="product-photo"><span className="upload-icon">⇧</span><strong>Tarik foto ke sini</strong><span>atau klik untuk pilih dari galeri kamu</span><small>JPG, PNG, WebP, maks. 10 MB</small></label>
+		<input id="product-photo" className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => onSelect(event.target.files?.[0])} />
+		<label className="upload-dropzone" htmlFor="product-photo"><span className="upload-icon">⇧</span><strong>Tarik foto ke sini</strong><span>atau klik untuk pilih dari galeri kamu</span><small>JPG, PNG, WebP, maks. 10 MB</small></label>
 		{error ? <p className="form-error">{error}</p> : null}<p className="privacy-note">♙ Foto kamu diproses hanya untuk analisis harga dan tidak disimpan dalam demo ini.</p>
 	</section>;
 }
