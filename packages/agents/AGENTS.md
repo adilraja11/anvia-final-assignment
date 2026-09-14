@@ -6,9 +6,13 @@ This package owns the server-side AsliSegini? agent runtime, prompts, model prov
 
 All user-facing agent text is Bahasa Indonesia. Internal IDs, status values, schemas, and tool names remain English.
 
+## Markdown naming and routing
+
+Follow the repository [Markdown naming and routing policy](../../AGENTS.md#markdown-naming-and-routing). Keep package-wide agent contracts in uppercase filenames; place future agent-specific references under `docs/agents/` in lowercase kebab-case and link each one here with the exact agent change that requires it.
+
 ## Product boundaries
 
-For valuation-agent or provider work, read [DEVELOPMENT.md](DEVELOPMENT.md). For a provider request, normalization, validation, retry, or cache change, also read [APIFY_INTEGRATION.md](APIFY_INTEGRATION.md); use [APIFY_CLIENT.md](APIFY_CLIENT.md) only when changing the client setup or credential handling.
+For shared agent architecture, read [DEVELOPMENT.md](DEVELOPMENT.md). For valuation-agent work, read [docs/agents/valuation.md](docs/agents/valuation.md); for image-identification work, read [docs/agents/image-identification.md](docs/agents/image-identification.md). For a provider request, normalization, validation, retry, or cache change, also read [APIFY_INTEGRATION.md](APIFY_INTEGRATION.md); use [APIFY_CLIENT.md](APIFY_CLIENT.md) only when changing the client setup or credential handling.
 
 Preserve these boundaries in every agent or tool change:
 

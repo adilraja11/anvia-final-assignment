@@ -10,6 +10,14 @@ pnpm 11 workspace for the AsliSegini? demo:
 
 Run workspace commands from this directory. The root `.env` is the single local configuration source; use `.env.example` for variable names and keep secret values out of source, fixtures, logs, and documentation.
 
+## Markdown naming and routing
+
+- Reserve `AGENTS.md` for scoped instructions that an agent must follow while changing files in that directory or its descendants. Reserve `README.md` for orienting readers to a directory.
+- Name repository- or package-wide governing documents in uppercase words joined by underscores, such as `PRD_TECHNICAL.md` and `APIFY_INTEGRATION.md`.
+- Name focused reference documents in lowercase kebab-case and group them by topic, for example `docs/agents/image-identification.md` and `docs/contracts/product-identity.md`.
+- Give each document one concern. Split by the work branch that needs different rules, rather than by a line-count threshold; keep cross-cutting rules in the nearest `AGENTS.md` and link to focused documents.
+- When a focused document is required for a kind of change, add a relative link and its exact trigger to the nearest `AGENTS.md`. Do not rely on its filename alone for discovery.
+
 ## Product and implementation context
 
 For a change to the intended valuation workflow, read [PRD.md](PRD.md) and [PRD_TECHNICAL.md](PRD_TECHNICAL.md) first. They define the product contract: application code validates evidence and calculates prices; AI can identify, normalize, match, and explain but never supplies the final calculation.

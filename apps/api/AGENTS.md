@@ -6,6 +6,10 @@ This package serves the Hono API. The current `/api/chat` routes create, list, l
 
 For a streaming or client-protocol change, read [../../ANVIA_APPS.md](../../ANVIA_APPS.md). Keep the API as the trust boundary: authenticate, authorize, validate input, rate-limit where the product contract requires it, and project only browser-safe client events. Provider credentials, raw runtime events, tool arguments/results, private errors, and continuations stay server-side.
 
+## Markdown naming and routing
+
+Follow the repository [Markdown naming and routing policy](../../AGENTS.md#markdown-naming-and-routing). Keep API-wide contracts in uppercase filenames and name any focused API reference in lowercase kebab-case. Link a focused document from this file with the exact API change that requires it.
+
 ## Persistence and contracts
 
 - Update `prisma/schema.prisma` for data-model changes, create a migration through Prisma, then regenerate the client. Do not edit `src/generated/prisma/` or existing migration files by hand.
