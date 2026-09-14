@@ -42,9 +42,11 @@ changing client setup or credential handling.
 ## Current implementation state
 
 The valuation agent, its two marketplace tools, and Studio registration are implemented. The
-image-identification agent contract is documented but its runtime, upload workflow, API
-transport, storage, and UI integration are not live. Do not represent those planned behaviors as
-implemented.
+image-identification agent factory, image-only prompt helper, and result schema are implemented.
+Studio registers an image-agent preview that returns the same JSON as text because Studio accepts
+string-output agents only; application integration uses the schema-validated structured mode.
+Image upload, API transport, storage, user confirmation, and UI integration are not live. Do not
+represent those planned behaviors as implemented.
 
 ## Deferred work
 

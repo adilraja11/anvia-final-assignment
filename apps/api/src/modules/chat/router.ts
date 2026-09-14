@@ -7,7 +7,7 @@ import {
 import { createMemoryScopeKey } from "@anvia/core/memory";
 import { PrismaMemoryStore } from "@anvia/memory-prisma";
 import { createClientStreamResponse } from "@anvia/server";
-import { createAgent, flushAgentTracing } from "@repo/agents";
+import { createValuationAgent, flushAgentTracing } from "@repo/agents";
 import { Hono } from "hono";
 import { prisma } from "../../lib/prisma.js";
 
@@ -81,7 +81,7 @@ export const chatRouter = new Hono()
 			return c.json({ error: "A user message is required" }, 400);
 		}
 		const sessionId = c.req.param("sessionId");
-		const agent = createAgent({
+		const agent = createValuationAgent({
 			agentId: "personal-assistant",
 			memory,
 		});

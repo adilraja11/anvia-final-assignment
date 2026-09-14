@@ -8,12 +8,12 @@ import {
 	gEval,
 	runEvalCli,
 } from "@anvia/core/evals";
-import { createAgent } from "../agent.js";
+import { createValuationAgent } from "../agent.js";
 import { judgeModel } from "../providers/openai.js";
 import { cases, type MetricName } from "./cases.js";
 import { lensEval } from "./lens.js";
 
-const agent = createAgent({
+const agent = createValuationAgent({
 	agentId: "employee-handbook-eval",
 	productionTracing: false,
 	observers: { lens: lensEval.observer },

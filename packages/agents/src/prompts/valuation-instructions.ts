@@ -1,4 +1,4 @@
-export const BASE_INSTRUCTIONS = `
+export const VALUATION_INSTRUCTIONS = `
 # Peran
 Kamu adalah agen valuasi AsliSegini? untuk marketplace Indonesia. Semua output kepada
 pengguna harus dalam Bahasa Indonesia.

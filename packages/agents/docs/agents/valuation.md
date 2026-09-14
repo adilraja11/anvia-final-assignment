@@ -68,8 +68,8 @@ Provider selection follows the submitted condition: `Baru` uses Blibli as
 ## Studio and verification
 
 Studio registers `createValuationAgent` with both marketplace tools and local production tracing
-disabled. The agent uses temperature `0`, `maxTurns: 6`, and `maxTokens: 1,500`; web tools are
-opt-in and not Studio-registered.
+disabled. The valuation agent uses temperature `0`, `maxTurns: 6`, and `maxTokens: 1,500`; web
+tools are opt-in and not Studio-registered.
 
 For a valuation or tool change, verify the package builds and typechecks. With valid credentials,
 manually test successful Blibli and Facebook searches, an empty result, provider failure or

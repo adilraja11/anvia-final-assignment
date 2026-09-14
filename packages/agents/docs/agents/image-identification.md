@@ -82,8 +82,11 @@ would otherwise be supported.
 
 ## Implementation and verification
 
-This contract does not make image upload, storage, API transport, Studio registration, or UI
-integration live. Before implementing those paths, read the matching root guides for agent and
+The agent factory, image-only prompt helper, and structured result schema are implemented. Studio
+registers the same image agent in a preview mode that returns its JSON result as text because the
+installed Studio version accepts string-output agents only. Application integration uses the
+default schema-validated structured mode. Image upload, storage, API transport, and UI integration
+are not live. Before implementing those paths, read the matching root guides for agent and
 application streaming work, and preserve the PRD's single-image, privacy, and validation rules.
 
 Add schema-level and behavioral tests for at least:

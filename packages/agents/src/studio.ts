@@ -1,11 +1,19 @@
 import { Studio } from "@anvia/studio";
-import { createValuationAgent } from "./agent.js";
+import {
+	createImageIdentificationAgent,
+	createValuationAgent,
+} from "./agent.js";
 
-const agent = createValuationAgent({
+const valuationAgent = createValuationAgent({
 	productionTracing: false,
 });
 
-new Studio([agent]).start({
+const imageIdentificationAgent = createImageIdentificationAgent({
+	productionTracing: false,
+	structuredOutput: false,
+});
+
+new Studio([imageIdentificationAgent, valuationAgent]).start({
 	hostname: "localhost",
 	port: 4021,
 });

@@ -26,5 +26,6 @@ The legacy handbook ingestion/evaluation code is also present. For handbook retr
 
 ## Verification
 
+- Create or modify automated tests only when the user explicitly requests automated-test work.
 - `pnpm --filter @repo/agents typecheck` for TypeScript changes.
 - `pnpm --filter @repo/agents build` when changing exported code.
