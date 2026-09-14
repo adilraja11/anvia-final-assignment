@@ -4,6 +4,7 @@ import {
 	type ImagePart,
 	type UserMessage,
 } from "@anvia/core";
+import { extract } from "@anvia/core/extractor";
 import { z } from "zod";
 import { IMAGE_IDENTIFICATION_INSTRUCTIONS } from "../prompts/image-identification-instructions.js";
 import {
@@ -58,40 +59,53 @@ export interface CreateImageIdentificationAgentOptions
 }
 
 export function createImageIdentificationAgent(
-	options: CreateImageIdentificationAgentOptions & {
-		structuredOutput: false;
-	},
-): Agent;
-
-export function createImageIdentificationAgent(
-	options?: CreateImageIdentificationAgentOptions & {
-		structuredOutput?: true;
-	},
-): Agent<ImageIdentificationResult>;
-
-export function createImageIdentificationAgent(
-	options: CreateImageIdentificationAgentOptions & {
-		structuredOutput?: boolean;
-	} = {},
+	options: CreateImageIdentificationAgentOptions = {},
 ) {
-	const { structuredOutput = true, ...runtimeOptions } = options;
-	const agentOptions = {
+	return new Agent({
 		...createAgentRuntimeOptions({
-			...runtimeOptions,
-			agentId: runtimeOptions.agentId ?? "asli-segini-image-identification",
+			...options,
+			agentId: options.agentId ?? "asli-segini-image-identification",
 		}),
 		instructions: IMAGE_IDENTIFICATION_INSTRUCTIONS,
 		tools: [],
 		toolChoice: "none" as const,
 		temperature: 0,
-		maxTokens: 160,
+		maxTokens: 768,
 		maxTurns: 1,
-	};
-
-	if (!structuredOutput) return new Agent(agentOptions);
-
-	return new Agent<ImageIdentificationResult>({
-		...agentOptions,
-		outputSchema: IMAGE_IDENTIFICATION_RESULT_SCHEMA,
 	});
+}
+
+export async function identifyProductImage(
+	agent: Agent,
+	image: SanitizedProductImage,
+): Promise<ImageIdentificationResult> {
+	const validatedImage = sanitizedProductImageSchema.parse(image);
+	const message: UserMessage = {
+		role: "user",
+		content: [
+			{
+				type: "image",
+				image: validatedImage.image,
+				mediaType: validatedImage.mediaType,
+				detail: validatedImage.detail ?? "high",
+			},
+		],
+	};
+	const response = await agent.generate({ messages: [message] });
+
+	if (response.type !== "response") {
+		throw new Error("Image identification did not produce a response.");
+	}
+
+	const result = await extract({
+		model: agent.model,
+		text: response.output,
+		instructions:
+			"Ubah hasil identifikasi gambar ke schema yang diberikan. Pertahankan status dan productName eksplisit bila tersedia. Jangan pernah menyimpulkan productName; jika produk yang didukung tidak dapat dinamai, gunakan MORE_INFORMATION_REQUIRED.",
+		outputSchema: IMAGE_IDENTIFICATION_RESULT_SCHEMA,
+		temperature: 0,
+		maxTokens: 160,
+	});
+
+	return result.output;
 }

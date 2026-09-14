@@ -10,7 +10,6 @@ const valuationAgent = createValuationAgent({
 
 const imageIdentificationAgent = createImageIdentificationAgent({
 	productionTracing: false,
-	structuredOutput: false,
 });
 
 new Studio([imageIdentificationAgent, valuationAgent]).start({

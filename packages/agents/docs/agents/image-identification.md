@@ -80,14 +80,21 @@ would otherwise be supported.
 5. Only after user confirmation of the category-specific minimum identity does the valuation
    workflow become eligible for marketplace retrieval.
 
-## Implementation and verification
+## Structured extraction implementation
 
-The agent factory, image-only prompt helper, and structured result schema are implemented. Studio
-registers the same image agent in a preview mode that returns its JSON result as text because the
-installed Studio version accepts string-output agents only. Application integration uses the
-default schema-validated structured mode. Image upload, storage, API transport, and UI integration
-are not live. Before implementing those paths, read the matching root guides for agent and
-application streaming work, and preserve the PRD's single-image, privacy, and validation rules.
+The factory creates a text-output image agent. After the agent performs visual identification, the
+`identifyProductImage` helper passes only its returned text to `extract` from
+`@anvia/core/extractor`, with `IMAGE_IDENTIFICATION_RESULT_SCHEMA` as the required schema. Do not
+configure the agent's `outputSchema` option for this workflow.
+
+The sanitized image is supplied only to the image agent. The extractor receives no image, user
+text, listing data, or tool result. Its schema-validated output is the only result the helper
+returns; an extraction failure must be handled explicitly and never replaced with a guessed product
+or generic supported result.
+
+Studio registers the same text-output agent. Image upload, storage, API transport, and UI
+integration are not live. Before implementing those paths, read the matching root guides for agent
+and application streaming work, and preserve the PRD's single-image, privacy, and validation rules.
 
 Add schema-level and behavioral tests for at least:
 
