@@ -1,5 +1,5 @@
 {
-	"name": "exploration-final-project",
+	"name": "anvia-final-assignment",
 	"private": true,
 	"scripts": {
 		"check": "biome check .",
