@@ -30,13 +30,15 @@ export interface AgentRuntimeOptions {
 	agentId: string;
 	model?: CompletionModel;
 	observers?: Record<string, AgentObserver>;
+	productionLogging?: boolean;
 	productionTracing?: boolean;
 }
 
 export function createAgentRuntimeOptions(options: AgentRuntimeOptions) {
+	const includeProductionLogging = options.productionLogging !== false;
 	const includeProductionTracing = options.productionTracing !== false;
 	const observers: Record<string, AgentObserver> = {
-		logger: logging,
+		...(includeProductionLogging ? { logger: logging } : {}),
 		...(includeProductionTracing ? { lens: tracing } : {}),
 		...options.observers,
 	};

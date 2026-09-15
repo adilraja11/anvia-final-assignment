@@ -92,6 +92,14 @@ text, listing data, or tool result. Its schema-validated output is the only resu
 returns; an extraction failure must be handled explicitly and never replaced with a guessed product
 or generic supported result.
 
+The helper accepts optional run-level `abortSignal` and `trace` settings. It forwards cancellation
+to both the image-agent generation and the structured extraction call; trace metadata must never
+contain image bytes, filenames, image content, or user-provided text.
+
+Hosts that cannot guarantee observer redaction must construct the agent with `productionLogging`
+and `productionTracing` disabled. The local API integration uses this mode because provider
+request logging or full trace capture could otherwise retain sanitized image data.
+
 Studio registers the same text-output agent. Image upload, storage, API transport, and UI
 integration are not live. Before implementing those paths, read the matching root guides for agent
 and application streaming work, and preserve the PRD's single-image, privacy, and validation rules.

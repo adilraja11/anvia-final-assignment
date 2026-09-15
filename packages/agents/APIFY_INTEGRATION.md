@@ -27,7 +27,11 @@ Keep the tested search configuration with these enforced values:
 ```
 
 `searchTerms` is supplied by the tool input and is limited to 1–5 bounded terms. The
-Actor receives no model-controlled actor ID, URL, limit, proxy, or other configuration.
+Actor receives no model-controlled actor ID, URL, limit, proxy, or other configuration. Its call
+options set `log: null` so provider logs containing generated queries or listing content are not
+redirected to application stdout. The private client factory also sets its logger to `OFF` so API
+retry diagnostics cannot leak provider request details; tool failures log only provider and the
+bounded error category.
 `maxItemsPerQuery` is a cap per submitted query. Terms must therefore be ordered from most
 useful to least useful and kept short; more terms increase the maximum dataset size and the
 subsequent validation work.
@@ -113,7 +117,7 @@ Use these enforced values:
 
 Use the fixed `curious_coder/facebook-marketplace` Actor. Its `searchKeyword` uses the first
 `searchTerms` entry. All supplied terms are still used for local title matching during
-normalization. The Actor call also passes `{ "maxItems": 10 }` as run options, and the
+normalization. The Actor call also passes `{ "maxItems": 10, "log": null }` as run options, and the
 dataset read is limited to 10 items.
 
 Facebook Marketplace supports `CONDITION_COMPARABLE` only. For a damaged product, its first

@@ -45,12 +45,14 @@ function getClient() {
   const token = process.env.APIFY_API_TOKEN?.trim();
   if (!token) throw new ProviderBoundaryError("CONFIGURATION");
 
-  return new ApifyClient({
+  const client = new ApifyClient({
     token,
     maxRetries: 1,
     minDelayBetweenRetriesMillis: 500,
     timeoutSecs: 360,
   });
+  client.logger.setLevel(client.logger.LEVELS.OFF);
+  return client;
 }
 ```
 
@@ -77,17 +79,22 @@ const run = await client.actor("fanndev/blibli-product-price-monitor").call({
     apifyProxyGroups: ["RESIDENTIAL"],
     apifyProxyCountry: "ID",
   },
-});
+}, { log: null });
 
 const { items } = await client
   .dataset(run.defaultDatasetId)
   .listItems({ limit: searchTerms.length * 10 });
 ```
 
+The per-client logger is set to `OFF`, and Actor log streaming is disabled with `log: null`.
+Provider retries and Actor logs can contain URLs, generated search terms, or listing content, so
+neither API routes nor local tool runs may redirect them to application stdout. Log only the
+bounded provider name and error category described below.
+
 For Facebook Marketplace, the fixed call uses
 `curious_coder/facebook-marketplace`, the documented keyword-search defaults (including
 Indonesia and `proxy.useApifyProxy: false`), and a second call argument of
-`{ maxItems: 10 }`. The dataset read is also limited to 10 items. For Blibli,
+`{ maxItems: 10, log: null }`. The dataset read is also limited to 10 items. For Blibli,
 `maxItemsPerQuery: 10` applies to each submitted term, so the bounded dataset read must allow
 up to ten records per term. `call()` waits for the
 Actor run to finish and returns its run object; `defaultDatasetId` identifies the output

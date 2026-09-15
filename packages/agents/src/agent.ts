@@ -1,4 +1,5 @@
 export type {
+	IdentifyProductImageOptions,
 	ImageIdentificationResult,
 	SanitizedProductImage,
 } from "./agents/image-identification.js";

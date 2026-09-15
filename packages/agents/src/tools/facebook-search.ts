@@ -434,12 +434,14 @@ function cacheKey(input: z.infer<typeof inputSchema>) {
 function getClient() {
 	const token = process.env.APIFY_API_TOKEN?.trim();
 	if (!token) throw new ProviderBoundaryError("CONFIGURATION");
-	return new ApifyClient({
+	const client = new ApifyClient({
 		token,
 		maxRetries: 1,
 		minDelayBetweenRetriesMillis: 500,
 		timeoutSecs: 360,
 	});
+	client.logger.setLevel(client.logger.LEVELS.OFF);
+	return client;
 }
 
 function errorCategory(error: unknown): Failure["error_category"] {
@@ -587,7 +589,7 @@ export function buildFacebookActorInput(input: z.infer<typeof inputSchema>) {
 }
 
 export function buildFacebookActorRunOptions() {
-	return { maxItems: MAX_ITEMS };
+	return { maxItems: MAX_ITEMS, log: null };
 }
 
 async function executeSearch(

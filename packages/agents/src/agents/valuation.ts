@@ -106,6 +106,7 @@ export async function generateValuationResult(
 		outputSchema: VALUATION_RESULT_SCHEMA,
 		temperature: 0,
 		maxTokens: 1_000,
+		abortSignal: request.abortSignal,
 	});
 
 	return result.output;

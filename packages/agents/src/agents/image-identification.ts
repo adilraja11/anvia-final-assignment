@@ -58,6 +58,11 @@ export interface CreateImageIdentificationAgentOptions
 	agentId?: string;
 }
 
+export type IdentifyProductImageOptions = Pick<
+	Parameters<Agent["generate"]>[0],
+	"abortSignal" | "trace"
+>;
+
 export function createImageIdentificationAgent(
 	options: CreateImageIdentificationAgentOptions = {},
 ) {
@@ -78,6 +83,7 @@ export function createImageIdentificationAgent(
 export async function identifyProductImage(
 	agent: Agent,
 	image: SanitizedProductImage,
+	options: IdentifyProductImageOptions = {},
 ): Promise<ImageIdentificationResult> {
 	const validatedImage = sanitizedProductImageSchema.parse(image);
 	const message: UserMessage = {
@@ -91,7 +97,7 @@ export async function identifyProductImage(
 			},
 		],
 	};
-	const response = await agent.generate({ messages: [message] });
+	const response = await agent.generate({ messages: [message], ...options });
 
 	if (response.type !== "response") {
 		throw new Error("Image identification did not produce a response.");
@@ -105,6 +111,7 @@ export async function identifyProductImage(
 		outputSchema: IMAGE_IDENTIFICATION_RESULT_SCHEMA,
 		temperature: 0,
 		maxTokens: 160,
+		abortSignal: options.abortSignal,
 	});
 
 	return result.output;

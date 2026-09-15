@@ -15,10 +15,7 @@ const conditionSchema = z.enum([
 	"Tidak diketahui",
 ]);
 
-const evidenceRoleSchema = z.enum([
-	"CONDITION_COMPARABLE",
-	"RETAIL_ANCHOR",
-]);
+const evidenceRoleSchema = z.enum(["CONDITION_COMPARABLE", "RETAIL_ANCHOR"]);
 
 const inputSchema = z.object({
 	searchTerms: z.array(z.string().trim().min(1).max(160)).min(1).max(5),
@@ -183,9 +180,7 @@ function matchesSearchTerms(title: string, searchTerms: string[]) {
 		// 256 GB, or 1 TB). Other title tokens use a majority match so retailer
 		// qualifiers such as "garansi resmi" do not reject relevant products.
 		if (
-			termTokens.some(
-				(token) => /^\d+$/.test(token) && !titleTokens.has(token),
-			)
+			termTokens.some((token) => /^\d+$/.test(token) && !titleTokens.has(token))
 		)
 			return false;
 		const matched = termTokens.filter((token) => titleTokens.has(token)).length;
@@ -249,8 +244,7 @@ function approvedUrl(value: unknown) {
 		const url = new URL(value);
 		if (
 			url.protocol !== "https:" ||
-			(url.hostname !== "blibli.com" &&
-				!url.hostname.endsWith(".blibli.com"))
+			(url.hostname !== "blibli.com" && !url.hostname.endsWith(".blibli.com"))
 		)
 			return undefined;
 		return url.toString();
@@ -287,12 +281,14 @@ function cacheKey(input: z.infer<typeof inputSchema>) {
 function getClient() {
 	const token = process.env.APIFY_API_TOKEN?.trim();
 	if (!token) throw new ProviderBoundaryError("CONFIGURATION");
-	return new ApifyClient({
+	const client = new ApifyClient({
 		token,
 		maxRetries: 1,
 		minDelayBetweenRetriesMillis: 500,
 		timeoutSecs: 360,
 	});
+	client.logger.setLevel(client.logger.LEVELS.OFF);
+	return client;
 }
 
 function errorCategory(error: unknown): Failure["error_category"] {
@@ -334,7 +330,10 @@ function normalizeRecord(
 	const titleCondition = classifyCondition(title);
 	const detected =
 		input.evidenceRole === "RETAIL_ANCHOR"
-			? { condition: "UNKNOWN" as const, explicitSecondHand: titleCondition.explicitSecondHand }
+			? {
+					condition: "UNKNOWN" as const,
+					explicitSecondHand: titleCondition.explicitSecondHand,
+				}
 			: input.condition === "Baru" && !titleCondition.explicitSecondHand
 				? { condition: "NEW" as const, explicitSecondHand: false }
 				: titleCondition;
@@ -408,7 +407,7 @@ async function fetch(input: z.infer<typeof inputSchema>): Promise<Success> {
 	const client = getClient();
 	const run = await client
 		.actor(ACTOR_ID)
-		.call(buildBlibliActorInput(input));
+		.call(buildBlibliActorInput(input), buildBlibliActorRunOptions());
 	if (!run || typeof run.defaultDatasetId !== "string" || !run.defaultDatasetId)
 		throw new ProviderBoundaryError("MISSING_DATASET");
 
@@ -421,7 +420,10 @@ async function fetch(input: z.infer<typeof inputSchema>): Promise<Success> {
 	const evidence: Evidence[] = [];
 	const rejected: Rejected[] = [];
 	const seenIds = new Set<string>();
-	for (const item of dataset.items.slice(0, input.searchTerms.length * MAX_ITEMS_PER_QUERY)) {
+	for (const item of dataset.items.slice(
+		0,
+		input.searchTerms.length * MAX_ITEMS_PER_QUERY,
+	)) {
 		const normalized = normalizeRecord(item, input, seenIds);
 		if (normalized.evidence) evidence.push(normalized.evidence);
 		if (normalized.rejected) rejected.push(normalized.rejected);
@@ -455,6 +457,10 @@ export function buildBlibliActorInput(input: z.infer<typeof inputSchema>) {
 			apifyProxyCountry: "ID",
 		},
 	};
+}
+
+export function buildBlibliActorRunOptions() {
+	return { log: null };
 }
 
 async function executeSearch(
