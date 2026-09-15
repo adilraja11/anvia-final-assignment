@@ -10,6 +10,11 @@ For a streaming or client-protocol change, read [../../ANVIA_APPS.md](../../ANVI
 
 Follow the repository [Markdown naming and routing policy](../../AGENTS.md#markdown-naming-and-routing). Keep API-wide contracts in uppercase filenames and name any focused API reference in lowercase kebab-case. Link a focused document from this file with the exact API change that requires it.
 
+Before implementing or revising the dedicated image-identification or valuation-agent HTTP routes,
+read the [agent API integration plan](docs/plans/agent-api-integration.md).
+When changing those routes' request, response, validation, authentication, or error behavior, also
+read the [agent API contract](docs/contracts/agent-api.md).
+
 ## Persistence and contracts
 
 - Update `prisma/schema.prisma` for data-model changes, create a migration through Prisma, then regenerate the client. Do not edit `src/generated/prisma/` or existing migration files by hand.
