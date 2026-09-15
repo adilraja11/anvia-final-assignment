@@ -65,6 +65,19 @@ Provider selection follows the submitted condition: `Baru` uses Blibli as
   provider responses, or reporting payloads.
 - Do not claim authenticity, ownership, transaction safety, or hidden physical condition.
 
+## Structured extraction implementation
+
+The factory creates a text-output valuation agent. The `generateValuationResult` helper runs that
+agent, then passes only its returned text to `extract` from `@anvia/core/extractor` with
+`VALUATION_RESULT_SCHEMA` as the required schema. Do not configure the agent's `outputSchema` for
+this workflow.
+
+The structured result uses `SUCCESS` for a completed evidence-and-explanation step and keeps
+`UNSUPPORTED_CATEGORY`, `MORE_INFORMATION_REQUIRED`, `INSUFFICIENT_EVIDENCE`, and
+`SERVICE_FAILURE` distinct. It contains no calculated range, negotiation target, confidence, or
+verdict. The extractor must preserve the agent's grounded content and explicit evidence IDs rather
+than create new facts, evidence, or calculations.
+
 ## Studio and verification
 
 Studio registers `createValuationAgent` with both marketplace tools and local production tracing
