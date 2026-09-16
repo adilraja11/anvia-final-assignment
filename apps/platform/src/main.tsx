@@ -1,23 +1,15 @@
-import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
-import { routeTree } from "./routeTree.gen";
-
-const router = createRouter({
-	routeTree,
-	defaultPreload: "intent",
-	defaultPreloadStaleTime: 0,
-	scrollRestoration: true,
-});
-
-declare module "@tanstack/react-router" {
-	interface Register {
-		router: typeof router;
-	}
-}
+import { ValuationSessionProvider } from "./modules/valuation/valuation-session";
+import { router } from "./router";
 
 const rootElement = document.getElementById("app")!;
 
 if (!rootElement.innerHTML) {
 	const root = ReactDOM.createRoot(rootElement);
-	root.render(<RouterProvider router={router} />);
+	root.render(
+		<ValuationSessionProvider>
+			<RouterProvider router={router} />
+		</ValuationSessionProvider>,
+	);
 }

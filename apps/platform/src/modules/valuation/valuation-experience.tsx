@@ -1,13 +1,12 @@
+import { Link, useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
+import {
+	defaultValuationDetails,
+	useValuationSession,
+	type ValuationDetails,
+} from "./valuation-session";
 
-type Step = "upload" | "details" | "analysing" | "result";
-type Details = {
-	name: string;
-	condition: string;
-	askingPrice: string;
-	notes: string;
-	location: string;
-};
+type CreateStep = "upload" | "details" | "analysing";
 
 const progressLabels = [
 	"Mengidentifikasi produk",
@@ -98,52 +97,100 @@ function SectionStamp({ children }: { children: string }) {
 	);
 }
 
-function AppHeader({ onRestart }: { onRestart: () => void }) {
+function AppHeader() {
 	return (
 		<header className="border-b-2 border-base-content bg-base-100">
 			<div className="navbar mx-auto min-h-16 max-w-7xl px-4 sm:min-h-20 sm:px-6">
-				<button
+				<Link
 					className="btn btn-ghost h-auto min-h-0 rounded-none px-0 font-display text-xl tracking-[-0.04em] uppercase sm:text-2xl"
-					type="button"
-					onClick={onRestart}
-					aria-label="Mulai ulang"
+					to="/"
+					aria-label="Beranda AsliSegini?"
 				>
 					<ProductMark />
 					<span>
 						asli<span className="text-primary">segini?</span>
 					</span>
-				</button>
+				</Link>
 				<div className="ml-auto flex h-full items-stretch">
 					<span className="hidden items-center border-x border-base-content px-5 text-[0.62rem] font-bold tracking-[0.08em] sm:flex">
 						DEMO MOCKUP
 					</span>
-					<button
+					<Link
 						className="btn btn-primary h-auto min-h-0 rounded-none px-4 text-xs uppercase sm:px-6"
-						type="button"
-						onClick={onRestart}
+						to="/create"
 					>
 						<Sparkle />
 						Cek harga
-					</button>
+					</Link>
 				</div>
 			</div>
 		</header>
 	);
 }
 
-export function ValuationExperience() {
-	const [step, setStep] = useState<Step>("upload");
+function ValuationLayout({ children }: { children: ReactNode }) {
+	return (
+		<div
+			className="flex min-h-screen flex-col bg-base-100 text-base-content"
+			data-theme="asli"
+		>
+			<AppHeader />
+			<main className="mx-auto flex w-full max-w-7xl flex-1 items-start justify-center px-4 py-12 sm:px-6 sm:py-20">
+				{children}
+			</main>
+			<footer className="flex flex-col gap-1 border-t-2 border-base-content px-4 py-4 text-[0.6rem] font-medium uppercase tracking-[0.04em] sm:flex-row sm:justify-between sm:px-6">
+				<span>Demo UI dengan data mockup</span>
+				<span>Estimasi hanya mencakup harga barang.</span>
+			</footer>
+		</div>
+	);
+}
+
+export function ValuationHomePage() {
+	return (
+		<ValuationLayout>
+			<section className="w-full max-w-4xl border-2 border-base-content bg-base-100 p-6 sm:p-12">
+				<span className="badge badge-primary rounded-none px-2 py-3 text-[0.62rem] font-bold uppercase tracking-[0.07em]">
+					Demo penilaian barang
+				</span>
+				<h1 className="mt-10 max-w-3xl font-display text-5xl leading-[0.9] tracking-[-0.04em] uppercase sm:text-7xl">
+					Tahu harga barang sebelum{" "}
+					<span className="text-primary">sepakat.</span>
+				</h1>
+				<p className="mt-6 max-w-2xl text-sm leading-7 text-base-content/80">
+					Unggah foto, konfirmasi detail barang, lalu tinjau contoh ringkasan
+					estimasi harga pasar. Seluruh proses ini memakai data mockup dan tidak
+					mengirim permintaan ke layanan mana pun.
+				</p>
+				<div className="mt-10 flex flex-col gap-3 sm:flex-row">
+					<Link
+						className="btn btn-primary min-h-13 rounded-none uppercase"
+						to="/create"
+					>
+						<Sparkle />
+						Mulai cek harga
+					</Link>
+					<Link
+						className="btn btn-outline min-h-13 rounded-none uppercase"
+						to="/result"
+					>
+						Lihat contoh hasil
+					</Link>
+				</div>
+			</section>
+		</ValuationLayout>
+	);
+}
+
+export function CreateValuationPage() {
+	const navigate = useNavigate();
+	const { setResultDetails } = useValuationSession();
+	const [step, setStep] = useState<CreateStep>("upload");
 	const [fileName, setFileName] = useState("");
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 	const [analysisStep, setAnalysisStep] = useState(0);
 	const [formError, setFormError] = useState("");
-	const [details, setDetails] = useState<Details>({
-		name: "Sony PlayStation 5 Slim Disc 1TB",
-		condition: "Baik",
-		askingPrice: "7800000",
-		notes: "Lengkap dus dan satu controller. Ada lecet halus di sudut casing.",
-		location: "Jakarta Selatan",
-	});
+	const [details, setDetails] = useState(defaultValuationDetails);
 
 	useEffect(() => {
 		if (step !== "analysing") return;
@@ -151,15 +198,21 @@ export function ValuationExperience() {
 		const timer = window.setTimeout(
 			() =>
 				analysisStep === progressLabels.length - 1
-					? setStep("result")
+					? navigate({ to: "/result" })
 					: setAnalysisStep((current) => current + 1),
 			delay,
 		);
 		return () => window.clearTimeout(timer);
-	}, [analysisStep, step]);
+	}, [analysisStep, navigate, step]);
+
+	useEffect(
+		() => () => {
+			if (imagePreview) URL.revokeObjectURL(imagePreview);
+		},
+		[imagePreview],
+	);
 
 	const askingPrice = Number(details.askingPrice.replace(/\D/g, "")) || 0;
-	const verdict = askingPrice < 8_000_000 ? "Harga bagus" : "Harga wajar";
 	const previewLabel = useMemo(
 		() => fileName || "Foto PlayStation 5 Slim",
 		[fileName],
@@ -183,54 +236,50 @@ export function ValuationExperience() {
 				"Lengkapi nama barang, kondisi, dan harga penawaran terlebih dahulu.",
 			);
 		setFormError("");
+		setResultDetails(details);
 		setAnalysisStep(0);
 		setStep("analysing");
 	}
 
-	function restart() {
-		setStep("upload");
-		setFormError("");
-	}
+	return (
+		<ValuationLayout>
+			{step === "upload" ? (
+				<UploadScreen error={formError} onSelect={selectImage} />
+			) : null}
+			{step === "details" ? (
+				<DetailsScreen
+					details={details}
+					error={formError}
+					imagePreview={imagePreview}
+					previewLabel={previewLabel}
+					onChange={(field, value) =>
+						setDetails((current) => ({ ...current, [field]: value }))
+					}
+					onSubmit={startAnalysis}
+				/>
+			) : null}
+			{step === "analysing" ? (
+				<AnalysisScreen activeStep={analysisStep} />
+			) : null}
+		</ValuationLayout>
+	);
+}
+
+export function ValuationResultPage() {
+	const navigate = useNavigate();
+	const { resultDetails } = useValuationSession();
+	const askingPrice = Number(resultDetails.askingPrice);
+	const verdict = askingPrice < 8_000_000 ? "Harga bagus" : "Harga wajar";
 
 	return (
-		<div
-			className="flex min-h-screen flex-col bg-base-100 text-base-content"
-			data-theme="asli"
-		>
-			<AppHeader onRestart={restart} />
-			<main className="mx-auto flex w-full max-w-7xl flex-1 items-start justify-center px-4 py-12 sm:px-6 sm:py-20">
-				{step === "upload" ? (
-					<UploadScreen error={formError} onSelect={selectImage} />
-				) : null}
-				{step === "details" ? (
-					<DetailsScreen
-						details={details}
-						error={formError}
-						imagePreview={imagePreview}
-						previewLabel={previewLabel}
-						onChange={(field, value) =>
-							setDetails((current) => ({ ...current, [field]: value }))
-						}
-						onSubmit={startAnalysis}
-					/>
-				) : null}
-				{step === "analysing" ? (
-					<AnalysisScreen activeStep={analysisStep} />
-				) : null}
-				{step === "result" ? (
-					<ResultScreen
-						details={details}
-						askingPrice={askingPrice}
-						verdict={verdict}
-						onRestart={restart}
-					/>
-				) : null}
-			</main>
-			<footer className="flex flex-col gap-1 border-t-2 border-base-content px-4 py-4 text-[0.6rem] font-medium uppercase tracking-[0.04em] sm:flex-row sm:justify-between sm:px-6">
-				<span>Demo UI dengan data mockup</span>
-				<span>Estimasi hanya mencakup harga barang.</span>
-			</footer>
-		</div>
+		<ValuationLayout>
+			<ResultScreen
+				details={resultDetails}
+				askingPrice={askingPrice}
+				verdict={verdict}
+				onRestart={() => navigate({ to: "/create" })}
+			/>
+		</ValuationLayout>
 	);
 }
 
@@ -322,11 +371,11 @@ function DetailsScreen({
 	onChange,
 	onSubmit,
 }: {
-	details: Details;
+	details: ValuationDetails;
 	error: string;
 	imagePreview: string | null;
 	previewLabel: string;
-	onChange: (field: keyof Details, value: string) => void;
+	onChange: (field: keyof ValuationDetails, value: string) => void;
 	onSubmit: () => void;
 }) {
 	return (
@@ -509,7 +558,7 @@ function ResultScreen({
 	verdict,
 	onRestart,
 }: {
-	details: Details;
+	details: ValuationDetails;
 	askingPrice: number;
 	verdict: string;
 	onRestart: () => void;

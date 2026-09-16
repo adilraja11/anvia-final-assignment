@@ -10,43 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SSessionIdRouteImport } from './routes/s.$sessionId'
+import { Route as CreateRouteImport } from './routes/create'
+import { Route as ResultRouteImport } from './routes/result'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SSessionIdRoute = SSessionIdRouteImport.update({
-  id: '/s/$sessionId',
-  path: '/s/$sessionId',
+const CreateRoute = CreateRouteImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultRoute = ResultRouteImport.update({
+  id: '/result',
+  path: '/result',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/s/$sessionId': typeof SSessionIdRoute
+  '/create': typeof CreateRoute
+  '/result': typeof ResultRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/s/$sessionId': typeof SSessionIdRoute
+  '/create': typeof CreateRoute
+  '/result': typeof ResultRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/s/$sessionId': typeof SSessionIdRoute
+  '/create': typeof CreateRoute
+  '/result': typeof ResultRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/s/$sessionId'
+  fullPaths: '/' | '/create' | '/result'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/s/$sessionId'
-  id: '__root__' | '/' | '/s/$sessionId'
+  to: '/' | '/create' | '/result'
+  id: '__root__' | '/' | '/create' | '/result'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  SSessionIdRoute: typeof SSessionIdRoute
+  CreateRoute: typeof CreateRoute
+  ResultRoute: typeof ResultRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,11 +68,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/s/$sessionId': {
-      id: '/s/$sessionId'
-      path: '/s/$sessionId'
-      fullPath: '/s/$sessionId'
-      preLoaderRoute: typeof SSessionIdRouteImport
+    '/create': {
+      id: '/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof CreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/result': {
+      id: '/result'
+      path: '/result'
+      fullPath: '/result'
+      preLoaderRoute: typeof ResultRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -70,7 +87,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  SSessionIdRoute: SSessionIdRoute,
+  CreateRoute: CreateRoute,
+  ResultRoute: ResultRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
