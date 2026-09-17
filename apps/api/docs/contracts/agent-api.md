@@ -89,15 +89,28 @@ Successful response:
 		"explanation": "...",
 		"pros": [],
 		"cons": [],
-		"evidenceIds": []
+		"evidenceIds": [],
+		"finalRecommendation": {
+			"status": "PRICE_RANGE_AVAILABLE",
+			"reasonableBuyPriceRangeIdr": {
+				"minimum": 7500000,
+				"maximum": 8300000
+			}
+		}
 	}
 }
 ```
 
 The response may instead contain `UNSUPPORTED_CATEGORY`, `MORE_INFORMATION_REQUIRED`,
 `INSUFFICIENT_EVIDENCE`, or `SERVICE_FAILURE`, preserving each agent result exactly. It never adds
-calculated price fields. In this contract, `SUCCESS` means the agent stage completed; it does not
-mean a final `VALUATED` result exists.
+calculated price fields beyond `finalRecommendation`. On a `SUCCESS` result, its
+`reasonableBuyPriceRangeIdr` is calculated by API code from accepted
+`CONDITION_COMPARABLE` evidence captured from the fixed marketplace tools, never by the model.
+The minimum and maximum are the deterministically calculated weighted 25th and 75th percentiles.
+Both require at least ten accepted comparables after IQR filtering. Otherwise
+`finalRecommendation.status` is `INSUFFICIENT_EVIDENCE`. In this contract, `SUCCESS` still means
+the agent stage completed; it does not mean a complete `VALUATED` response, confidence level, or
+negotiation target exists.
 
 ## Error contract
 

@@ -6,8 +6,14 @@ import {
 	type AgentRuntimeOptions,
 	createAgentRuntimeOptions,
 } from "../runtime.js";
-import { blibliSearch } from "../tools/blibli-search.js";
-import { facebookMarketplaceSearch } from "../tools/facebook-search.js";
+import {
+	type MarketplaceSearchObserver as BlibliSearchObserver,
+	createBlibliSearchTool,
+} from "../tools/blibli-search.js";
+import {
+	createFacebookMarketplaceSearchTool,
+	type MarketplaceSearchObserver as FacebookSearchObserver,
+} from "../tools/facebook-search.js";
 import { createWebTools } from "../tools/web-search.js";
 
 const explanationSchema = z.string().trim().min(1).max(2_000);
@@ -61,6 +67,7 @@ export interface CreateValuationAgentOptions
 	additionalInstructions?: string[];
 	memory?: MemoryStore;
 	includeWebTools?: boolean;
+	onMarketplaceResult?: BlibliSearchObserver & FacebookSearchObserver;
 }
 
 export function createValuationAgent(
@@ -77,8 +84,10 @@ export function createValuationAgent(
 		].join("\n\n"),
 		tools: [
 			...(options.includeWebTools ? createWebTools() : []),
-			blibliSearch,
-			facebookMarketplaceSearch,
+			createBlibliSearchTool({ onResult: options.onMarketplaceResult }),
+			createFacebookMarketplaceSearchTool({
+				onResult: options.onMarketplaceResult,
+			}),
 			...(options.additionalTools ?? []),
 		],
 		temperature: 0,

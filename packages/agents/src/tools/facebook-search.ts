@@ -169,6 +169,8 @@ type Failure = {
 };
 
 type ToolOutput = Success | Failure;
+
+export type MarketplaceSearchObserver = (result: unknown) => void;
 type CacheEntry = { expiresAt: number; value: Success };
 const cache = new Map<string, CacheEntry>();
 
@@ -627,10 +629,20 @@ async function executeSearch(
 	};
 }
 
-export const facebookMarketplaceSearch = createTool({
-	name: "facebookMarketplaceSearch",
-	description:
-		"Cari listing barang bekas yang sebanding di Facebook Marketplace. Hanya mendukung evidenceRole CONDITION_COMPARABLE; untuk kondisi Rusak, letakkan cue kerusakan di searchTerms pertama. URL pencarian, actor, batas hasil, dan konfigurasi provider dikunci oleh aplikasi.",
-	inputSchema,
-	execute: executeSearch,
-});
+export function createFacebookMarketplaceSearchTool(
+	options: { onResult?: MarketplaceSearchObserver } = {},
+) {
+	return createTool({
+		name: "facebookMarketplaceSearch",
+		description:
+			"Cari listing barang bekas yang sebanding di Facebook Marketplace. Hanya mendukung evidenceRole CONDITION_COMPARABLE; untuk kondisi Rusak, letakkan cue kerusakan di searchTerms pertama. URL pencarian, actor, batas hasil, dan konfigurasi provider dikunci oleh aplikasi.",
+		inputSchema,
+		execute: async (input) => {
+			const result = await executeSearch(input);
+			options.onResult?.(result);
+			return result;
+		},
+	});
+}
+
+export const facebookMarketplaceSearch = createFacebookMarketplaceSearchTool();

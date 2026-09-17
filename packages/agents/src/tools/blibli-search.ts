@@ -98,6 +98,8 @@ type Failure = {
 
 type ToolOutput = Success | Failure;
 
+export type MarketplaceSearchObserver = (result: unknown) => void;
+
 type CacheEntry = {
 	expiresAt: number;
 	value: Success;
@@ -495,10 +497,20 @@ async function executeSearch(
 	};
 }
 
-export const blibliSearch = createTool({
-	name: "blibliSearch",
-	description:
-		"Cari listing produk di Blibli. Gunakan evidenceRole CONDITION_COMPARABLE untuk produk Baru, atau RETAIL_ANCHOR untuk referensi harga retail yang harus dilaporkan terpisah. Actor, batas hasil, proxy, dan konfigurasi provider dikunci oleh aplikasi.",
-	inputSchema,
-	execute: executeSearch,
-});
+export function createBlibliSearchTool(
+	options: { onResult?: MarketplaceSearchObserver } = {},
+) {
+	return createTool({
+		name: "blibliSearch",
+		description:
+			"Cari listing produk di Blibli. Gunakan evidenceRole CONDITION_COMPARABLE untuk produk Baru, atau RETAIL_ANCHOR untuk referensi harga retail yang harus dilaporkan terpisah. Actor, batas hasil, proxy, dan konfigurasi provider dikunci oleh aplikasi.",
+		inputSchema,
+		execute: async (input) => {
+			const result = await executeSearch(input);
+			options.onResult?.(result);
+			return result;
+		},
+	});
+}
+
+export const blibliSearch = createBlibliSearchTool();

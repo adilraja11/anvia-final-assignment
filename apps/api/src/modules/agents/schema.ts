@@ -45,6 +45,24 @@ export const imageIdentificationResponseSchema = z
 const explanationSchema = z.string().trim().min(1).max(2_000);
 const explanationItemSchema = z.string().trim().min(1).max(300);
 const evidenceIdSchema = z.string().trim().min(1).max(160);
+const finalRecommendationSchema = z.discriminatedUnion("status", [
+	z
+		.object({
+			status: z.literal("PRICE_RANGE_AVAILABLE"),
+			reasonableBuyPriceRangeIdr: z
+				.object({
+					minimum: z.number().int().positive(),
+					maximum: z.number().int().positive(),
+				})
+				.strict(),
+		})
+		.strict(),
+	z
+		.object({
+			status: z.literal("INSUFFICIENT_EVIDENCE"),
+		})
+		.strict(),
+]);
 
 export const valuationResultSchema = z.discriminatedUnion("status", [
 	z
@@ -54,6 +72,7 @@ export const valuationResultSchema = z.discriminatedUnion("status", [
 			pros: z.array(explanationItemSchema).max(8),
 			cons: z.array(explanationItemSchema).max(8),
 			evidenceIds: z.array(evidenceIdSchema).max(30),
+			finalRecommendation: finalRecommendationSchema,
 		})
 		.strict(),
 	z

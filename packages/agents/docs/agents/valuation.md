@@ -11,6 +11,11 @@ It does not calculate quartiles, weighted percentiles, confidence, negotiation t
 ranges, or verdicts. The application validates evidence and performs every final numeric
 calculation.
 
+`createValuationAgent` may receive an application-owned `onMarketplaceResult` observer. It is
+called with each bounded, normalized marketplace tool result so the host application can perform
+its own deterministic calculation. The observer is not exposed to the model and does not change
+which tools it may call.
+
 ## Input contract
 
 The valuation API supplies exactly four fields:

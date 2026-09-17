@@ -16,10 +16,11 @@ workflow.
 - `apps/api` retains the `/api/chat` module and now has typed, unauthenticated `/api/agents` routes for
   image identification and the valuation-agent stage.
 - The image-identification route validates and sanitizes a bounded in-memory multipart upload. R2
-  quarantine, user confirmation, persistent valuation jobs, rate limits, deterministic price
-  calculation, and browser integration remain unimplemented.
-- The valuation helper returns evidence-grounded narrative fields and evidence IDs. It deliberately
-  does not return a price range, negotiation target, confidence, or verdict.
+  quarantine, user confirmation, persistent valuation jobs, rate limits, the full deterministic
+  valuation result, and browser integration remain unimplemented.
+- The valuation helper returns evidence-grounded narrative fields and evidence IDs. The API also
+  derives a narrow deterministic `finalRecommendation` from captured accepted comparable evidence;
+  it returns a reasonable-buy price range but not a negotiation target or confidence.
 
 ## Accepted implementation scope
 
@@ -36,8 +37,9 @@ The implementation follows these accepted boundaries:
    implemented valuation agent uses Blibli and `curious_coder/facebook-marketplace`. This plan
    connects the existing implementation unchanged and does not claim PRD provider compliance.
 4. **Result meaning:** a valuation-agent `SUCCESS` means the evidence/explanation agent stage
-   completed. It must not be renamed to `VALUATED`, because deterministic valuation code does not
-   exist yet.
+   completed. It must not be renamed to `VALUATED`; the API's narrow recommendation does not yet
+   provide the full range, confidence, job, and evidence-presentation contract required for that
+   status.
 
 Any future browser-ready end-to-end valuation API must expand this design rather than silently
 treating the deferred capabilities as live.
@@ -114,7 +116,8 @@ platform UI and `finding/agents` fixtures. Those unrelated files were not change
   or optional web tools.
 - Agent business statuses remain distinct and structured.
 - No endpoint returns raw streams, traces, provider data, secrets, or unreviewed agent text.
-- No endpoint returns or implies deterministic price calculations that have not been implemented.
+- The valuation endpoint returns only its documented deterministic recommendation; it does not
+  imply that the remaining final-valuation calculations and workflow are implemented.
 - Existing chat routes continue to compile and behave unchanged.
 
 ## Explicitly deferred
@@ -125,8 +128,8 @@ platform UI and `finding/agents` fixtures. Those unrelated files were not change
   and the 90-second job boundary;
 - five-per-day anonymous limits, global spending limits, bot challenge, and persistent evidence
   cache enforcement at the application layer;
-- deterministic evidence filtering, quartiles, weighted percentiles, confidence, negotiation target,
-  verdict, and final `VALUATED` response;
+- price ranges, confidence, negotiation target, representative-listing persistence, and a final
+  `VALUATED` response;
 - evidence persistence and the representative-listing response required by the results screen;
 - platform UI integration and client-side state;
 - reconciliation of the PRD provider list with the currently implemented Blibli/Facebook tools;
