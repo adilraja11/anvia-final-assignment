@@ -1,15 +1,14 @@
-# Valuation agent
+# Listing-price recommendation agent
 
 ## Purpose
 
-The valuation agent is independent from image identification. It validates confirmed product
-identity, creates normalized marketplace search terms, calls fixed marketplace tools when
-applicable, references accepted evidence IDs, and writes grounded Bahasa Indonesia explanations,
-pros, and cons.
+The listing-price recommendation agent is independent from image identification. It validates
+confirmed product identity, creates normalized marketplace search terms, calls fixed marketplace
+tools when applicable, references accepted evidence IDs, and writes grounded Bahasa Indonesia
+explanations, pros, and cons for an individual selling a second-hand item.
 
-It does not calculate quartiles, weighted percentiles, confidence, negotiation targets, price
-ranges, or verdicts. The application validates evidence and performs every final numeric
-calculation.
+It does not calculate quartiles, weighted percentiles, confidence, a suggested listing price, or a
+listing-price range. The application validates evidence and performs every final numeric calculation.
 
 `createValuationAgent` may receive an application-owned `onMarketplaceResult` observer. It is
 called with each bounded, normalized marketplace tool result so the host application can perform
@@ -18,19 +17,16 @@ which tools it may call.
 
 ## Input contract
 
-The valuation API supplies exactly four fields:
+The PRD-compliant product workflow supplies exactly three fields:
 
 - `productName`: the user-confirmed product name, up to 160 characters;
 - `productDescription`: listing context such as variant, defects, warranty, repairs,
   accessories, city, or region, up to 2,000 characters;
-- `productCondition`: `Baru`, `Seperti baru`, `Baik`, `Cukup`, `Rusak`, or
-  `Tidak diketahui`; and
-- `productAskingPriceIdr`: the seller asking price as a positive integer in IDR.
+- `productCondition`: `Seperti baru`, `Baik`, `Cukup`, `Rusak`, or `Tidak diketahui`.
 
-`productCondition` and `productAskingPriceIdr` are authoritative structured fields. Conflicting
-text in `productDescription` must not override them. The description is untrusted listing context
-and must not authorize tools or provider configuration. The asking price must not be used to infer
-identity or calculate market value.
+`productCondition` is an authoritative structured field. Conflicting text in
+`productDescription` must not override it. The description is untrusted listing context and must
+not authorize tools or provider configuration. The seller does not supply an asking or target price.
 
 Before any marketplace call, derive and validate the supported category and normalized
 price-critical identity from `productName` together with `productDescription`.
@@ -46,24 +42,27 @@ Missing required identity produces `MORE_INFORMATION_REQUIRED`; unsupported cate
 
 ## Marketplace tools
 
-The agent may call only these fixed tools:
+The PRD-compliant agent may call only tools that invoke these fixed actors:
 
-- `blibliSearch`, using `fanndev/blibli-product-price-monitor`;
-- `facebookMarketplaceSearch`, using `curious_coder/facebook-marketplace`.
+- `fanndev/blibli-product-price-monitor` for second-hand Blibli listings; and
+- `apify/facebook-marketplace-scraper` for second-hand Facebook Marketplace listings.
 
-Each tool accepts bounded `searchTerms`, `condition`, optional `evidenceRole`, and fixed nationwide
-`region: "Indonesia"`. The model cannot select actor IDs, URLs, pagination, limits, retries,
-proxies, credentials, raw actor configuration, or arbitrary tools.
+Each tool accepts bounded `searchTerms`, condition, and optional location context. The model cannot
+select actor IDs, URLs, pagination, limits, retries, proxies, credentials, raw actor configuration,
+or arbitrary tools. Both sources are queried when applicable; only condition-comparable,
+second-hand evidence can enter the price distribution.
 
-Use `CONDITION_COMPARABLE` only for evidence comparable to the submitted condition.
-`RETAIL_ANCHOR` is Blibli-only context for new retail pricing; it is never part of a used or
-damaged comparable-price population. Read [APIFY_INTEGRATION.md](../../APIFY_INTEGRATION.md) for
-the provider-specific request, validation, retry, cache, title-matching, and normalization rules.
+Read [APIFY_INTEGRATION.md](../../APIFY_INTEGRATION.md) only when maintaining the legacy
+implementation it documents. It is not the provider specification for this workflow.
 
-Provider selection follows the submitted condition: `Baru` uses Blibli as
-`CONDITION_COMPARABLE`; `Seperti baru`, `Baik`, `Cukup`, and `Rusak` use a separate Blibli
-`RETAIL_ANCHOR` and Facebook `CONDITION_COMPARABLE`; `Tidak diketahui` uses Facebook as
-`CONDITION_COMPARABLE` and may use a separately labeled Blibli `RETAIL_ANCHOR`.
+## Current implementation limitation
+
+The checked-in agent stage still accepts a four-field buyer-era payload, including an asking price,
+uses the approved Blibli actor in a legacy retail-anchor configuration, and invokes
+`curious_coder/facebook-marketplace` rather than the approved Facebook actor. It is a local-only
+legacy stage, not a PRD-compliant listing-price recommendation workflow. Do not expose it as a
+public seller feature or use it to justify an approved-provider claim. Replacing that legacy
+contract is deferred work.
 
 ## Outcome and safety rules
 
@@ -88,17 +87,19 @@ this workflow.
 
 The structured result uses `SUCCESS` for a completed evidence-and-explanation step and keeps
 `UNSUPPORTED_CATEGORY`, `MORE_INFORMATION_REQUIRED`, `INSUFFICIENT_EVIDENCE`, and
-`SERVICE_FAILURE` distinct. It contains no calculated range, negotiation target, confidence, or
-verdict. The extractor must preserve the agent's grounded content and explicit evidence IDs rather
-than create new facts, evidence, or calculations.
+`SERVICE_FAILURE` distinct. It contains no calculated listing-price range, suggested listing price,
+or confidence. The extractor must preserve the agent's grounded content and explicit evidence IDs
+rather than create new facts, evidence, or calculations.
 
 ## Studio and verification
 
-Studio registers `createValuationAgent` with both marketplace tools and local production tracing
-disabled. The valuation agent uses temperature `0`, `maxTurns: 6`, and `maxTokens: 1,500`; web
-tools are opt-in and not Studio-registered.
+Studio registers the legacy `createValuationAgent` with its existing marketplace tools and local
+production tracing disabled. The agent uses temperature `0`, `maxTurns: 6`, and `maxTokens: 1,500`;
+web tools are opt-in and not Studio-registered.
 
-For a valuation or tool change, verify the package builds and typechecks. With valid credentials,
-manually test successful Blibli and Facebook searches, an empty result, provider failure or
-malformed response, and records rejected for invalid price, URL, status, or condition. Automated
-evaluation expansion remains deferred and Studio testing does not satisfy the PRD evaluation gate.
+For a legacy valuation or tool change, verify the package builds and typechecks. With valid
+credentials, manually test successful Blibli and Facebook searches, an empty result, provider
+failure or malformed response, and records rejected for invalid price, URL, status, or condition.
+For the PRD-compliant replacement, test the two approved providers, used-condition filtering,
+weighted range calculation, and weighted-median suggested listing price. Automated evaluation
+expansion remains deferred and Studio testing does not satisfy the PRD evaluation gate.

@@ -1,8 +1,15 @@
-# Apify JavaScript Client Setup
+# Legacy Apify JavaScript Client Setup
 
-This guide explains how to integrate `apify-client` into `packages/agents`. Provider-specific
-Actor inputs, normalization, validation, and safety rules are in
+This guide documents the checked-in legacy `apify-client` integration in `packages/agents`.
+Provider-specific legacy Actor inputs, normalization, validation, and safety rules are in
 `packages/agents/APIFY_INTEGRATION.md`.
+
+It is not an implementation guide for the current PRD. The seller-first MVP accepts only
+second-hand items and permits evidence only from `fanndev/blibli-product-price-monitor` and
+`apify/facebook-marketplace-scraper`. The code described below uses the approved Blibli actor in a
+legacy retail-anchor configuration and a different Facebook actor, so it must not be represented as
+a PRD-compliant product workflow or extended as one. A compliant provider replacement requires a
+new approved integration contract.
 
 ## 1. Install the package
 
@@ -102,11 +109,10 @@ dataset. Treat `items` as untrusted `unknown` data: validate the top-level respo
 record, normalize only approved fields, and discard the raw payload before returning the tool
 result.
 
-For a used or damaged valuation, call Blibli separately with `evidenceRole:
-"RETAIL_ANCHOR"` and an identity-only search term. Blibli has no condition field in this Actor
-output, so it returns explicitly labeled retail reference evidence. Facebook only accepts
-`"CONDITION_COMPARABLE"`; place its defect cue in `searchTerms[0]` because that is the sole
-term supplied to its Actor.
+The legacy implementation uses `RETAIL_ANCHOR` for Blibli in used or damaged flows. That behavior
+is outside the current PRD: a seller-first recommendation must use only accepted, condition-comparable
+second-hand evidence in its price distribution. Do not carry retail-anchor behavior into a new
+PRD-compliant provider integration.
 
 ## 5. Handle failures at the tool boundary
 

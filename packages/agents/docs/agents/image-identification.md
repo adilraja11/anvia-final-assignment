@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This agent is the first step of the AsliSegini? valuation workflow. It receives exactly one
+This agent is the first step of the AsliSegini? listing-price recommendation workflow. It receives exactly one
 sanitized product image and determines whether its primary product is in the MVP-supported
 categories from [PRD.md](../../../../PRD.md): smartphone, laptop, tablet, or gaming console.
 
@@ -63,7 +63,7 @@ would otherwise be supported.
   authorization, and browser-safe response projection belong to application code.
 - Do not claim condition, hidden damage, authenticity, ownership, safety, completeness, or
   market value from the image.
-- Do not provide a valuation input contract. `SUPPORTED` is only permission to ask the user to
+- Do not provide a listing-price input contract. `SUPPORTED` is only permission to ask the user to
   confirm the category-specific, price-critical identity required by the PRD.
 - Keep `UNSUPPORTED_CATEGORY` distinct from `MORE_INFORMATION_REQUIRED`; the former rejects the
   product type while the latter requests a clearer or more informative image.
@@ -72,12 +72,12 @@ would otherwise be supported.
 
 1. The application sanitizes one uploaded image and invokes this agent with that image only.
 2. For `SUPPORTED`, the application displays `productName` as an editable proposal and collects
-   the required identity fields, condition, and asking price.
-3. For `UNSUPPORTED_CATEGORY`, the application ends the valuation flow without a generic or
-   low-confidence valuation.
+   the required identity fields, a second-hand condition, and optional listing details and location.
+3. For `UNSUPPORTED_CATEGORY`, the application ends the recommendation flow without a generic or
+   low-confidence price recommendation.
 4. For `MORE_INFORMATION_REQUIRED`, the application asks for a clearer eligible image; it does
    not start marketplace retrieval.
-5. Only after user confirmation of the category-specific minimum identity does the valuation
+5. Only after user confirmation of the category-specific minimum identity and second-hand condition does the valuation
    workflow become eligible for marketplace retrieval.
 
 ## Structured extraction implementation

@@ -5,9 +5,9 @@ Status: implemented on 2026-09-15.
 ## Goal
 
 Add a dedicated module under `apps/api/src/modules/` that exposes the existing image-identification
-and valuation agents through narrow, validated HTTP contracts. This first integration must return
-the agents' structured stage results without presenting them as the completed AsliSegini? valuation
-workflow.
+and valuation agents through narrow, validated HTTP contracts. This first integration returns the
+agents' structured stage results without presenting them as the completed AsliSegini? seller
+listing-price recommendation workflow.
 
 ## Current state
 
@@ -19,8 +19,9 @@ workflow.
   quarantine, user confirmation, persistent valuation jobs, rate limits, the full deterministic
   valuation result, and browser integration remain unimplemented.
 - The valuation helper returns evidence-grounded narrative fields and evidence IDs. The API also
-  derives a narrow deterministic `finalRecommendation` from captured accepted comparable evidence;
-  it returns a reasonable-buy price range but not a negotiation target or confidence.
+  derives a narrow legacy deterministic `finalRecommendation` from captured accepted comparable
+  evidence; it returns a reasonable-buy price range, not the PRD's seller listing-price range,
+  suggested listing price, or confidence.
 
 ## Accepted implementation scope
 
@@ -33,16 +34,19 @@ The implementation follows these accepted boundaries:
 2. **Image transport:** the identification endpoint will accept one multipart image and sanitize it
    in memory before invoking the agent. This gives the agent sanitized bytes but does not implement
    the PRD's future private R2 quarantine/presigned-upload lifecycle.
-3. **Provider contract mismatch:** the PRD names Tokopedia and a different Facebook actor, while the
-   implemented valuation agent uses Blibli and `curious_coder/facebook-marketplace`. This plan
-   connects the existing implementation unchanged and does not claim PRD provider compliance.
+3. **Product and provider contract mismatch:** the current PRD is seller-first and second-hand-only:
+   it has no asking-price input, returns a listing-price range plus a weighted-median suggested
+   listing price, and names Blibli plus a different Facebook actor. The implemented valuation
+   agent retains a buyer-era four-field payload, a legacy Blibli configuration, and
+   `curious_coder/facebook-marketplace`. This plan connects that legacy implementation unchanged
+   and does not claim PRD compliance.
 4. **Result meaning:** a valuation-agent `SUCCESS` means the evidence/explanation agent stage
    completed. It must not be renamed to `VALUATED`; the API's narrow recommendation does not yet
    provide the full range, confidence, job, and evidence-presentation contract required for that
    status.
 
-Any future browser-ready end-to-end valuation API must expand this design rather than silently
-treating the deferred capabilities as live.
+Any future browser-ready end-to-end seller listing-price API must replace this legacy design rather
+than silently treating its deferred capabilities as live.
 
 ## HTTP contract
 
@@ -116,8 +120,8 @@ platform UI and `finding/agents` fixtures. Those unrelated files were not change
   or optional web tools.
 - Agent business statuses remain distinct and structured.
 - No endpoint returns raw streams, traces, provider data, secrets, or unreviewed agent text.
-- The valuation endpoint returns only its documented deterministic recommendation; it does not
-  imply that the remaining final-valuation calculations and workflow are implemented.
+- The valuation endpoint returns only its documented legacy deterministic recommendation; it does
+  not imply that the PRD's final seller listing-price calculation and workflow are implemented.
 - Existing chat routes continue to compile and behave unchanged.
 
 ## Explicitly deferred
@@ -128,9 +132,9 @@ platform UI and `finding/agents` fixtures. Those unrelated files were not change
   and the 90-second job boundary;
 - five-per-day anonymous limits, global spending limits, bot challenge, and persistent evidence
   cache enforcement at the application layer;
-- price ranges, confidence, negotiation target, representative-listing persistence, and a final
-  `VALUATED` response;
+- the PRD's listing-price range, weighted-median suggested listing price, confidence,
+  representative-listing persistence, and a final `VALUATED` response;
 - evidence persistence and the representative-listing response required by the results screen;
 - platform UI integration and client-side state;
-- reconciliation of the PRD provider list with the currently implemented Blibli/Facebook tools;
+- replacement of the legacy Blibli configuration and Facebook tool with PRD-compliant provider integrations;
 - automated API tests and agent behavioral eval expansion.

@@ -1,5 +1,11 @@
 # Employee handbook evals
 
+## Product-contract boundary
+
+These evals cover the legacy employee-handbook retrieval feature only. They do not test, define,
+or validate the seller-first second-hand listing-price workflow in the PRD. Do not apply its
+marketplace evidence, pricing, or user-target rules to handbook behavior.
+
 Run all evals from the repository root:
 
 ```sh

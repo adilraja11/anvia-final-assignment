@@ -1,7 +1,15 @@
-# Apify Marketplace Integration Guide
+# Legacy Apify Marketplace Integration Guide
 
-This guide defines the provider-specific request configuration, normalization, validation, and
-failure behavior for the Blibli and Facebook Marketplace tools in `packages/agents`.
+This guide documents the provider-specific request configuration, normalization, validation, and
+failure behavior of the legacy Blibli and Facebook Marketplace tools in `packages/agents`.
+
+It does not define the current product contract. The seller-first PRD supports only second-hand
+items and permits only `fanndev/blibli-product-price-monitor` and
+`apify/facebook-marketplace-scraper` as evidence providers. The legacy Blibli configuration, its
+alternate Facebook actor, `Baru` condition, and `RETAIL_ANCHOR` behavior are not PRD-compliant and
+must not be used for a public product flow.
+Keep this document accurate for maintaining the existing local agent stage until a separately
+reviewed provider replacement supersedes it.
 
 For installing and using the JavaScript client in this workspace, see
 `packages/agents/APIFY_CLIENT.md`.
