@@ -14,7 +14,7 @@ Follow the repository [Markdown naming and routing policy](../../AGENTS.md#markd
 
 - Keep mock data and simulated progress visibly labeled until a live, typed API contract replaces them. Do not use mock evidence as a fallback for live-provider failure.
 - Keep user-facing text in Bahasa Indonesia and retain the successful-result limitations required by the development plan: the listing-price recommendation covers item price only, and authenticity, ownership, transaction safety, and hidden physical condition are not verified.
-- The browser renders the server-calculated condition-adjusted suggestion, separately labeled mixed-condition Blibli market range, confidence, and evidence; it does not calculate or invent any of them.
+- The browser renders the server-calculated median-based suggestion, separately labeled Blibli market range, confidence, and evidence; it does not calculate or invent any of them.
 - Use native labels and keyboard-accessible controls, and preserve focus/error behavior when editing the multi-step flow.
 
 ## Routes and verification

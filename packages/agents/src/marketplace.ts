@@ -17,21 +17,15 @@ export const marketplaceConditionSchema = z.enum([
 ]);
 export type MarketplaceCondition = z.infer<typeof marketplaceConditionSchema>;
 
-export const evidencePurposeSchema = z.enum(["new_reference", "used_market"]);
-export type EvidencePurpose = z.infer<typeof evidencePurposeSchema>;
-
-export type ListingLifecycle = "NEW" | "USED";
 export type MarketplaceSource = "BLIBLI";
 
 export type ComparableListing = {
 	source: MarketplaceSource;
-	purpose: EvidencePurpose;
 	listing_id: string;
 	listing_url: string;
 	title: string;
 	price_idr: number;
 	condition?: string;
-	lifecycle: ListingLifecycle;
 	city?: string;
 	seller_type?: string;
 	product_attributes: Record<string, string>;
@@ -44,7 +38,6 @@ export type ComparableListing = {
 
 export type RejectedListing = {
 	source: MarketplaceSource;
-	purpose: EvidencePurpose;
 	listing_id?: string;
 	exclusion_reason: string;
 };
@@ -53,7 +46,6 @@ export type MarketplaceSuccess = {
 	status: "SUCCESS";
 	provider: MarketplaceSource;
 	source: MarketplaceSource;
-	purpose: EvidencePurpose;
 	search_terms: string[];
 	region: "Indonesia";
 	location?: string;
@@ -67,7 +59,6 @@ export type MarketplaceFailure = {
 	status: "PROVIDER_FAILURE";
 	provider: MarketplaceSource;
 	source: MarketplaceSource;
-	purpose: EvidencePurpose;
 	error_category:
 		| "CONFIGURATION"
 		| "NETWORK"
@@ -147,13 +138,8 @@ export function approvedMarketplaceUrl(value: unknown) {
 	}
 }
 
-export function cacheKey(input: {
-	purpose: EvidencePurpose;
-	searchTerms: string[];
-	location?: string;
-}) {
+export function cacheKey(input: { searchTerms: string[]; location?: string }) {
 	return JSON.stringify({
-		purpose: input.purpose,
 		searchTerms: input.searchTerms.map(normalizeText).sort(),
 		location: input.location ? normalizeText(input.location) : undefined,
 		region: "Indonesia",

@@ -20,7 +20,7 @@ listing-price recommendation workflow.
   valuation result, and browser integration remain unimplemented.
 - The valuation helper returns evidence-grounded narrative fields and evidence IDs. The API also
   derives a narrow legacy deterministic `finalRecommendation` from captured accepted comparable
-  evidence; it returns a reasonable-buy price range, not the PRD's depreciation-based suggestion,
+  evidence; it returns a reasonable-buy price range, not the PRD's median-based suggestion,
   observed market range, or confidence.
 
 ## Accepted implementation scope
@@ -35,9 +35,9 @@ The implementation follows these accepted boundaries:
    in memory before invoking the agent. This gives the agent sanitized bytes but does not implement
    the PRD's future private R2 quarantine/presigned-upload lifecycle.
 3. **Product and provider contract mismatch:** the current PRD is seller-first and second-hand-only:
-   it has no asking or original-price input, uses Blibli-only `new_reference` and `used_market`
-   evidence, and returns a condition-adjusted suggestion plus a separately labeled observed market
-   range. The implemented valuation agent retains a buyer-era four-field payload, a legacy Blibli
+   it has no asking or original-price input, uses one Blibli evidence set, and returns a
+   median-based suggestion plus a separately labeled observed market range. The implemented
+   valuation agent retains a buyer-era four-field payload, a legacy Blibli
    configuration, and `curious_coder/facebook-marketplace`. This plan connects that legacy
    implementation unchanged and does not claim PRD compliance.
 4. **Result meaning:** a valuation-agent `SUCCESS` means the evidence/explanation agent stage
@@ -132,7 +132,7 @@ platform UI and `finding/agents` fixtures. Those unrelated files were not change
   and the 90-second job boundary;
 - five-per-day anonymous limits, global spending limits, bot challenge, and persistent evidence
   cache enforcement at the application layer;
-- the PRD's Blibli new-reference and used-market retrieval, depreciation-based suggestion,
+- the PRD's single-run Blibli retrieval, median-based suggestion,
   observed market range, confidence, representative-listing persistence, and final `VALUATED`
   response;
 - evidence persistence and the representative-listing response required by the results screen;

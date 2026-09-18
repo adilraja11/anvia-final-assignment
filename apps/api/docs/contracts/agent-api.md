@@ -10,10 +10,9 @@ AsliSegini? seller listing-price recommendation contract.
 
 The current PRD is for individual Indonesian sellers of second-hand computers, handphones, tablets,
 gaming consoles, and cameras. Its public workflow collects identity, second-hand condition,
-optional purchase month/year or age band, listing details, and location; it does not collect an
-asking or original price. Its deterministic result uses separate Blibli `new_reference` and
-`used_market` sets to produce a condition-adjusted suggested price and a separately labeled,
-mixed-condition observed market range.
+listing details, and location; it does not collect an asking or original price. Its deterministic
+result uses one Blibli evidence set to produce a median-based suggested price and a separately
+labeled observed market range.
 
 The implemented routes below predate that contract. They retain a four-field buyer-era request,
 including `productAskingPriceIdr`, and legacy provider behavior, including Facebook tooling. They

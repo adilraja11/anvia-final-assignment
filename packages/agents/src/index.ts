@@ -1,8 +1,6 @@
 export * from "./agent.js";
 export type {
 	ComparableListing,
-	EvidencePurpose,
-	ListingLifecycle,
 	MarketplaceCondition,
 	MarketplaceFailure,
 	MarketplaceSource,
@@ -13,7 +11,6 @@ export type {
 } from "./marketplace.js";
 export { flushAgentTracing } from "./runtime.js";
 export {
-	type AgeSource,
 	type CalculateValuationInput,
 	calculateValuation,
 	type EvidenceCoverage,

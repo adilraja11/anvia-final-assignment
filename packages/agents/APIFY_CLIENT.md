@@ -2,8 +2,8 @@
 
 This guide covers the server-only `apify-client` setup for the intended Blibli valuation
 integration. Provider request, normalization, validation, and failure rules are in
-[APIFY_INTEGRATION.md](APIFY_INTEGRATION.md). The package exposes only the fixed-purpose Blibli
-search boundary for valuation.
+[APIFY_INTEGRATION.md](APIFY_INTEGRATION.md). The package exposes one guarded Blibli search
+boundary for valuation.
 
 ## Install and credentials
 
@@ -55,6 +55,6 @@ pnpm --filter @repo/agents build
 ```
 
 With valid configuration, manually verify a successful result, a successful empty result, a
-provider failure, one retry, invalid IDR/URL/status records, exact identity and explicit lifecycle
-validation, condition-agnostic used-market acceptance, and the ten-results-per-query limit. Do not
-expose the provider output in issue reports or traces.
+provider failure, one retry, invalid IDR/URL/status records, exact identity validation without
+lifecycle filtering, and the ten-results-per-query limit. Do not expose the provider output in
+issue reports or traces.

@@ -17,8 +17,8 @@ for the complete request and response shapes.
 
 These routes expose agent stages for local integration only. They are not the seller-first,
 second-hand-only product API defined by the PRD: that future API must omit asking and original-price
-fields, use the fixed Blibli actor for separate new-reference and used-market evidence, and return
-a condition-adjusted suggestion plus a separately labeled mixed-condition market range. A legacy
+fields, use the fixed Blibli actor once for identity-matched evidence, and return a median-based
+suggestion plus a separately labeled observed market range. A legacy
 valuation-agent `SUCCESS` is not a final `VALUATED` result; authentication, persistent jobs, public
 rate limits, R2 upload, and the browser workflow also remain deferred.
 

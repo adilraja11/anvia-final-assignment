@@ -7,7 +7,7 @@ or validate the seller-first second-hand listing-price workflow in the PRD. Do n
 marketplace evidence, pricing, or user-target rules to handbook behavior.
 
 The repository contains a legacy seller-first valuation engine in `src/valuation-engine.ts`, but it
-does not yet implement the current Blibli depreciation-based PRD contract. The PRD's 30 behavioral
+does not yet implement the current single-run Blibli median PRD contract. The PRD's 30 behavioral
 valuation cases and release gate are still application/evaluation work. Do not cite this handbook
 suite as evidence for valuation quality, live provider reliability, image recognition, or
 mathematical correctness.

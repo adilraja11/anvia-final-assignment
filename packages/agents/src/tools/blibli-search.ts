@@ -6,7 +6,6 @@ import {
 	boundedText,
 	CACHE_TTL_MS,
 	cacheKey,
-	type EvidencePurpose,
 	isoDate,
 	isRejectedTitle,
 	MAX_ITEMS_PER_QUERY,
@@ -74,25 +73,6 @@ function matchesSearchTerms(title: string, searchTerms: string[]) {
 	});
 }
 
-function lifecycleFrom(record: Record<string, unknown>, title: string) {
-	const values = [
-		record.lifecycle,
-		record.condition,
-		record.itemCondition,
-		record.productCondition,
-		title,
-	]
-		.map((value) => boundedText(value, 160))
-		.filter((value): value is string => Boolean(value));
-	for (const value of values) {
-		const normalized = value.toLocaleLowerCase("id-ID");
-		if (/\b(used|bekas|second\s*hand|preloved)\b/.test(normalized))
-			return "USED" as const;
-		if (/\b(new|baru|segel|unopened)\b/.test(normalized)) return "NEW" as const;
-	}
-	return undefined;
-}
-
 function allowedAttributes(record: Record<string, unknown>) {
 	const attributes: Record<string, string> = {};
 	for (const key of ["brand", "model", "storage", "capacity", "variant"]) {
@@ -118,13 +98,12 @@ function parseIdrPrice(record: Record<string, unknown>) {
 export function normalizeBlibliRecord(
 	value: unknown,
 	input: Input,
-	purpose: EvidencePurpose,
 	seenIds: Set<string>,
 ) {
 	const source = "BLIBLI" as const;
 	if (typeof value !== "object" || value === null || Array.isArray(value))
 		return {
-			rejected: { source, purpose, exclusion_reason: "MALFORMED_RECORD" },
+			rejected: { source, exclusion_reason: "MALFORMED_RECORD" },
 		};
 	const record = value as Record<string, unknown>;
 	const url = approvedMarketplaceUrl(record.url ?? record.productUrl);
@@ -136,7 +115,6 @@ export function normalizeBlibliRecord(
 	const reject = (exclusion_reason: string) => ({
 		rejected: {
 			source,
-			purpose,
 			...(listingId ? { listing_id: listingId } : {}),
 			exclusion_reason,
 		},
@@ -157,14 +135,6 @@ export function normalizeBlibliRecord(
 		return reject("LISTING_NOT_AVAILABLE");
 	const priceIdr = parseIdrPrice(record);
 	if (priceIdr === undefined) return reject("INVALID_PRICE");
-	const lifecycle = lifecycleFrom(record, title);
-	if (!lifecycle) return reject("LIFECYCLE_UNCLASSIFIED");
-	if (
-		(purpose === "new_reference" && lifecycle !== "NEW") ||
-		(purpose === "used_market" && lifecycle !== "USED")
-	)
-		return reject("LIFECYCLE_MISMATCH");
-
 	seenIds.add(listingId);
 	const scrapedAt = isoDate(record.scrapedAt) ?? new Date().toISOString();
 	const postedAt = isoDate(record.postedAt ?? record.createdAt);
@@ -173,13 +143,11 @@ export function normalizeBlibliRecord(
 	return {
 		evidence: {
 			source,
-			purpose,
 			listing_id: listingId,
 			listing_url: url,
 			title,
 			price_idr: priceIdr,
 			...(condition ? { condition } : {}),
-			lifecycle,
 			...(city ? { city } : {}),
 			product_attributes: allowedAttributes(record),
 			listing_status:
@@ -193,7 +161,7 @@ export function normalizeBlibliRecord(
 	};
 }
 
-async function fetch(input: Input, purpose: EvidencePurpose): Promise<Success> {
+async function fetch(input: Input): Promise<Success> {
 	const client = getClient();
 	const run = await client
 		.actor(ACTOR_ID)
@@ -210,7 +178,7 @@ async function fetch(input: Input, purpose: EvidencePurpose): Promise<Success> {
 	const rejected: Success["rejected"] = [];
 	const seenIds = new Set<string>();
 	for (const item of dataset.items.slice(0, MAX_PROVIDER_RESULTS)) {
-		const normalized = normalizeBlibliRecord(item, input, purpose, seenIds);
+		const normalized = normalizeBlibliRecord(item, input, seenIds);
 		if ("evidence" in normalized) evidence.push(normalized.evidence);
 		else rejected.push(normalized.rejected);
 	}
@@ -218,7 +186,6 @@ async function fetch(input: Input, purpose: EvidencePurpose): Promise<Success> {
 		status: "SUCCESS",
 		provider: "BLIBLI",
 		source: "BLIBLI",
-		purpose,
 		search_terms: input.searchTerms,
 		region: "Indonesia",
 		...(input.location ? { location: input.location } : {}),
@@ -262,11 +229,8 @@ export function buildBlibliActorRunOptions() {
 	return { log: null };
 }
 
-async function executeSearch(
-	input: Input,
-	purpose: EvidencePurpose,
-): Promise<MarketplaceToolResult> {
-	const key = cacheKey({ ...input, purpose });
+async function executeSearch(input: Input): Promise<MarketplaceToolResult> {
+	const key = cacheKey(input);
 	const cached = cache.get(key);
 	if (cached && cached.expiresAt > Date.now())
 		return { ...cached.value, cache_hit: true };
@@ -275,7 +239,7 @@ async function executeSearch(
 	let lastCategory: ProviderErrorCategory = "UNKNOWN";
 	for (let attempt = 0; attempt < 2; attempt += 1) {
 		try {
-			const result = await fetch(input, purpose);
+			const result = await fetch(input);
 			cache.set(key, { value: result, expiresAt: Date.now() + CACHE_TTL_MS });
 			return result;
 		} catch (error) {
@@ -289,7 +253,6 @@ async function executeSearch(
 	console.error(
 		JSON.stringify({
 			provider: "BLIBLI",
-			purpose,
 			error_category: lastCategory,
 		}),
 	);
@@ -297,29 +260,21 @@ async function executeSearch(
 		status: "PROVIDER_FAILURE",
 		provider: "BLIBLI",
 		source: "BLIBLI",
-		purpose,
 		error_category: lastCategory,
 		retried: lastCategory !== "CONFIGURATION",
 	};
 }
 
 export function createBlibliSearchTool(
-	purpose: EvidencePurpose,
-	options: { name?: string; onResult?: MarketplaceSearchObserver } = {},
+	options: { onResult?: MarketplaceSearchObserver } = {},
 ) {
 	return createTool({
-		name:
-			options.name ??
-			(purpose === "new_reference"
-				? "blibliNewReferenceSearch"
-				: "blibliUsedMarketSearch"),
+		name: "blibliSearch",
 		description:
-			purpose === "new_reference"
-				? "Cari referensi listing barang baru dengan identitas yang sama di Blibli. Tujuan, actor, batas, retry, proxy, dan kredensial dikunci aplikasi."
-				: "Cari listing pasar barang bekas dengan identitas yang sama di Blibli. Tujuan, actor, batas, retry, proxy, dan kredensial dikunci aplikasi.",
+			"Cari listing Blibli dengan identitas produk yang sama. Actor, batas, retry, proxy, dan kredensial dikunci aplikasi.",
 		inputSchema,
 		execute: async (input) => {
-			const result = await executeSearch(input, purpose);
+			const result = await executeSearch(input);
 			options.onResult?.(result);
 			return result;
 		},

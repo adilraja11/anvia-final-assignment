@@ -62,7 +62,7 @@ export interface CreateValuationAgentOptions
 	additionalTools?: AnyTool[];
 	additionalInstructions?: string[];
 	memory?: MemoryStore;
-	/** @deprecated The PRD permits no tools beyond the two fixed Blibli searches. */
+	/** @deprecated The PRD permits no tools beyond the fixed Blibli search. */
 	includeWebTools?: boolean;
 	onMarketplaceResult?: BlibliSearchObserver;
 }
@@ -79,14 +79,7 @@ export function createValuationAgent(
 			VALUATION_INSTRUCTIONS,
 			...(options.additionalInstructions ?? []),
 		].join("\n\n"),
-		tools: [
-			createBlibliSearchTool("new_reference", {
-				onResult: options.onMarketplaceResult,
-			}),
-			createBlibliSearchTool("used_market", {
-				onResult: options.onMarketplaceResult,
-			}),
-		],
+		tools: [createBlibliSearchTool({ onResult: options.onMarketplaceResult })],
 		temperature: 0,
 		maxTokens: 1_500,
 		maxTurns: 6,

@@ -11,11 +11,10 @@ deterministic mock data; it does not make API or marketplace requests, upload fi
 write browser storage. It must not present mock evidence as live market data or as a fallback when a
 live provider fails.
 
-The intended flow lets a seller confirm a product's identity, second-hand condition, optional
-purchase month/year or age band, details, and optional listing location. It does not ask for an
-asking or original price. A completed live result will show a server-calculated condition-adjusted
-suggested price and separately labeled **"Rentang harga pasar saat ini di Blibli (berbagai kondisi)"**,
-with confidence and Blibli evidence disclosure.
+The intended flow lets a seller confirm a product's identity, second-hand condition, details, and
+optional listing location. It does not ask for an asking or original price. A completed live result
+will show a server-calculated median-based suggested price and separately labeled **"Rentang harga
+pasar saat ini di Blibli"**, with confidence and Blibli evidence disclosure.
 
 The browser never calculates or invents the market range, suggested listing price, confidence, or
 marketplace evidence. The current API agent-stage routes are also legacy local-only endpoints; they

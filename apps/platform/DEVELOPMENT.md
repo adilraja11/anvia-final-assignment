@@ -10,11 +10,11 @@ marketplace requests are made.
 Implemented user journey:
 
 1. Upload one JPG, PNG, or WebP image (validated in the browser for type and 10 MB limit).
-2. Confirm the AI-proposed product identity, second-hand condition, optional purchase month/year or
-   age band, notes, and optional listing location.
+2. Confirm the AI-proposed product identity, second-hand condition, notes, and optional listing
+   location.
 3. See the four PRD progress states in sequence.
-4. Review a mock listing-price result with a condition-adjusted suggested price, separately labeled
-   mixed-condition Blibli market range, confidence, limitations, and transparent sample evidence.
+4. Review a mock listing-price result with a median-based suggested price, separately labeled
+   Blibli market range, confidence, limitations, and transparent sample evidence.
 
 The reference screens guide the visual direction: a light canvas, centered cards, violet accent,
 compact header, and a clear three-stage journey. The result content follows the seller-first PRD
@@ -39,10 +39,9 @@ rather than copying unsupported sources or buyer-oriented pricing framing.
 
 ## Integration guardrails
 
-- The browser must never calculate or invent the condition-adjusted suggestion, observed market range,
+- The browser must never calculate or invent the median-based suggestion, observed market range,
   or confidence; it only renders the deterministic result returned by the application.
-- Show only approved Blibli evidence in live mode, distinguishing new-reference from used-market
-  evidence and labeling all values as advertised asking prices.
+- Show only approved Blibli evidence in live mode and label all values as advertised asking prices.
 - Keep the statement “Estimasi hanya mencakup harga barang.” and the authenticity/ownership/hidden-condition limitation on every successful result.
 - Do not turn the mock evidence into a hidden fallback when providers fail.
 - Maintain Bahasa Indonesia for all user-facing text.
