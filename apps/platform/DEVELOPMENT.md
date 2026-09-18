@@ -1,20 +1,23 @@
 # Platform UI development plan
 
-## Current demo scope
+## Current development scope
 
-The platform is a client-only, Bahasa Indonesia prototype of the AsliSegini? listing-price
-recommendation journey for individual sellers of second-hand electronics. It intentionally uses
-local state and deterministic mock data only: no API calls, network uploads, browser storage, or
-marketplace requests are made.
+The platform is a Bahasa Indonesia prototype of the AsliSegini? listing-price recommendation
+journey for individual sellers of second-hand electronics. It defaults to deterministic mock mode
+and can explicitly use the synchronous local agent API during Vite development. It uses local
+session state and no browser storage.
 
 Implemented user journey:
 
-1. Upload one JPG, PNG, or WebP image (validated in the browser for type and 10 MB limit).
-2. Confirm the AI-proposed product identity, second-hand condition, notes, and optional listing
-   location.
-3. See the four PRD progress states in sequence.
-4. Review a mock listing-price result with a median-based suggested price, separately labeled
-   Blibli market range, confidence, limitations, and transparent sample evidence.
+1. Upload one JPG, PNG, or WebP image with browser preflight and authoritative local-server
+   validation when local mode is enabled.
+2. Confirm the proposed identity, one allowed second-hand condition, optional details, and a visibly
+   deferred listing location.
+3. See labelled simulated progress in mock mode or a truthful indeterminate state in local mode.
+4. Review either a clearly labelled mock result or a local result containing only fields returned
+   by the API.
+5. Recover from unsupported category, missing information, insufficient evidence, service failure,
+   and the future rate-limit outcome without fabricated prices.
 
 The reference screens guide the visual direction: a light canvas, centered cards, violet accent,
 compact header, and a clear three-stage journey. The result content follows the seller-first PRD
@@ -27,15 +30,23 @@ rather than copying unsupported sources or buyer-oriented pricing framing.
 - Mock evidence is explicitly labelled, so the prototype does not imply live marketplace data.
 - The UI is responsive and keyboard-accessible with native form controls and labels.
 
-## Proposed implementation sequence
+## Remaining implementation sequence
 
-1. **Confirm UX and copy** — review this prototype's fields, result hierarchy, and error/outcome screens with product/design.
-2. **Define contracts** — agree on typed endpoints for image upload, identity proposal, job creation/status, and seller listing-price result. Keep the UI model separate from API response models.
-3. **Integrate upload safely** — replace only the local preview with the presigned-upload, validation, sanitization, and deletion flow defined in the PRD. Do not retain the original filename or image metadata.
-4. **Integrate idempotent jobs** — persist a job ID in the route and poll or subscribe to status. Map the four UI progress labels to backend job stages; duplicate submissions must reuse the same job.
-5. **Render live results** — replace `mock` values with deterministic backend result fields, display actual approved-source links, and preserve evidence counts, timestamps, exclusions, and confidence reasons.
-6. **Add all honest outcome states** — implement distinct screens for `UNSUPPORTED_CATEGORY`, `MORE_INFORMATION_REQUIRED`, `INSUFFICIENT_EVIDENCE`, `SERVICE_FAILURE`, and `RATE_LIMITED`.
-7. **Test and harden** — add component tests for validation, status mapping, evidence disclosure, focus management, mobile layouts, and no-duplicate submission behavior.
+1. **Complete the server workflow** - add secure upload, persistent idempotent jobs, access control,
+   usage limits, and safe representative evidence.
+2. **Integrate browser-ready jobs** - key the result route by opaque `jobId` and render only
+   server-reported progress.
+3. **Render approved evidence** - add representative Blibli listing fields only after the response
+   contract exists.
+4. **Test and harden** - add component and end-to-end tests for every outcome, focus management,
+   cancellation, refresh recovery, and duplicate submission protection.
+
+## Local adapter
+
+Set `VITE_VALUATION_MODE=local-api` in the root `.env` and run `pnpm dev`. The Vite server proxies
+relative `/api` requests to `http://127.0.0.1:$PORT` (default `8000`). Do not add a `VITE_*` API base
+URL. Production builds fail closed if `local-api` is selected. Use `mock` or omit the variable for
+the labelled deterministic demo.
 
 ## Integration guardrails
 

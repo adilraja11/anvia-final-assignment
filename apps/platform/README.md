@@ -6,10 +6,10 @@ on an online marketplace.
 
 ## Current implementation boundary
 
-The interface is a Bahasa Indonesia, client-only prototype. It uses local state and visibly labeled
-deterministic mock data; it does not make API or marketplace requests, upload files to a server, or
-write browser storage. It must not present mock evidence as live market data or as a fallback when a
-live provider fails.
+The interface is a Bahasa Indonesia prototype with two explicit modes. It defaults to visibly
+labelled deterministic mock data. During local Vite development only, it can call the synchronous
+agent-stage API through a same-origin proxy. It does not write browser storage, and it never uses
+mock evidence as a fallback when the local provider fails.
 
 The intended flow lets a seller confirm a product's identity, second-hand condition, details, and
 optional listing location. It does not ask for an asking or original price. A completed live result
@@ -17,8 +17,9 @@ will show a server-calculated median-based suggested price and separately labele
 pasar saat ini di Blibli"**, with confidence and Blibli evidence disclosure.
 
 The browser never calculates or invents the market range, suggested listing price, confidence, or
-marketplace evidence. The current API agent-stage routes are also legacy local-only endpoints; they
-are not the product API for this flow.
+marketplace evidence. The current API agent-stage routes are local-only endpoints; they are not the
+public product API for this flow. Local results expose evidence IDs and summary metadata only, so
+the interface does not add representative listing details to those results.
 
 ## Commands
 
@@ -31,6 +32,16 @@ pnpm --filter @repo/platform build
 ```
 
 ## Development
+
+Mock mode needs no configuration. To exercise the local adapter, set this in the root `.env` and
+run `pnpm dev` so both the API and platform are available:
+
+```sh
+VITE_VALUATION_MODE=local-api
+```
+
+The local adapter always uses relative `/api/agents/*` paths. It cannot be selected by a production
+build and does not accept a configurable public API base URL.
 
 Read [DEVELOPMENT.md](DEVELOPMENT.md) before changing the journey, integration state, or
 user-facing copy. It defines the mock-data boundary, required outcome states, and live-integration

@@ -1,7 +1,7 @@
 # Platform valuation integration contract
 
-Status: proposed platform contract. It maps the implemented local API stage for development
-validation; it does not make that API a public browser contract.
+Status: implemented for labelled mock mode and local development validation. It does not make the
+local API a public browser contract.
 
 ## Purpose and boundary
 

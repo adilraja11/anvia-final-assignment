@@ -1,8 +1,7 @@
 # Platform valuation integration plan
 
-Status: proposed. This plan adopts the current local agent API only as a development-stage
-dependency. It does not authorize a public browser integration until the missing product workflow
-exists server-side.
+Status: Phases 1 and 2 implemented in `@repo/platform`. Phases 3 and 4 remain blocked on the
+browser-ready server contract. The local agent API is still only a development-stage dependency.
 
 ## Goal
 
@@ -13,9 +12,10 @@ no fabricated marketplace evidence. The platform-facing contract is
 
 ## Current implementation and API gap
 
-The platform currently uses local state, a timer-driven progress screen, an asking-price field, and
-labelled mock marketplace evidence. The API now implements synchronous, local-only image
-identification and valuation stages, but not the full public workflow.
+The platform now defaults to visibly labelled mock mode and can explicitly select a validated,
+same-origin local API adapter during Vite development. The asking-price path has been removed,
+local requests are cancellable, and live local results render only returned summary fields and
+evidence IDs. The API still does not implement the full public workflow.
 
 | Capability | Current local API stage | Required before browser-ready integration |
 | --- | --- | --- |
@@ -28,6 +28,8 @@ identification and valuation stages, but not the full public workflow.
 | Location | Not accepted | A later approved request/selection contract, if product requirements still call for it |
 
 ## Phase 1 — Make the UI contract-compatible
+
+Implementation status: complete.
 
 This phase is a platform change and does not make network calls yet.
 
@@ -46,6 +48,10 @@ This phase is a platform change and does not make network calls yet.
    remain visibly mock and cannot share rendering paths with live data.
 
 ## Phase 2 — Add a development-only gateway
+
+Implementation status: complete. Set `VITE_VALUATION_MODE=local-api` in the root `.env` and run
+`pnpm dev`; Vite proxies same-origin `/api` requests to the local API port. The same setting fails
+closed in a production build. Omit it or set it to `mock` for the labelled mock journey.
 
 Once Phase 1 has the contract-compatible UI model, add an adapter implementation that maps only to
 the current `/api/agents/*` endpoints.
@@ -71,6 +77,8 @@ and a provider failure. It must not log image bytes, free text, raw provider res
 
 ## Phase 3 — Complete the server contract
 
+Implementation status: not started by this platform plan.
+
 This phase belongs primarily in `apps/api`; platform work waits for its approved contract. The API
 must provide:
 
@@ -86,6 +94,8 @@ must provide:
 Do not treat the present local endpoints as a shortcut around any item in this phase.
 
 ## Phase 4 — Integrate the browser-ready workflow
+
+Implementation status: waiting for Phase 3 and an approved browser contract.
 
 After a reviewed API contract exists:
 
