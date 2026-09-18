@@ -1,6 +1,7 @@
 # Agent API contract
 
-Status: implemented on 2026-09-15 for unauthenticated local-demo use.
+Status: implemented for unauthenticated local-demo use. The valuation route returns a
+deterministic local valuation result, but it is not the final browser-facing product workflow.
 
 This document defines the local agent-stage HTTP interface planned by the
 [agent API integration plan](../plans/agent-api-integration.md). It is not the final browser-facing
@@ -14,10 +15,14 @@ listing details, and location; it does not collect an asking or original price. 
 result uses one Blibli evidence set to produce a median-based suggested price and a separately
 labeled observed market range.
 
-The implemented routes below predate that contract. They retain a four-field buyer-era request,
-including `productAskingPriceIdr`, and legacy provider behavior, including Facebook tooling. They
-are local-only integration routes and must not be presented as a PRD-compliant product API. A
-replacement public contract requires a separately reviewed implementation.
+The valuation route accepts confirmed product identity, a confirmed second-hand condition, and an
+optional product description. It uses only the fixed Blibli boundary and passes its normalized
+result to application-owned `calculateValuation`. The model supplies only the grounded Bahasa
+Indonesia explanation and evidence IDs; it does not calculate price fields.
+
+These remain local-only integration routes and must not be presented as the complete public product
+API. Persistent jobs, access controls, usage limits, evidence persistence, and browser workflow
+work require separate implementation.
 
 ## Route scope
 
@@ -57,13 +62,13 @@ Successful response:
 The other valid results are `UNSUPPORTED_CATEGORY` and `MORE_INFORMATION_REQUIRED`. These business
 outcomes use HTTP `200`; request or service failures use the error contract below.
 
-## `POST /api/agents/valuation` (legacy local stage)
+## `POST /api/agents/valuation`
 
 Request:
 
 - `application/json` only;
-- exactly four fields: product name, listing description, condition, and asking price;
-- a positive safe-integer asking price in IDR;
+- exactly one confirmed product name and second-hand condition, plus an optional product
+  description;
 - no arbitrary prompt, chat history, image URL, actor ID, tool settings, retry settings, model
   settings, or provider configuration.
 
@@ -72,58 +77,59 @@ Exact JSON shape:
 ```json
 {
 	"productName": "PlayStation 5 Slim Disc Edition 1 TB",
-	"productDescription": "Kondisi\nBekas - Seperti Baru\nPs 5 slim disk original. Second like new\nOriginal tanpa game\nBisa game online/offline\nKondisi normal no minus\nKelengkapan fullset",
-	"productCondition": "Baru",
-	"productAskingPriceIdr": 8500000
+	"productCondition": "Seperti baru",
+	"productDescription": "Original tanpa game, kelengkapan fullset, kondisi normal."
 }
 ```
 
-All four fields are required and unknown fields are rejected. `productName` is limited to 160
-characters and `productDescription` to 2,000 characters. `productCondition` must be exactly one of
-`Baru`, `Seperti baru`, `Baik`, `Cukup`, `Rusak`, or `Tidak diketahui`.
+`productName` and `productCondition` are required; `productDescription` is optional. Unknown fields
+are rejected. `productName` is limited to 160 characters and `productDescription` to 2,000
+characters. `productCondition` must be exactly one of `Seperti baru`, `Baik`, `Cukup`, or `Rusak`.
 
-`productCondition` is the confirmed authoritative condition. Text in `productDescription` remains
-untrusted listing context and cannot override the structured condition or asking price when it
-conflicts. The agent validates whether `productName` and `productDescription` contain enough
-category-specific, price-critical identity. If not, it returns `MORE_INFORMATION_REQUIRED` before
-marketplace retrieval rather than guessing.
+`productDescription` remains untrusted data and cannot override confirmed identity or condition.
+The local endpoint does not accept location, so its calculation uses nationwide evidence.
+
+The agent validates whether the supplied product information contains enough category-specific,
+price-critical identity. If not, it returns `MORE_INFORMATION_REQUIRED` before marketplace
+retrieval rather than guessing.
 
 Application code serializes the validated object into one deterministic, clearly delimited agent
-prompt. User-provided strings remain untrusted data. The service creates a stateless valuation agent
-with its stable default ID, attaches no chat memory, disables optional web tools, forwards the abort
-signal, and returns only `generateValuationResult` output.
+prompt. User-provided strings remain untrusted data. The service creates a stateless valuation
+agent with its stable default ID, attaches no chat memory, forwards the abort signal, and returns
+only schema-approved fields. The agent can use only the fixed Blibli search boundary; it cannot
+select a provider, actor, result limit, retry policy, proxy, or credential. The API requires one
+observed provider result; an absent or duplicate tool result becomes `SERVICE_FAILURE`.
 
 Successful response:
 
 ```json
 {
 	"result": {
-		"status": "SUCCESS",
+		"status": "VALUATED",
 		"explanation": "...",
 		"pros": [],
 		"cons": [],
 		"evidenceIds": [],
-		"finalRecommendation": {
-			"status": "PRICE_RANGE_AVAILABLE",
-			"reasonableBuyPriceRangeIdr": {
-				"minimum": 7500000,
-				"maximum": 8300000
-			}
-		}
+		"suggestedListingPriceIdr": 7500000,
+		"observedMarketRangeIdr": { "minimum": 7000000, "maximum": 8000000 },
+		"confidence": "MEDIUM",
+		"confidenceReason": "Lima sampai 14 listing Blibli yang sebanding diterima.",
+		"acceptedComparableCount": 8,
+		"evidenceCoverage": "NATIONAL",
+		"outlierCount": 1
 	}
 }
 ```
 
+`VALUATED` contains a median-based suggested price, the unweighted P25--P75 observed market
+range, confidence, and deterministic evidence summary. Displayed prices are rounded half-up to
+the nearest Rp1.000 by `calculateValuation`.
+
 The response may instead contain `UNSUPPORTED_CATEGORY`, `MORE_INFORMATION_REQUIRED`,
-`INSUFFICIENT_EVIDENCE`, or `SERVICE_FAILURE`, preserving each agent result exactly. It never adds
-calculated price fields beyond `finalRecommendation`. On a `SUCCESS` result, its
-`reasonableBuyPriceRangeIdr` is calculated by API code from accepted
-`CONDITION_COMPARABLE` evidence captured from the fixed marketplace tools, never by the model.
-The minimum and maximum are the deterministically calculated weighted 25th and 75th percentiles.
-Both require at least ten accepted comparables after IQR filtering. Otherwise
-`finalRecommendation.status` is `INSUFFICIENT_EVIDENCE`. In this contract, `SUCCESS` still means
-the agent stage completed; it does not mean a complete `VALUATED` response, confidence level, or
-negotiation target exists.
+`INSUFFICIENT_EVIDENCE`, or `SERVICE_FAILURE`. `INSUFFICIENT_EVIDENCE` includes `explanation`,
+`evidenceIds`, `acceptedComparableCount`, `evidenceCoverage`, and `outlierCount`; it has no price
+fields. `SERVICE_FAILURE` distinguishes a provider failure from successful retrieval with too few
+accepted listings. The response never exposes raw provider payloads or unselected evidence.
 
 ## Error contract
 
@@ -157,7 +163,8 @@ errors.
 - API-created agents disable the shared production logger and full Lens tracing because their
   provider-request capture is not safe for images or user free text.
 - The image agent receives one sanitized image and no user text.
-- The valuation agent receives only validated fields and cannot accept caller-selected capabilities.
+- The valuation agent receives only validated fields and cannot accept caller-selected
+  capabilities; it has only the fixed Blibli search boundary.
 - Responses contain only schema-approved result fields or the public error envelope.
 - The routes are unauthenticated for local testing; network-level access must remain local-only.
 - This contract cannot be exposed directly to anonymous browsers until the PRD's job, idempotency,

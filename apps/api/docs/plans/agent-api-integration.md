@@ -1,6 +1,6 @@
 # Agent API integration plan
 
-Status: implemented on 2026-09-15.
+Status: implemented for the local synchronous integration.
 
 ## Goal
 
@@ -16,12 +16,13 @@ listing-price recommendation workflow.
 - `apps/api` retains the `/api/chat` module and now has typed, unauthenticated `/api/agents` routes for
   image identification and the valuation-agent stage.
 - The image-identification route validates and sanitizes a bounded in-memory multipart upload. R2
-  quarantine, user confirmation, persistent valuation jobs, rate limits, the full deterministic
-  valuation result, and browser integration remain unimplemented.
-- The valuation helper returns evidence-grounded narrative fields and evidence IDs. The API also
-  derives a narrow legacy deterministic `finalRecommendation` from captured accepted comparable
-  evidence; it returns a reasonable-buy price range, not the PRD's median-based suggestion,
-  observed market range, or confidence.
+  quarantine, user confirmation, persistent valuation jobs, rate limits, and browser integration
+  remain unimplemented.
+- The valuation route accepts confirmed product identity and a second-hand condition, plus an
+  optional product description. It captures the single normalized Blibli result and passes it to
+  `calculateValuation`. A `VALUATED` response contains the deterministic median suggestion,
+  observed market range, confidence, and safe evidence summary; the model supplies only grounded
+  explanation fields and evidence IDs.
 
 ## Accepted implementation scope
 
@@ -34,19 +35,16 @@ The implementation follows these accepted boundaries:
 2. **Image transport:** the identification endpoint will accept one multipart image and sanitize it
    in memory before invoking the agent. This gives the agent sanitized bytes but does not implement
    the PRD's future private R2 quarantine/presigned-upload lifecycle.
-3. **Product and provider contract mismatch:** the current PRD is seller-first and second-hand-only:
-   it has no asking or original-price input, uses one Blibli evidence set, and returns a
-   median-based suggestion plus a separately labeled observed market range. The implemented
-   valuation agent retains a buyer-era four-field payload, a legacy Blibli
-   configuration, and `curious_coder/facebook-marketplace`. This plan connects that legacy
-   implementation unchanged and does not claim PRD compliance.
-4. **Result meaning:** a valuation-agent `SUCCESS` means the evidence/explanation agent stage
-   completed. It must not be renamed to `VALUATED`; the API's narrow recommendation does not yet
-   provide the full range, confidence, job, and evidence-presentation contract required for that
-   status.
+3. **Product calculation boundary:** the API accepts no asking or original-price input. It uses one
+   Blibli evidence set and delegates all numeric fields to `calculateValuation`. The agent's
+   `SUCCESS` status only permits the API to use its explanation fields; it cannot create or change
+   a calculated price.
+4. **Result meaning:** `VALUATED` means the local synchronous API calculated a result from accepted
+   evidence. It does not make the endpoint the complete public workflow: persistent jobs, access
+   controls, rate limits, evidence presentation, and the browser flow remain deferred.
 
-Any future browser-ready end-to-end seller listing-price API must replace this legacy design rather
-than silently treating its deferred capabilities as live.
+Any future browser-ready end-to-end seller listing-price API must add the deferred capabilities
+rather than silently treating them as live.
 
 ## HTTP contract
 
@@ -79,8 +77,8 @@ Related changes:
 1. Add strict API request, response, and public error schemas in `schema.ts`.
 2. In `services.ts`, implement decoded-image validation, metadata stripping, and the sanitized
    `SanitizedProductImage` adapter.
-3. In `services.ts`, implement deterministic serialization of the four-field valuation request.
-   Keep free text length-bounded and visibly delimited from instructions.
+3. In `services.ts`, serialize the seller-first valuation request deterministically. Keep free text
+   length-bounded and visibly delimited from instructions.
 4. In `services.ts`, invoke the existing structured helpers, forward cancellation where supported,
    assign safe trace names, and call `flushAgentTracing()` in `finally` blocks.
 5. In `router.ts`, implement both handlers and map only intentional result fields or sanitized
@@ -93,35 +91,25 @@ Related changes:
 ## Verification
 
 Automated tests were not added because the repository instructions require an explicit request for
-automated-test work. Completed verification:
+automated-test work. The current change is verified with API typechecking and build, targeted Biome
+checks for changed TypeScript, and `git diff --check`.
 
-- `@repo/agents` typecheck and build pass;
-- `@repo/api` typecheck and build pass;
-- a live mounted-server probe reaches the unauthenticated route and returns its request-validation
-  envelope;
-- direct route checks cover malformed JSON, unknown valuation fields, duplicate image fields,
-  unsupported bytes, an oversized image, invalid dimensions, and a cancelled request;
-- a valid four-field valuation request passes the strict request schema and the previous
-  category/identity payload is rejected;
-- live image-agent checks return structured `SUPPORTED` and `UNSUPPORTED_CATEGORY` outcomes;
-- API-created agents disable provider-request logging and full tracing, and both Apify Actor call
-  options disable provider log streaming;
-- all changed TypeScript and JSON files pass targeted Biome checks, and `git diff --check` passes.
-
-Repository-wide `pnpm check` remains blocked by pre-existing formatting and lint findings in the
-platform UI and `finding/agents` fixtures. Those unrelated files were not changed.
+With configured provider credentials, also exercise a valid seller-first request, a request that
+contains the removed asking-price field, an insufficient-evidence result, and a provider failure.
+Do not log image data, free text, raw provider responses, or credentials while doing so.
 
 ## Acceptance criteria
 
 - Both existing agents are reachable through dedicated, typed API endpoints.
 - Every request is strictly validated before model or paid tool execution.
 - The image agent receives exactly one validated, re-encoded image and no user text.
-- The valuation agent receives only the validated four-field product payload and uses no chat memory
-  or optional web tools.
+- The valuation agent receives only the validated seller-first payload and uses no chat memory or
+  optional web tools.
 - Agent business statuses remain distinct and structured.
 - No endpoint returns raw streams, traces, provider data, secrets, or unreviewed agent text.
-- The valuation endpoint returns only its documented legacy deterministic recommendation; it does
-  not imply that the PRD's final seller listing-price calculation and workflow are implemented.
+- The valuation endpoint uses `calculateValuation` for the documented median suggestion, observed
+  market range, confidence, and insufficient-evidence decision. It does not imply that the PRD's
+  complete seller workflow is implemented.
 - Existing chat routes continue to compile and behave unchanged.
 
 ## Explicitly deferred
@@ -132,11 +120,6 @@ platform UI and `finding/agents` fixtures. Those unrelated files were not change
   and the 90-second job boundary;
 - five-per-day anonymous limits, global spending limits, bot challenge, and persistent evidence
   cache enforcement at the application layer;
-- the PRD's single-run Blibli retrieval, median-based suggestion,
-  observed market range, confidence, representative-listing persistence, and final `VALUATED`
-  response;
 - evidence persistence and the representative-listing response required by the results screen;
 - platform UI integration and client-side state;
-- replacement of the legacy Blibli configuration and Facebook tool with the PRD-compliant
-  Blibli-only provider integration;
 - automated API tests and agent behavioral eval expansion.

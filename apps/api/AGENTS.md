@@ -16,9 +16,9 @@ When changing those routes' request, response, validation, authentication, or er
 read the [agent API contract](docs/contracts/agent-api.md).
 The intended public product contract is seller-first and second-hand-only: it accepts no asking or
 original price, derives a median-based suggestion from one Blibli evidence set, and returns a
-separate observed Blibli market range. The current local-only agent routes are a legacy
-stage contract; preserve and document that mismatch until a replacement is implemented rather than
-presenting those routes as the public product API.
+separate observed Blibli market range. The local-only valuation route implements that calculation
+boundary, but it remains a synchronous stage contract: do not present it as the public product API
+until its job, access-control, rate-limit, persistence, and browser contracts exist.
 
 ## Persistence and contracts
 

@@ -4,24 +4,17 @@ const shortTextSchema = z.string().trim().min(1).max(160);
 const detailTextSchema = z.string().trim().min(1).max(2_000);
 
 export const conditionSchema = z.enum([
-	"Baru",
 	"Seperti baru",
 	"Baik",
 	"Cukup",
 	"Rusak",
-	"Tidak diketahui",
 ]);
 
 export const valuationRequestSchema = z
 	.object({
 		productName: shortTextSchema,
-		productDescription: detailTextSchema,
 		productCondition: conditionSchema,
-		productAskingPriceIdr: z
-			.number()
-			.int()
-			.positive()
-			.max(Number.MAX_SAFE_INTEGER),
+		productDescription: detailTextSchema.optional(),
 	})
 	.strict();
 
@@ -45,35 +38,39 @@ export const imageIdentificationResponseSchema = z
 const explanationSchema = z.string().trim().min(1).max(2_000);
 const explanationItemSchema = z.string().trim().min(1).max(300);
 const evidenceIdSchema = z.string().trim().min(1).max(160);
-const finalRecommendationSchema = z.discriminatedUnion("status", [
+const valuationSummarySchema = z
+	.object({
+		acceptedComparableCount: z.number().int().min(0).max(30),
+		evidenceCoverage: z.enum(["LOCAL", "NATIONAL"]),
+		outlierCount: z.number().int().min(0).max(30),
+	})
+	.strict();
+
+const valuationExplanationSchema = z
+	.object({
+		explanation: explanationSchema,
+		pros: z.array(explanationItemSchema).max(8),
+		cons: z.array(explanationItemSchema).max(8),
+		evidenceIds: z.array(evidenceIdSchema).max(30),
+	})
+	.strict();
+
+export const valuationResultSchema = z.discriminatedUnion("status", [
 	z
 		.object({
-			status: z.literal("PRICE_RANGE_AVAILABLE"),
-			reasonableBuyPriceRangeIdr: z
+			status: z.literal("VALUATED"),
+			suggestedListingPriceIdr: z.number().int().positive(),
+			observedMarketRangeIdr: z
 				.object({
 					minimum: z.number().int().positive(),
 					maximum: z.number().int().positive(),
 				})
 				.strict(),
+			confidence: z.enum(["HIGH", "MEDIUM"]),
+			confidenceReason: explanationSchema,
 		})
-		.strict(),
-	z
-		.object({
-			status: z.literal("INSUFFICIENT_EVIDENCE"),
-		})
-		.strict(),
-]);
-
-export const valuationResultSchema = z.discriminatedUnion("status", [
-	z
-		.object({
-			status: z.literal("SUCCESS"),
-			explanation: explanationSchema,
-			pros: z.array(explanationItemSchema).max(8),
-			cons: z.array(explanationItemSchema).max(8),
-			evidenceIds: z.array(evidenceIdSchema).max(30),
-			finalRecommendation: finalRecommendationSchema,
-		})
+		.extend(valuationExplanationSchema.shape)
+		.extend(valuationSummarySchema.shape)
 		.strict(),
 	z
 		.object({
@@ -94,6 +91,7 @@ export const valuationResultSchema = z.discriminatedUnion("status", [
 			explanation: explanationSchema,
 			evidenceIds: z.array(evidenceIdSchema).max(30),
 		})
+		.extend(valuationSummarySchema.shape)
 		.strict(),
 	z
 		.object({
