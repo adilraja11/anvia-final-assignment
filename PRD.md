@@ -7,25 +7,24 @@ This document defines the requirements for a two-week demo MVP. The goal is to d
 The product interface and generated responses will use Bahasa Indonesia. Internal status codes and technical identifiers may remain in English.
 
 ## 2. Product Summary
-AsliSegini? is an AI-assisted price evaluator for Indonesian marketplace buyers. The MVP supports selected new and second-hand consumer electronics. A user uploads a product image, confirms the product identity and condition, enters the seller's asking price, and optionally provides listing details and a city or region.
-The application retrieves comparable listings from Tokopedia and Facebook Marketplace, filters them for relevance, and uses deterministic application logic to produce:
+AsliSegini? is an AI-assisted listing-price evaluator for people in Indonesia selling second-hand consumer electronics that they own on an online marketplace. The MVP is intended for individual sellers, not stores, resellers, or professional refurbishers. It does not verify ownership. A user uploads a product image, confirms the product identity and condition, and optionally provides listing details and a city or region.
+The application retrieves comparable listings from Blibli and Facebook Marketplace, filters them for relevance, and uses deterministic application logic to produce:
 
-- A reasonable item-price range.
-- A negotiation target.
-- A comparison with the seller's asking price.
+- An evidence-based listing-price range.
+- A suggested listing price for a balanced sale.
 - A confidence level.
 - A grounded explanation and relevant pros and cons.
 - A transparent summary of the marketplace evidence used.
 The AI may identify products, normalize search terms, filter evidence, and explain results. It must not invent marketplace evidence or determine the final price mathematically.
 
 ## 3. Problem Statement
-Marketplace buyers often cannot tell whether an asking price is reasonable. Electronics prices vary materially by exact model, specification, condition, warranty, included accessories, defects, and location. Manually finding and comparing equivalent listings is slow, and superficially similar products may have very different values.
-AsliSegini? reduces that effort by combining image-assisted identification, user-confirmed product details, current comparable listings, and a deterministic valuation method. When the product cannot be identified precisely enough or there is not enough usable evidence, the application must refuse to calculate a price rather than guess.
+Individual sellers often cannot tell what price to list a second-hand electronic product for. Prices vary materially by exact model, specification, condition, warranty, included accessories, defects, and location. Manually finding and comparing equivalent listings is slow, and superficially similar products may have very different values.
+AsliSegini? reduces that effort by combining image-assisted identification, user-confirmed product details, current comparable listings, and a deterministic valuation method. When the product cannot be identified precisely enough or there is not enough usable evidence, the application must refuse to recommend a listing price rather than guess.
 
 ## 4. Goals and Success Criteria
 ### 4.1 MVP goals
-- Demonstrate an end-to-end valuation flow for supported electronics.
-- Ground every price result in current Tokopedia and/or Facebook Marketplace listings.
+- Demonstrate an end-to-end listing-price recommendation flow for supported second-hand electronics.
+- Ground every price result in current Blibli and/or Facebook Marketplace listings.
 - Make uncertainty and evidence coverage visible.
 - Prevent the AI from inventing prices, sources, product details, or tool results.
 - Keep the anonymous public demo within explicit storage, latency, and paid-tool limits.
@@ -39,17 +38,17 @@ AsliSegini? reduces that effort by combining image-assisted identification, user
 The MVP will not include a user feedback prompt or claim that automated evals prove production-level usefulness or accuracy.
 
 ## 5. Target Users
-The primary users are people in Indonesia considering the purchase of a supported electronic product from an online marketplace. They may be unfamiliar with the product's exact value and want a quick reference before buying or negotiating.
+The primary users are people in Indonesia who want to sell a supported second-hand electronic product that they own through an online marketplace. They may be unfamiliar with the product's current value and want a quick, evidence-based reference before creating a listing. The MVP is not intended for stores, resellers, or professional refurbishers, and it does not verify that a seller owns an item.
 Typical needs include:
 
-- Checking whether an asking price is below, within, or above comparable listings.
-- Finding a defensible negotiation target.
+- Choosing a defensible listing price and price range.
+- Understanding the comparable median as a balanced suggested listing price.
 - Understanding which product and listing details materially affect the comparison.
 - Seeing the evidence and limitations behind the estimate.
 
 ## 6. MVP Scope
 ### 6.1 Supported categories
-The MVP supports only:
+The MVP supports only second-hand:
 
 - Smartphones.
 - Laptops.
@@ -57,6 +56,7 @@ The MVP supports only:
 - Gaming consoles.
 The MVP explicitly rejects:
 
+- New products.
 - Components and accessories.
 - TVs and monitors.
 - Cameras.
@@ -74,7 +74,7 @@ Paid marketplace searches must not begin until the user confirms the minimum pri
 - Gaming console: generation/model, edition such as digital or disc, storage, and bundle contents.
 The AI proposes these values from the uploaded image and user text. The user can correct them through the editable product title and details. If a required value remains unknown, return `MORE_INFORMATION_REQUIRED` and explain what must be added.
 ### 6.3 Price scope
-The valuation covers the item price only. It excludes:
+The recommendation covers the item price only. It excludes:
 
 - Shipping or delivery.
 - Marketplace or payment-service fees.
@@ -89,17 +89,16 @@ Accessories are included only when equivalent accessories are present in both th
 3. AI determines whether the image contains a supported, identifiable product.
 4. AI generates an editable product title and proposed price-critical identity.
 5. The user confirms or corrects the identity.
-6. The user selects a required condition: `Baru`, `Seperti baru`, `Baik`, `Cukup`, `Rusak`, or `Tidak diketahui`.
+6. The user selects a required condition: `Seperti baru`, `Baik`, `Cukup`, `Rusak`, or `Tidak diketahui`.
 7. The user optionally adds listing details such as defects, warranty, repairs, and included accessories.
-8. The user enters the required asking price in IDR.
-9. The user optionally enters a city or region.
-10. The application confirms that minimum identity requirements are satisfied.
-11. The user starts the analysis.
-12. The application creates one idempotent valuation job and displays progress.
-13. The application retrieves, validates, and filters marketplace evidence.
-14. Deterministic application code calculates the result.
-15. AI produces a Bahasa Indonesia explanation grounded in the calculated result and accepted evidence.
-16. The results screen displays the valuation, confidence, evidence summary, and applicable limitations.
+8. The user optionally enters the city or region where they intend to list the item.
+9. The application confirms that minimum identity requirements are satisfied.
+10. The user starts the analysis.
+11. The application creates one idempotent valuation job and displays progress.
+12. The application retrieves, validates, and filters marketplace evidence.
+13. Deterministic application code calculates the result.
+14. AI produces a Bahasa Indonesia explanation grounded in the calculated result and accepted evidence.
+15. The results screen displays the listing-price recommendation, confidence, evidence summary, and applicable limitations.
 ### 7.2 Progress states
 The interface displays these localized stages:
 
@@ -113,8 +112,8 @@ The following internal statuses are distinct and must not be collapsed into a ge
 
 | Internal status | Bahasa Indonesia presentation | Meaning |
 | --- | --- | --- |
-| `VALUATED` | Result and verdict | A deterministic valuation was produced. |
-| `UNSUPPORTED_CATEGORY` | Kategori produk belum didukung | The product is outside the four supported categories. |
+| `VALUATED` | Result and recommendation | A deterministic listing-price recommendation was produced. |
+| `UNSUPPORTED_CATEGORY` | Kategori produk belum didukung | The product is outside the four supported categories or is not second-hand. |
 | `MORE_INFORMATION_REQUIRED` | Informasi produk perlu dilengkapi | A price-critical identity field is missing. |
 | `INSUFFICIENT_EVIDENCE` | Bukti harga belum cukup | Tools worked, but fewer than ten usable comparables remained. |
 | `SERVICE_FAILURE` | Layanan sedang bermasalah | Both evidence providers failed or the valuation job could not complete. |
@@ -148,9 +147,9 @@ The R2 bucket must remain private. Presigned URLs are treated as bearer credenti
 ### 9.1 Approved evidence providers
 The MVP uses a maximum of two normal actor runs per valuation:
 
-1. `abotapi/tokopedia-scraper` for new and second-hand Tokopedia listings.
+1. `fanndev/blibli-product-price-monitor` for second-hand Blibli listings.
 2. `apify/facebook-marketplace-scraper` for second-hand Facebook Marketplace listings.
-For new items, Tokopedia is the primary retail anchor. For second-hand items, both sources are queried when applicable. Evidence represents advertised listing prices unless a completed-sale state is explicitly and reliably present; the system must not describe asking prices as completed transaction prices.
+Both sources are queried when applicable. They are approved sources of pricing evidence only; AsliSegini? does not publish a listing and its recommendation may be used on any Indonesian online marketplace. Evidence represents advertised listing prices unless a completed-sale state is explicitly and reliably present; the system must not describe advertised prices as completed transaction prices.
 Marketplace data collection is limited to publicly visible listing data obtained through approved third-party providers and remains subject to legal, terms-of-service, privacy, and data-retention review. Use of Apify alone must not be described as marketplace authorization.
 ### 9.2 Evidence retrieval
 - AI generates normalized Bahasa Indonesia search terms while preserving official brand and model names.
@@ -188,12 +187,12 @@ Before valuation, the application must:
 
 - Validate actor output against a strict schema.
 - Accept only numeric IDR item prices.
-- Accept evidence links only from approved Tokopedia and Facebook domains.
+- Accept evidence links only from approved Blibli and Facebook domains.
 - Reject accessories, components, repair-only products, and unrelated listings.
 - Reject wrong models, material specification mismatches, and irrelevant bundles.
 - Reject misleading minimum variant prices when the matched variant has another price.
 - Reject duplicates across repeated searches and actors.
-- Reject listings whose condition is not comparable to the submitted item unless explicitly used only as a separate new-price anchor.
+- Reject listings whose condition is not comparable to the submitted item.
 - For `Tidak diketahui`, use only listings identified as second-hand, allow multiple used-condition labels, and cap the final confidence at `MEDIUM`.
 - Remove statistical price outliers after identity and condition filtering.
 - Preserve a machine-readable exclusion reason for every rejected result.

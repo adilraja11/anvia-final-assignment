@@ -7,7 +7,7 @@
 - AI may identify, normalize, match, categorize, and explain.
 - Application code validates evidence and calculates all prices.
 - The model cannot modify the calculation or substitute a price.
-- The seller's asking price is never used to calculate the fair-price distribution.
+- The seller does not supply a target or asking price; the recommendation derives only from accepted comparable evidence.
 ### 10.2 Calculation
 1. Begin with listings that pass schema, identity, variant, condition, currency, and duplication checks.
 2. Calculate the first and third quartiles (`Q1` and `Q3`) of comparable prices.
@@ -15,36 +15,25 @@
 4. Require at least ten accepted comparables after filtering.
 5. When both sources contribute evidence, give each source 50% of the total distribution weight and divide that source's weight equally among its accepted listings. When one source contributes, it receives 100% of the weight.
 6. Calculate weighted percentiles from the accepted evidence:
-   - Recommended minimum: weighted 25th percentile.
-   - Recommended maximum: weighted 75th percentile.
+   - Recommended listing-price minimum: weighted 25th percentile.
+   - Recommended listing-price maximum: weighted 75th percentile.
    - Comparable median: weighted 50th percentile.
-7. Calculate the negotiation target as the lower of the seller's asking price and the recommended minimum.
+7. Use the comparable median as the suggested listing price for a balanced sale.
 8. Round and format all displayed values consistently as Indonesian rupiah.
 ### 10.3 Confidence
-- `HIGH`: at least ten accepted comparables, including at least three from Tokopedia and three from Facebook Marketplace.
+- `HIGH`: at least ten accepted comparables, including at least three from Blibli and three from Facebook Marketplace.
 - `MEDIUM`: at least ten accepted comparables, but the `HIGH` cross-source requirement is not met.
 - `INSUFFICIENT_EVIDENCE`: fewer than ten accepted comparables remain after filtering.
 An item with condition `Tidak diketahui` cannot receive `HIGH` confidence.
 The UI explains the evidence count and source coverage behind the confidence level.
-### 10.4 Verdict
-
-| Condition | Internal verdict | Bahasa Indonesia label |
-| --- | --- | --- |
-| Asking price below the recommended minimum | `GREAT_PRICE` | Harga bagus |
-| Asking price within the recommended range | `FAIR_PRICE` | Harga wajar |
-| Asking price above the recommended maximum | `ABOVE_MARKET` | Di atas harga pasar |
-The MVP does not add a special warning, safety flag, or alternate verdict solely because an asking price is far below the comparable median.
-
 ## 11. Results Screen
 A successful result displays:
 
 - Confirmed product identity and condition.
-- Seller's asking price.
-- Recommended minimum and maximum item price.
-- Negotiation target.
-- Verdict.
+- Recommended minimum and maximum listing price.
+- Suggested listing price for a balanced sale.
 - Confidence level and its reason.
-- A grounded explanation of the valuation.
+- A grounded explanation of the listing-price recommendation.
 - Relevant pros and cons.
 - The statement **"Estimasi hanya mencakup harga barang."**
 - A limitation notice that the result does not verify authenticity, ownership, safety, or hidden physical condition.
@@ -82,7 +71,7 @@ Pros and cons focus on transaction-relevant evidence such as condition, warranty
 The MVP is freely accessible without authentication, subject to these controls:
 
 - Maximum of five valuations per anonymous user or client per day.
-- No paid actor run before the user confirms identity, condition, and asking price.
+- No paid actor run before the user confirms identity and condition.
 - Maximum of two normal actor runs and one retry per failed actor per valuation.
 - Maximum result count of 30 per actor.
 - Six-hour evidence caching.
@@ -135,6 +124,7 @@ Because the harness supports only text input and expected text, these evals do n
 
 ## 17. MVP Exclusions
 - Product categories outside smartphones, laptops, tablets, and gaming consoles.
+- New products.
 - Guaranteed product authentication, ownership verification, safety verification, or physical-condition inspection.
 - General-purpose web search or unapproved marketplace actors.
 - More than the two approved marketplace evidence providers.
@@ -146,7 +136,7 @@ Because the harness supports only text input and expected text, these evals do n
 - User feedback prompts.
 - English or other interface languages.
 - A presentation-only cache or fabricated fallback when live evidence is unavailable.
-- Guaranteed valuation for every supported product.
+- Guaranteed listing-price recommendation for every supported product.
 
 ## 18. Future Considerations
 - Support multiple images to improve identity and condition assessment.
@@ -154,7 +144,7 @@ Because the harness supports only text input and expected text, these evals do n
 - Add approved evidence providers such as OLX or Carousell after reliability and compliance review.
 - Accept user-supplied listing links.
 - Save valuation history for authenticated users.
-- Compare multiple target listings.
+- Compare multiple listing-price strategies.
 - Track price changes and notify users.
 - Generate seller negotiation messages.
 - Add structured user feedback and usability research.
@@ -162,9 +152,9 @@ Because the harness supports only text input and expected text, these evals do n
 - Build mobile applications or browser extensions.
 
 ## 19. Product Principles
-> Give buyers a useful, evidence-based price range without pretending the AI knows more than it does.
+> Give individual sellers a useful, evidence-based listing-price recommendation without pretending the AI knows more than it does.
 
-1. **Buyer first:** Help buyers evaluate and negotiate purchases.
+1. **Seller first:** Help individual sellers price second-hand items they own for a balanced sale.
 2. **Use ranges:** Avoid false precision.
 3. **Require exact identity:** Do not compare materially different variants.
 4. **Use current evidence:** Ground prices in approved marketplace listings.

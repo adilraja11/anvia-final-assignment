@@ -6,9 +6,14 @@ import {
 	type AgentRuntimeOptions,
 	createAgentRuntimeOptions,
 } from "../runtime.js";
-import { blibliSearch } from "../tools/blibli-search.js";
-import { facebookMarketplaceSearch } from "../tools/facebook-search.js";
-import { createWebTools } from "../tools/web-search.js";
+import {
+	type MarketplaceSearchObserver as BlibliSearchObserver,
+	createBlibliSearchTool,
+} from "../tools/blibli-search.js";
+import {
+	createFacebookMarketplaceSearchTool,
+	type MarketplaceSearchObserver as FacebookSearchObserver,
+} from "../tools/facebook-search.js";
 
 const explanationSchema = z.string().trim().min(1).max(2_000);
 const explanationItemSchema = z.string().trim().min(1).max(300);
@@ -57,10 +62,13 @@ export type ValuationResult = z.infer<typeof VALUATION_RESULT_SCHEMA>;
 export interface CreateValuationAgentOptions
 	extends Omit<AgentRuntimeOptions, "agentId"> {
 	agentId?: string;
+	/** Kept for source compatibility; unapproved tools are never attached. */
 	additionalTools?: AnyTool[];
 	additionalInstructions?: string[];
 	memory?: MemoryStore;
+	/** @deprecated The PRD allows only the two fixed marketplace tools. */
 	includeWebTools?: boolean;
+	onMarketplaceResult?: BlibliSearchObserver & FacebookSearchObserver;
 }
 
 export function createValuationAgent(
@@ -76,10 +84,10 @@ export function createValuationAgent(
 			...(options.additionalInstructions ?? []),
 		].join("\n\n"),
 		tools: [
-			...(options.includeWebTools ? createWebTools() : []),
-			blibliSearch,
-			facebookMarketplaceSearch,
-			...(options.additionalTools ?? []),
+			createBlibliSearchTool({ onResult: options.onMarketplaceResult }),
+			createFacebookMarketplaceSearchTool({
+				onResult: options.onMarketplaceResult,
+			}),
 		],
 		temperature: 0,
 		maxTokens: 1_500,

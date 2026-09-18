@@ -1,140 +1,58 @@
 # Apify JavaScript Client Setup
 
-This guide explains how to integrate `apify-client` into `packages/agents`. Provider-specific
-Actor inputs, normalization, validation, and safety rules are in
-`packages/agents/APIFY_INTEGRATION.md`.
+This guide covers the server-only `apify-client` setup used by the two approved marketplace
+tools. Provider request, normalization, validation, and failure rules are in
+[APIFY_INTEGRATION.md](APIFY_INTEGRATION.md).
 
-## 1. Install the package
+## Install and credentials
 
-Run this from the repository root:
+From the repository root:
 
 ```bash
 pnpm --filter @repo/agents add apify-client
 ```
 
-The package should be recorded in `packages/agents/package.json`. Verify the workspace lockfile
-is updated, then run `pnpm --filter @repo/agents typecheck`.
-
-## 2. Configure authentication
-
-Create or update the repository-root, uncommitted `.env` file:
+Keep the token in the uncommitted repository-root `.env` only:
 
 ```dotenv
 APIFY_API_TOKEN=your-token-from-apify-console
 ```
 
-The token is available from the Integrations section of Apify Console. Do not hard-code it or
-add it to `.env.example`, source files, test fixtures, Studio output, or error messages.
+Never put it in `.env.example`, source, fixtures, prompts, Studio output, logs, docs, or any agent
+response. The client is imported only by server-side tool code.
 
-The repository's root `pnpm studio`, `pnpm build`, and `pnpm typecheck` scripts load this file
-with `dotenv-cli`. Direct package commands require `APIFY_API_TOKEN` to already be exported.
-The official JavaScript client supports Node.js and TypeScript, provides typed resource
-clients, and handles API retries. Use it only in server-side tool code; the API token must
-never reach an agent response or browser bundle.
+## Client boundary
 
-## 3. Create the server-side client in each provider tool
-
-The current implementation keeps the client factory private in both
-`src/tools/blibli-search.ts` and `src/tools/facebook-search.ts`. There is no shared
-`src/providers/apify.ts` module yet, so both factories must retain the same configuration:
+Each provider tool creates its client privately with the same bounded settings:
 
 ```ts
-import { ApifyClient } from "apify-client";
-
-function getClient() {
-  const token = process.env.APIFY_API_TOKEN?.trim();
-  if (!token) throw new ProviderBoundaryError("CONFIGURATION");
-
-  const client = new ApifyClient({
-    token,
-    maxRetries: 1,
-    minDelayBetweenRetriesMillis: 500,
-    timeoutSecs: 360,
-  });
-  client.logger.setLevel(client.logger.LEVELS.OFF);
-  return client;
-}
+const client = new ApifyClient({
+	token,
+	maxRetries: 1,
+	minDelayBetweenRetriesMillis: 500,
+	timeoutSecs: 360,
+});
+client.logger.setLevel(client.logger.LEVELS.OFF);
 ```
 
-The client’s default is up to eight retries with exponential backoff. `maxRetries: 1` keeps
-the client-level retry bound explicit. The tools additionally make at most one retry at their
-Actor-call boundary for non-configuration failures. Keep the token lookup and client code out
-of browser-facing code.
+Actor IDs and inputs remain in the provider modules. Calls disable Actor log streaming with
+`log: null`. The tool reads only the bounded dataset, validates every item as `unknown`, and
+discards the raw payload before returning normalized evidence.
 
-## 4. Run an Actor and read its dataset
+The provider boundary can make one additional Actor call after a non-configuration failure. It
+does not retry records rejected by validation. A successful empty dataset is a successful result;
+configuration, network, timeout, Apify, malformed-response, and missing-dataset failures remain
+`PROVIDER_FAILURE`.
 
-Keep Actor IDs and input defaults in the provider tool, never in model-controlled arguments:
+## Verification
 
-```ts
-const client = getClient();
-const run = await client.actor("fanndev/blibli-product-price-monitor").call({
-  fetchProductDetails: false,
-  includeOutOfStock: true,
-  maxItemsPerQuery: 10,
-  searchTerms,
-  sortBy: "relevance",
-  maxConcurrency: 8,
-  proxyConfiguration: {
-    useApifyProxy: true,
-    apifyProxyGroups: ["RESIDENTIAL"],
-    apifyProxyCountry: "ID",
-  },
-}, { log: null });
-
-const { items } = await client
-  .dataset(run.defaultDatasetId)
-  .listItems({ limit: searchTerms.length * 10 });
-```
-
-The per-client logger is set to `OFF`, and Actor log streaming is disabled with `log: null`.
-Provider retries and Actor logs can contain URLs, generated search terms, or listing content, so
-neither API routes nor local tool runs may redirect them to application stdout. Log only the
-bounded provider name and error category described below.
-
-For Facebook Marketplace, the fixed call uses
-`curious_coder/facebook-marketplace`, the documented keyword-search defaults (including
-Indonesia and `proxy.useApifyProxy: false`), and a second call argument of
-`{ maxItems: 10, log: null }`. The dataset read is also limited to 10 items. For Blibli,
-`maxItemsPerQuery: 10` applies to each submitted term, so the bounded dataset read must allow
-up to ten records per term. `call()` waits for the
-Actor run to finish and returns its run object; `defaultDatasetId` identifies the output
-dataset. Treat `items` as untrusted `unknown` data: validate the top-level response and every
-record, normalize only approved fields, and discard the raw payload before returning the tool
-result.
-
-For a used or damaged valuation, call Blibli separately with `evidenceRole:
-"RETAIL_ANCHOR"` and an identity-only search term. Blibli has no condition field in this Actor
-output, so it returns explicitly labeled retail reference evidence. Facebook only accepts
-`"CONDITION_COMPARABLE"`; place its defect cue in `searchTerms[0]` because that is the sole
-term supplied to its Actor.
-
-## 5. Handle failures at the tool boundary
-
-Catch `ApifyApiError` and network, timeout, malformed-response, or missing-dataset failures.
-The current tools also classify unexpected errors as `UNKNOWN`. Log only a bounded
-machine-readable error category and provider name. Return a `PROVIDER_FAILURE` envelope, not
-pricing evidence and not `INSUFFICIENT_EVIDENCE`. Do not retry records rejected during
-validation. A successful run with zero valid records remains a successful empty search.
-
-Request at most 10 dataset items per actor. If a future flow needs more, use the client’s paginated
-`listItems()` iterator only after changing the tool contract, budget, and validation tests.
-
-## 6. Run locally
-
-With `APIFY_API_TOKEN` available, build and typecheck the package, then start Studio from the
-repository root:
+Run without printing the token or raw provider response:
 
 ```bash
-pnpm --filter @repo/agents build
 pnpm --filter @repo/agents typecheck
-pnpm studio
+pnpm --filter @repo/agents build
 ```
 
-Manually verify a successful response, a successful empty response, a provider failure, and
-invalid records. Never paste the token or raw Actor response into issue reports.
-
-The instructions follow Apify’s [JavaScript client overview](https://docs.apify.com/api/client/js/docs),
-[quick start](https://docs.apify.com/api/client/js/docs/introduction/quick-start),
-[usage patterns](https://docs.apify.com/api/client/js/docs/concepts/usage-patterns),
-[error handling and retries](https://docs.apify.com/api/client/js/docs/concepts/error-handling),
-and [pagination](https://docs.apify.com/api/client/js/docs/concepts/pagination).
+With valid configuration, manually verify a successful result, a successful empty result, a
+provider failure, one retry, invalid IDR/URL/status records, second-hand condition filtering, and
+the 30-result limit. Do not expose the provider output in issue reports or traces.

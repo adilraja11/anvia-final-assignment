@@ -13,8 +13,8 @@ Follow the repository [Markdown naming and routing policy](../../AGENTS.md#markd
 ## UI contract
 
 - Keep mock data and simulated progress visibly labeled until a live, typed API contract replaces them. Do not use mock evidence as a fallback for live-provider failure.
-- Keep user-facing text in Bahasa Indonesia and retain the successful-result limitations required by the development plan: the estimate covers item price only, and authenticity, ownership, transaction safety, and hidden physical condition are not verified.
-- The browser renders a server-calculated valuation; it does not calculate or invent a price range, confidence, verdict, or marketplace evidence.
+- Keep user-facing text in Bahasa Indonesia and retain the successful-result limitations required by the development plan: the listing-price recommendation covers item price only, and authenticity, ownership, transaction safety, and hidden physical condition are not verified.
+- The browser renders a server-calculated listing-price recommendation; it does not calculate or invent a price range, suggested listing price, confidence, or marketplace evidence.
 - Use native labels and keyboard-accessible controls, and preserve focus/error behavior when editing the multi-step flow.
 
 ## Routes and verification

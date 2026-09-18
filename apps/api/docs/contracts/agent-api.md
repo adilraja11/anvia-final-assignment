@@ -4,7 +4,20 @@ Status: implemented on 2026-09-15 for unauthenticated local-demo use.
 
 This document defines the local agent-stage HTTP interface planned by the
 [agent API integration plan](../plans/agent-api-integration.md). It is not the final browser-facing
-AsliSegini? valuation contract.
+AsliSegini? seller listing-price recommendation contract.
+
+## PRD alignment
+
+The current PRD is for individual Indonesian sellers of second-hand electronics. Its public
+workflow collects identity, second-hand condition, optional listing details, and optional location;
+it does not collect an asking price. Its deterministic result is a 25th–75th percentile
+listing-price range and a weighted-median suggested listing price for a balanced sale, using only
+the two approved evidence providers.
+
+The implemented routes below predate that contract. They retain a four-field buyer-era request,
+including `productAskingPriceIdr`, and legacy provider behavior. They are local-only integration
+routes and must not be presented as a PRD-compliant product API. A replacement public contract
+requires a separately reviewed implementation.
 
 ## Route scope
 
@@ -44,7 +57,7 @@ Successful response:
 The other valid results are `UNSUPPORTED_CATEGORY` and `MORE_INFORMATION_REQUIRED`. These business
 outcomes use HTTP `200`; request or service failures use the error contract below.
 
-## `POST /api/agents/valuation`
+## `POST /api/agents/valuation` (legacy local stage)
 
 Request:
 
@@ -89,15 +102,28 @@ Successful response:
 		"explanation": "...",
 		"pros": [],
 		"cons": [],
-		"evidenceIds": []
+		"evidenceIds": [],
+		"finalRecommendation": {
+			"status": "PRICE_RANGE_AVAILABLE",
+			"reasonableBuyPriceRangeIdr": {
+				"minimum": 7500000,
+				"maximum": 8300000
+			}
+		}
 	}
 }
 ```
 
 The response may instead contain `UNSUPPORTED_CATEGORY`, `MORE_INFORMATION_REQUIRED`,
 `INSUFFICIENT_EVIDENCE`, or `SERVICE_FAILURE`, preserving each agent result exactly. It never adds
-calculated price fields. In this contract, `SUCCESS` means the agent stage completed; it does not
-mean a final `VALUATED` result exists.
+calculated price fields beyond `finalRecommendation`. On a `SUCCESS` result, its
+`reasonableBuyPriceRangeIdr` is calculated by API code from accepted
+`CONDITION_COMPARABLE` evidence captured from the fixed marketplace tools, never by the model.
+The minimum and maximum are the deterministically calculated weighted 25th and 75th percentiles.
+Both require at least ten accepted comparables after IQR filtering. Otherwise
+`finalRecommendation.status` is `INSUFFICIENT_EVIDENCE`. In this contract, `SUCCESS` still means
+the agent stage completed; it does not mean a complete `VALUATED` response, confidence level, or
+negotiation target exists.
 
 ## Error contract
 

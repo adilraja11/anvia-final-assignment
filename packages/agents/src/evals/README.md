@@ -1,5 +1,16 @@
 # Employee handbook evals
 
+## Product-contract boundary
+
+These evals cover the legacy employee-handbook retrieval feature only. They do not test, define,
+or validate the seller-first second-hand listing-price workflow in the PRD. Do not apply its
+marketplace evidence, pricing, or user-target rules to handbook behavior.
+
+The seller-first valuation engine is implemented in `src/valuation-engine.ts`, but the PRD's 30
+behavioral valuation cases and release gate are still application/evaluation work. Do not cite this
+handbook suite as evidence for valuation quality, live provider reliability, image recognition, or
+mathematical correctness.
+
 Run all evals from the repository root:
 
 ```sh
