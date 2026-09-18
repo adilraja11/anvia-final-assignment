@@ -20,6 +20,16 @@ separate observed Blibli market range. The local-only valuation route implements
 boundary, but it remains a synchronous stage contract: do not present it as the public product API
 until its job, access-control, rate-limit, persistence, and browser contracts exist.
 
+Before implementing or revising the persistent valuation job, result, or evidence workflow, read
+the [valuation workflow integration plan](docs/plans/valuation-workflow-integration.md). When
+changing its public request, polling, result, evidence, access-control, idempotency, or error
+behavior, also read the [valuation workflow API contract](docs/contracts/valuation-workflow-api.md).
+The workflow documents describe a proposed target and do not make those routes live.
+
+Before adding or changing Prisma models, enums, relations, indexes, migrations, retention, or
+worker-claim fields for that workflow, read the
+[valuation data-model contract](docs/contracts/valuation-data-model.md).
+
 ## Persistence and contracts
 
 - Update `prisma/schema.prisma` for data-model changes, create a migration through Prisma, then regenerate the client. Do not edit `src/generated/prisma/` or existing migration files by hand.

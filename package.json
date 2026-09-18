@@ -7,6 +7,7 @@
 		"dev": "dotenv -e .env -- pnpm --parallel --filter @repo/agents --filter @repo/platform --filter @repo/api dev",
 		"dev:platform": "dotenv -e .env -- pnpm --filter @repo/platform dev",
 		"dev:api": "dotenv -e .env -- pnpm --filter @repo/api dev",
+		"worker:dev": "dotenv -e .env -- pnpm --filter @repo/api worker:dev",
 		"build": "dotenv -e .env -- pnpm -r --if-present build",
 		"typecheck": "dotenv -e .env -- pnpm -r --if-present typecheck",
 		"db:generate": "dotenv -e .env -- pnpm --filter @repo/api prisma:generate",

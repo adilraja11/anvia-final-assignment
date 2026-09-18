@@ -13,6 +13,7 @@ allowBuilds:
   onnxruntime-node: true
   protobufjs: true
   sharp: false
+  msgpackr-extract: false
 
 minimumReleaseAgeExclude:
   - '@anvia/core@1.2.0'
