@@ -1,52 +1,77 @@
 import {
 	type ComparableListing,
+	type EvidencePurpose,
 	type MarketplaceCondition,
 	type MarketplaceToolResult,
 	normalizeText,
+	type ProductCategory,
 } from "./marketplace.js";
 
 export type ValuationConfidence = "HIGH" | "MEDIUM";
 export type EvidenceCoverage = "LOCAL" | "NATIONAL";
+export type AgeSource = "USER_PROVIDED" | "CATEGORY_DEFAULT";
 
 export type ValuationResult =
-	| {
-			status: "RATE_LIMITED";
-	  }
+	| { status: "RATE_LIMITED" }
 	| {
 			status: "VALUATED";
-			recommended_minimum_idr: number;
-			recommended_maximum_idr: number;
 			suggested_listing_price_idr: number;
+			observed_market_range_idr: { minimum: number; maximum: number };
+			new_reference_price_idr: number;
+			market_adjustment: { unclamped: number; applied: number };
 			confidence: ValuationConfidence;
 			confidence_reason: string;
-			accepted_comparable_count: number;
-			source_coverage: Record<"BLIBLI" | "FACEBOOK_MARKETPLACE", number>;
+			age_months: number;
+			age_source: AgeSource;
+			depreciation_rate: number;
+			condition_multiplier: number;
+			accepted_new_reference_count: number;
+			accepted_used_market_count: number;
 			evidence_coverage: EvidenceCoverage;
 			accepted_evidence: ComparableListing[];
 			outlier_count: number;
 	  }
 	| {
 			status: "INSUFFICIENT_EVIDENCE";
-			accepted_comparable_count: number;
-			outlier_count: number;
+			accepted_new_reference_count: number;
+			accepted_used_market_count: number;
 			accepted_evidence: ComparableListing[];
 			evidence_coverage: EvidenceCoverage;
+			outlier_count: number;
 	  }
-	| {
-			status: "SERVICE_FAILURE";
-			failed_sources: Array<"BLIBLI" | "FACEBOOK_MARKETPLACE">;
-	  };
-
-type Source = "BLIBLI" | "FACEBOOK_MARKETPLACE";
+	| { status: "SERVICE_FAILURE"; failed_purposes: EvidencePurpose[] };
 
 export type CalculateValuationInput = {
+	category: ProductCategory;
 	condition: MarketplaceCondition;
+	ageMonths?: number;
 	location?: string;
 	providerResults: MarketplaceToolResult[];
 	rateLimited?: boolean;
 };
 
-const MIN_ACCEPTED_COMPARABLES = 10;
+const CATEGORY_DEFAULT_AGE_MONTHS: Record<ProductCategory, number> = {
+	computer: 24,
+	handphone: 18,
+	tablet: 24,
+	gaming_console: 24,
+	camera: 36,
+};
+
+const ANNUAL_DEPRECIATION: Record<ProductCategory, number> = {
+	computer: 0.25,
+	handphone: 0.35,
+	tablet: 0.3,
+	gaming_console: 0.2,
+	camera: 0.2,
+};
+
+const CONDITION_MULTIPLIER: Record<MarketplaceCondition, number> = {
+	"Seperti baru": 0.95,
+	Baik: 0.825,
+	Cukup: 0.675,
+	Rusak: 0.5,
+};
 
 function percentile(values: number[], fraction: number) {
 	const ordered = [...values].sort((left, right) => left - right);
@@ -58,19 +83,8 @@ function percentile(values: number[], fraction: number) {
 	);
 }
 
-function weightedPercentile(evidence: ComparableListing[], fraction: number) {
-	const counts = new Map<Source, number>();
-	for (const item of evidence)
-		counts.set(item.source, (counts.get(item.source) ?? 0) + 1);
-	const sourceWeight = 1 / counts.size;
-	let cumulativeWeight = 0;
-	for (const item of [...evidence].sort(
-		(left, right) => left.price_idr - right.price_idr,
-	)) {
-		cumulativeWeight += sourceWeight / (counts.get(item.source) ?? 1);
-		if (cumulativeWeight >= fraction) return item.price_idr;
-	}
-	return evidence.at(-1)?.price_idr;
+function median(values: number[]) {
+	return percentile(values, 0.5);
 }
 
 function locationMatches(city: string | undefined, location: string) {
@@ -83,23 +97,47 @@ function locationMatches(city: string | undefined, location: string) {
 	);
 }
 
-function selectCoverage(evidence: ComparableListing[], location?: string) {
-	if (!location) return { evidence, coverage: "NATIONAL" as const };
-	const local = evidence.filter((item) => locationMatches(item.city, location));
-	return local.length >= MIN_ACCEPTED_COMPARABLES
-		? { evidence: local, coverage: "LOCAL" as const }
-		: { evidence, coverage: "NATIONAL" as const };
+function selectCoverage(
+	newReference: ComparableListing[],
+	usedMarket: ComparableListing[],
+	location?: string,
+) {
+	if (!location)
+		return { newReference, usedMarket, coverage: "NATIONAL" as const };
+	const localNewReference = newReference.filter((item) =>
+		locationMatches(item.city, location),
+	);
+	const localUsedMarket = usedMarket.filter((item) =>
+		locationMatches(item.city, location),
+	);
+	return localNewReference.length >= 3 && localUsedMarket.length >= 5
+		? {
+				newReference: localNewReference,
+				usedMarket: localUsedMarket,
+				coverage: "LOCAL" as const,
+			}
+		: { newReference, usedMarket, coverage: "NATIONAL" as const };
 }
 
-function acceptedEvidence(results: MarketplaceToolResult[]) {
+function acceptedEvidence(
+	results: MarketplaceToolResult[],
+	purpose: EvidencePurpose,
+) {
 	const seen = new Set<string>();
 	const evidence: ComparableListing[] = [];
 	for (const result of results) {
-		if (result.status !== "SUCCESS") continue;
+		if (result.status !== "SUCCESS" || result.purpose !== purpose) continue;
 		for (const item of result.evidence) {
-			if (!Number.isSafeInteger(item.price_idr) || item.price_idr <= 0)
+			if (
+				item.source !== "BLIBLI" ||
+				item.purpose !== purpose ||
+				!Number.isSafeInteger(item.price_idr) ||
+				item.price_idr <= 0 ||
+				(purpose === "new_reference" && item.lifecycle !== "NEW") ||
+				(purpose === "used_market" && item.lifecycle !== "USED")
+			)
 				continue;
-			const key = `${item.source}:${item.listing_id}:${item.listing_url}`;
+			const key = `${item.listing_id}:${item.listing_url}`;
 			if (seen.has(key)) continue;
 			seen.add(key);
 			evidence.push(item);
@@ -108,21 +146,26 @@ function acceptedEvidence(results: MarketplaceToolResult[]) {
 	return evidence;
 }
 
-function matchesCondition(
-	condition: MarketplaceCondition,
-	evidence: ComparableListing["condition"],
-) {
-	if (condition === "Tidak diketahui") return true;
-	return (
-		(condition === "Seperti baru" && evidence === "LIKE_NEW") ||
-		(condition === "Baik" && evidence === "GOOD") ||
-		(condition === "Cukup" && evidence === "FAIR") ||
-		(condition === "Rusak" && evidence === "DAMAGED")
+function removeOutliers(evidence: ComparableListing[]) {
+	if (evidence.length < 4) return { evidence, outlierCount: 0 };
+	const prices = evidence.map((item) => item.price_idr);
+	const firstQuartile = percentile(prices, 0.25);
+	const thirdQuartile = percentile(prices, 0.75);
+	const interquartileRange = thirdQuartile - firstQuartile;
+	const lowerFence = firstQuartile - 1.5 * interquartileRange;
+	const upperFence = thirdQuartile + 1.5 * interquartileRange;
+	const accepted = evidence.filter(
+		(item) => item.price_idr >= lowerFence && item.price_idr <= upperFence,
 	);
+	return {
+		evidence: accepted,
+		outlierCount: evidence.length - accepted.length,
+	};
 }
 
+/** Rounds positive IDR values half-up to the nearest Rp1.000. */
 export function roundIdr(value: number) {
-	return Math.round(value / 1_000) * 1_000;
+	return Math.floor(value / 1_000 + 0.5) * 1_000;
 }
 
 export function formatIdr(value: number) {
@@ -138,91 +181,94 @@ export function calculateValuation(
 ): ValuationResult {
 	if (input.rateLimited) return { status: "RATE_LIMITED" };
 
-	const failures = input.providerResults
-		.filter(
-			(
-				result,
-			): result is Extract<
-				MarketplaceToolResult,
-				{ status: "PROVIDER_FAILURE" }
-			> => result.status === "PROVIDER_FAILURE",
-		)
-		.map((result) => result.source);
-	const successes = input.providerResults.filter(
-		(result) => result.status === "SUCCESS",
-	);
-	if (successes.length === 0 && failures.length >= 2)
-		return { status: "SERVICE_FAILURE", failed_sources: failures };
+	const failedPurposes = ["new_reference", "used_market"] as const;
+	const failures = failedPurposes.filter((purpose) => {
+		const purposeResults = input.providerResults.filter(
+			(result) => result.purpose === purpose,
+		);
+		return (
+			purposeResults.length === 0 ||
+			purposeResults.some((result) => result.status === "PROVIDER_FAILURE")
+		);
+	});
+	if (failures.length > 0)
+		return { status: "SERVICE_FAILURE", failed_purposes: [...failures] };
 
-	const conditionEvidence = acceptedEvidence(input.providerResults).filter(
-		(item) => matchesCondition(input.condition, item.condition),
+	const selected = selectCoverage(
+		acceptedEvidence(input.providerResults, "new_reference"),
+		acceptedEvidence(input.providerResults, "used_market"),
+		input.location,
 	);
-	const conditionSelected = selectCoverage(conditionEvidence, input.location);
-	if (conditionSelected.evidence.length < MIN_ACCEPTED_COMPARABLES)
+	const newReference = removeOutliers(selected.newReference);
+	const usedMarket = removeOutliers(selected.usedMarket);
+	const acceptedEvidenceAll = [
+		...newReference.evidence,
+		...usedMarket.evidence,
+	];
+	const outlierCount = newReference.outlierCount + usedMarket.outlierCount;
+	if (newReference.evidence.length < 3 || usedMarket.evidence.length < 5)
 		return {
 			status: "INSUFFICIENT_EVIDENCE",
-			accepted_comparable_count: conditionSelected.evidence.length,
-			outlier_count: 0,
-			accepted_evidence: conditionSelected.evidence,
-			evidence_coverage: conditionSelected.coverage,
-		};
-
-	const prices = conditionSelected.evidence.map((item) => item.price_idr);
-	const firstQuartile = percentile(prices, 0.25);
-	const thirdQuartile = percentile(prices, 0.75);
-	const interquartileRange = thirdQuartile - firstQuartile;
-	const lowerFence = firstQuartile - 1.5 * interquartileRange;
-	const upperFence = thirdQuartile + 1.5 * interquartileRange;
-	const filtered = conditionSelected.evidence.filter(
-		(item) => item.price_idr >= lowerFence && item.price_idr <= upperFence,
-	);
-	const outlierCount = conditionSelected.evidence.length - filtered.length;
-	if (filtered.length < MIN_ACCEPTED_COMPARABLES)
-		return {
-			status: "INSUFFICIENT_EVIDENCE",
-			accepted_comparable_count: filtered.length,
+			accepted_new_reference_count: newReference.evidence.length,
+			accepted_used_market_count: usedMarket.evidence.length,
+			accepted_evidence: acceptedEvidenceAll,
+			evidence_coverage: selected.coverage,
 			outlier_count: outlierCount,
-			accepted_evidence: filtered,
-			evidence_coverage: conditionSelected.coverage,
 		};
 
-	const minimum = weightedPercentile(filtered, 0.25);
-	const maximum = weightedPercentile(filtered, 0.75);
-	const suggested = weightedPercentile(filtered, 0.5);
-	if (minimum === undefined || maximum === undefined || suggested === undefined)
-		return {
-			status: "INSUFFICIENT_EVIDENCE",
-			accepted_comparable_count: filtered.length,
-			outlier_count: outlierCount,
-			accepted_evidence: filtered,
-			evidence_coverage: conditionSelected.coverage,
-		};
-
-	const sourceCoverage = {
-		BLIBLI: filtered.filter((item) => item.source === "BLIBLI").length,
-		FACEBOOK_MARKETPLACE: filtered.filter(
-			(item) => item.source === "FACEBOOK_MARKETPLACE",
-		).length,
-	};
+	const ageMonths =
+		input.ageMonths ?? CATEGORY_DEFAULT_AGE_MONTHS[input.category];
+	if (!Number.isInteger(ageMonths) || ageMonths < 0 || ageMonths > 240)
+		throw new RangeError(
+			"ageMonths must be a whole number from 0 through 240.",
+		);
+	const ageSource: AgeSource =
+		input.ageMonths === undefined ? "CATEGORY_DEFAULT" : "USER_PROVIDED";
+	const newReferencePrice = median(
+		newReference.evidence.map((item) => item.price_idr),
+	);
+	const depreciationRate = ANNUAL_DEPRECIATION[input.category];
+	const conditionMultiplier = CONDITION_MULTIPLIER[input.condition];
+	const baseline =
+		newReferencePrice *
+		(1 - depreciationRate) ** (ageMonths / 12) *
+		conditionMultiplier;
+	const unclampedMarketAdjustment =
+		median(usedMarket.evidence.map((item) => item.price_idr)) / baseline;
+	const marketAdjustment = Math.max(
+		0.85,
+		Math.min(1.15, unclampedMarketAdjustment),
+	);
+	const suggested = baseline * marketAdjustment;
+	const usedPrices = usedMarket.evidence.map((item) => item.price_idr);
 	const highConfidence =
-		input.condition !== "Tidak diketahui" &&
-		sourceCoverage.BLIBLI >= 3 &&
-		sourceCoverage.FACEBOOK_MARKETPLACE >= 3;
+		usedMarket.evidence.length >= 15 && ageSource !== "CATEGORY_DEFAULT";
 	return {
 		status: "VALUATED",
-		recommended_minimum_idr: roundIdr(minimum),
-		recommended_maximum_idr: roundIdr(maximum),
 		suggested_listing_price_idr: roundIdr(suggested),
+		observed_market_range_idr: {
+			minimum: roundIdr(percentile(usedPrices, 0.25)),
+			maximum: roundIdr(percentile(usedPrices, 0.75)),
+		},
+		new_reference_price_idr: roundIdr(newReferencePrice),
+		market_adjustment: {
+			unclamped: unclampedMarketAdjustment,
+			applied: marketAdjustment,
+		},
 		confidence: highConfidence ? "HIGH" : "MEDIUM",
 		confidence_reason: highConfidence
-			? "Setidaknya 10 pembanding diterima, termasuk minimal 3 dari masing-masing marketplace."
-			: input.condition === "Tidak diketahui"
-				? "Setidaknya 10 pembanding diterima, tetapi kondisi barang tidak diketahui sehingga kepercayaan dibatasi."
-				: `Setidaknya 10 pembanding diterima; cakupan sumber adalah ${sourceCoverage.BLIBLI} Blibli dan ${sourceCoverage.FACEBOOK_MARKETPLACE} Facebook Marketplace.`,
-		accepted_comparable_count: filtered.length,
-		source_coverage: sourceCoverage,
-		evidence_coverage: conditionSelected.coverage,
-		accepted_evidence: filtered,
+			? "Terdapat setidaknya 3 referensi barang baru dan 15 listing barang bekas yang diterima."
+			: ageSource === "CATEGORY_DEFAULT"
+				? "Usia default kategori digunakan sehingga tingkat kepercayaan dibatasi ke MEDIUM."
+				: "Terdapat setidaknya 3 referensi barang baru dan 5 listing barang bekas yang diterima.",
+		age_months: ageMonths,
+		age_source: ageSource,
+		depreciation_rate: depreciationRate,
+		condition_multiplier: conditionMultiplier,
+		accepted_new_reference_count: newReference.evidence.length,
+		accepted_used_market_count: usedMarket.evidence.length,
+		evidence_coverage: selected.coverage,
+		accepted_evidence: acceptedEvidenceAll,
 		outlier_count: outlierCount,
 	};
 }

@@ -2,9 +2,8 @@
 
 ## Contract status
 
-This is the intended valuation-agent contract from the PRD and ADR 002. The current agent factory,
-Facebook tool, and weighted-percentile engine are legacy implementation and must not be represented
-as satisfying this document until they are replaced.
+This valuation-agent contract implements the PRD and ADR 002. It uses fixed-purpose Blibli
+searches and passes accepted evidence to the application-owned deterministic engine.
 
 ## Purpose
 

@@ -2,8 +2,8 @@
 
 This guide covers the server-only `apify-client` setup for the intended Blibli valuation
 integration. Provider request, normalization, validation, and failure rules are in
-[APIFY_INTEGRATION.md](APIFY_INTEGRATION.md). The current code still contains a legacy Facebook
-tool; this guide does not make that tool part of the intended PRD contract.
+[APIFY_INTEGRATION.md](APIFY_INTEGRATION.md). The package exposes only the fixed-purpose Blibli
+search boundary for valuation.
 
 ## Install and credentials
 

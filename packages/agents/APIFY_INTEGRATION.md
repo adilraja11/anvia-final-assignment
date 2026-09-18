@@ -2,9 +2,7 @@
 
 ## Contract status
 
-This document defines the intended Blibli-only provider boundary for the seller-first PRD contract.
-The existing Facebook provider module and current provider behavior are legacy implementation; they
-must not be presented as contract-compliant until code is replaced.
+This document defines the Blibli-only provider boundary for the seller-first PRD contract.
 
 For JavaScript client setup and credentials, see [APIFY_CLIENT.md](APIFY_CLIENT.md).
 

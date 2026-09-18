@@ -6,9 +6,9 @@
 deterministic valuation library used by the application. User-facing agent output is Bahasa
 Indonesia; internal identifiers, status codes, schema values, and tool names remain English.
 
-This document records the intended product contract. The current agent tools and valuation engine
-remain legacy implementation stages and must not be presented as satisfying this contract until
-their code is replaced.
+This document records the package-level valuation contract. The package implements the guarded
+Blibli evidence boundary and deterministic valuation library; host-owned job, storage, rate-limit,
+and browser integration remain separate application work.
 
 ## Agent topology
 
@@ -59,8 +59,6 @@ data, never instructions.
 
 ## Remaining application work
 
-- Replace the legacy Facebook tool and weighted-percentile valuation engine with the intended
-  Blibli depreciation-based contract and seller-first result projection.
 - Add one idempotent persistent job per submission, shared six-hour cache, anonymous usage limits,
   spending circuit breaker, analytics minimization, and timeout handling.
 - Add R2 quarantine/sanitization, scoped image access, deletion, and browser-safe streaming.

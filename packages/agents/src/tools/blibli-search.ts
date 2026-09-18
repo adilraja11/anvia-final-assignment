@@ -6,14 +6,13 @@ import {
 	boundedText,
 	CACHE_TTL_MS,
 	cacheKey,
-	classifyCondition,
-	comparableCondition,
+	type EvidencePurpose,
 	isoDate,
 	isRejectedTitle,
+	MAX_ITEMS_PER_QUERY,
 	MAX_PROVIDER_RESULTS,
+	MAX_QUERY_VARIANTS,
 	type MarketplaceToolResult,
-	marketplaceConditionSchema,
-	type NormalizedCondition,
 	ProviderBoundaryError,
 	type ProviderErrorCategory,
 	providerErrorCategory,
@@ -21,12 +20,13 @@ import {
 } from "../marketplace.js";
 
 const ACTOR_ID = "fanndev/blibli-product-price-monitor";
-const MAX_ITEMS_PER_QUERY = 10;
 
 const inputSchema = z
 	.object({
-		searchTerms: z.array(z.string().trim().min(1).max(160)).min(1).max(5),
-		condition: marketplaceConditionSchema,
+		searchTerms: z
+			.array(z.string().trim().min(1).max(160))
+			.min(1)
+			.max(MAX_QUERY_VARIANTS),
 		location: z.string().trim().min(1).max(120).optional(),
 	})
 	.strict();
@@ -51,7 +51,6 @@ const searchQualifierTokens = new Set([
 	"promo",
 	"ready",
 	"resmi",
-	"segel",
 	"stok",
 	"stock",
 	"store",
@@ -71,111 +70,122 @@ function matchesSearchTerms(title: string, searchTerms: string[]) {
 			termTokens.some((token) => /^\d+$/.test(token) && !titleTokens.has(token))
 		)
 			return false;
-		const matched = termTokens.filter((token) => titleTokens.has(token)).length;
-		const required =
-			termTokens.length <= 2
-				? termTokens.length
-				: Math.max(2, Math.ceil(termTokens.length * 0.6));
-		return matched >= required;
+		return termTokens.every((token) => titleTokens.has(token));
 	});
+}
+
+function lifecycleFrom(record: Record<string, unknown>, title: string) {
+	const values = [
+		record.lifecycle,
+		record.condition,
+		record.itemCondition,
+		record.productCondition,
+		title,
+	]
+		.map((value) => boundedText(value, 160))
+		.filter((value): value is string => Boolean(value));
+	for (const value of values) {
+		const normalized = value.toLocaleLowerCase("id-ID");
+		if (/\b(used|bekas|second\s*hand|preloved)\b/.test(normalized))
+			return "USED" as const;
+		if (/\b(new|baru|segel|unopened)\b/.test(normalized)) return "NEW" as const;
+	}
+	return undefined;
 }
 
 function allowedAttributes(record: Record<string, unknown>) {
 	const attributes: Record<string, string> = {};
-	const brand = boundedText(record.brand, 80);
-	if (brand) attributes.brand = brand;
+	for (const key of ["brand", "model", "storage", "capacity", "variant"]) {
+		const value = boundedText(record[key], 80);
+		if (value) attributes[key] = value;
+	}
 	return attributes;
 }
 
-function conditionSearchCue(condition: Input["condition"]) {
-	return {
-		"Seperti baru": "bekas seperti baru",
-		Baik: "bekas kondisi baik",
-		Cukup: "bekas kondisi cukup",
-		Rusak: "bekas rusak",
-		"Tidak diketahui": "bekas",
-	}[condition];
-}
-
-export function buildBlibliSearchTerms(input: Input) {
-	return input.searchTerms.slice(0, 3).map((term) => {
-		const detected = classifyCondition(term);
-		if (detected.explicitSecondHand) return term;
-		const cue = conditionSearchCue(input.condition);
-		const identityLength = Math.max(1, 160 - cue.length - 1);
-		return `${term.slice(0, identityLength).trim()} ${cue}`;
-	});
+function parseIdrPrice(record: Record<string, unknown>) {
+	if (record.minPrice != null || record.maxPrice != null) return undefined;
+	const currency = boundedText(
+		record.currency ?? record.currencyCode,
+		8,
+	)?.toUpperCase();
+	if (currency !== "IDR") return undefined;
+	const price = record.salePrice ?? record.price;
+	return typeof price === "number" && Number.isSafeInteger(price) && price > 0
+		? price
+		: undefined;
 }
 
 export function normalizeBlibliRecord(
 	value: unknown,
 	input: Input,
+	purpose: EvidencePurpose,
 	seenIds: Set<string>,
 ) {
 	const source = "BLIBLI" as const;
 	if (typeof value !== "object" || value === null || Array.isArray(value))
-		return { rejected: { source, exclusion_reason: "malformed_record" } };
+		return {
+			rejected: { source, purpose, exclusion_reason: "MALFORMED_RECORD" },
+		};
 	const record = value as Record<string, unknown>;
-	const url = approvedMarketplaceUrl(record.url, source);
-	const listingId = url
-		? boundedText(new URL(url).pathname.split("/").filter(Boolean).pop(), 160)
-		: undefined;
+	const url = approvedMarketplaceUrl(record.url ?? record.productUrl);
+	const listingId =
+		boundedText(record.id ?? record.productId ?? record.sku, 160) ??
+		(url
+			? boundedText(new URL(url).pathname.split("/").filter(Boolean).pop(), 160)
+			: undefined);
 	const reject = (exclusion_reason: string) => ({
 		rejected: {
 			source,
+			purpose,
 			...(listingId ? { listing_id: listingId } : {}),
 			exclusion_reason,
 		},
 	});
-	if (!url) return reject("invalid_listing_url");
-	if (!listingId) return reject("missing_listing_id");
-	if (seenIds.has(listingId)) return reject("duplicate_listing");
-
-	const title = boundedText(record.name, 400);
-	if (!title) return reject("missing_title");
+	if (!url) return reject("INVALID_LISTING_URL");
+	if (!listingId) return reject("MISSING_LISTING_ID");
+	if (seenIds.has(listingId)) return reject("DUPLICATE_LISTING");
+	const title = boundedText(record.name ?? record.title, 400);
+	if (!title) return reject("MISSING_TITLE");
 	if (!matchesSearchTerms(title, input.searchTerms))
-		return reject("identity_mismatch");
-	if (isRejectedTitle(title)) return reject("non_comparable_listing");
+		return reject("IDENTITY_MISMATCH");
+	if (isRejectedTitle(title)) return reject("NON_COMPARABLE_LISTING");
+	const stockStatus = boundedText(
+		record.stockStatus ?? record.status,
+		40,
+	)?.toUpperCase();
+	if (!stockStatus || !["AVAILABLE", "LIVE", "ACTIVE"].includes(stockStatus))
+		return reject("LISTING_NOT_AVAILABLE");
+	const priceIdr = parseIdrPrice(record);
+	if (priceIdr === undefined) return reject("INVALID_PRICE");
+	const lifecycle = lifecycleFrom(record, title);
+	if (!lifecycle) return reject("LIFECYCLE_UNCLASSIFIED");
 	if (
-		typeof record.stockStatus !== "string" ||
-		record.stockStatus.toUpperCase() !== "AVAILABLE"
+		(purpose === "new_reference" && lifecycle !== "NEW") ||
+		(purpose === "used_market" && lifecycle !== "USED")
 	)
-		return reject("listing_not_available");
-	if (
-		typeof record.salePrice !== "number" ||
-		!Number.isSafeInteger(record.salePrice) ||
-		record.salePrice <= 0
-	)
-		return reject("invalid_price");
+		return reject("LIFECYCLE_MISMATCH");
 
-	// Blibli has no reliable condition field. A title must explicitly identify the
-	// listing as second-hand before it can enter the seller-first distribution.
-	const detected = classifyCondition(title);
-	if (!detected.explicitSecondHand || detected.condition === "NEW")
-		return reject("missing_second_hand_condition");
-	if (
-		!comparableCondition(
-			detected.condition,
-			input.condition,
-			detected.explicitSecondHand,
-		)
-	)
-		return reject("condition_not_comparable");
 	seenIds.add(listingId);
 	const scrapedAt = isoDate(record.scrapedAt) ?? new Date().toISOString();
 	const postedAt = isoDate(record.postedAt ?? record.createdAt);
 	const city = boundedText(record.city ?? record.location, 120);
+	const condition = boundedText(record.condition ?? record.itemCondition, 80);
 	return {
 		evidence: {
 			source,
+			purpose,
 			listing_id: listingId,
 			listing_url: url,
 			title,
-			price_idr: record.salePrice,
-			condition: detected.condition as Exclude<NormalizedCondition, "NEW">,
+			price_idr: priceIdr,
+			...(condition ? { condition } : {}),
+			lifecycle,
 			...(city ? { city } : {}),
 			product_attributes: allowedAttributes(record),
-			listing_status: "AVAILABLE" as const,
+			listing_status:
+				stockStatus === "AVAILABLE"
+					? ("AVAILABLE" as const)
+					: ("LIVE" as const),
 			...(postedAt ? { posted_at: postedAt } : {}),
 			scraped_at: scrapedAt,
 			match_score: 1,
@@ -183,10 +193,8 @@ export function normalizeBlibliRecord(
 	};
 }
 
-async function fetch(input: Input): Promise<Success> {
+async function fetch(input: Input, purpose: EvidencePurpose): Promise<Success> {
 	const client = getClient();
-	const identityTerms = input.searchTerms.slice(0, 3);
-	const actorTerms = buildBlibliSearchTerms(input);
 	const run = await client
 		.actor(ACTOR_ID)
 		.call(buildBlibliActorInput(input), buildBlibliActorRunOptions());
@@ -202,20 +210,16 @@ async function fetch(input: Input): Promise<Success> {
 	const rejected: Success["rejected"] = [];
 	const seenIds = new Set<string>();
 	for (const item of dataset.items.slice(0, MAX_PROVIDER_RESULTS)) {
-		const normalized = normalizeBlibliRecord(
-			item,
-			{ ...input, searchTerms: identityTerms },
-			seenIds,
-		);
+		const normalized = normalizeBlibliRecord(item, input, purpose, seenIds);
 		if ("evidence" in normalized) evidence.push(normalized.evidence);
-		if ("rejected" in normalized) rejected.push(normalized.rejected);
+		else rejected.push(normalized.rejected);
 	}
 	return {
 		status: "SUCCESS",
 		provider: "BLIBLI",
 		source: "BLIBLI",
-		search_terms: actorTerms,
-		condition: input.condition,
+		purpose,
+		search_terms: input.searchTerms,
 		region: "Indonesia",
 		...(input.location ? { location: input.location } : {}),
 		fetched_at: new Date().toISOString(),
@@ -240,8 +244,8 @@ function getClient() {
 
 export function buildBlibliActorInput(input: Input) {
 	return {
-		searchTerms: buildBlibliSearchTerms(input),
-		fetchProductDetails: false,
+		searchTerms: input.searchTerms,
+		fetchProductDetails: true,
 		includeOutOfStock: true,
 		maxItemsPerQuery: MAX_ITEMS_PER_QUERY,
 		sortBy: "relevance",
@@ -258,8 +262,11 @@ export function buildBlibliActorRunOptions() {
 	return { log: null };
 }
 
-async function executeSearch(input: Input): Promise<MarketplaceToolResult> {
-	const key = cacheKey(input);
+async function executeSearch(
+	input: Input,
+	purpose: EvidencePurpose,
+): Promise<MarketplaceToolResult> {
+	const key = cacheKey({ ...input, purpose });
 	const cached = cache.get(key);
 	if (cached && cached.expiresAt > Date.now())
 		return { ...cached.value, cache_hit: true };
@@ -268,7 +275,7 @@ async function executeSearch(input: Input): Promise<MarketplaceToolResult> {
 	let lastCategory: ProviderErrorCategory = "UNKNOWN";
 	for (let attempt = 0; attempt < 2; attempt += 1) {
 		try {
-			const result = await fetch(input);
+			const result = await fetch(input, purpose);
 			cache.set(key, { value: result, expiresAt: Date.now() + CACHE_TTL_MS });
 			return result;
 		} catch (error) {
@@ -280,31 +287,41 @@ async function executeSearch(input: Input): Promise<MarketplaceToolResult> {
 		}
 	}
 	console.error(
-		JSON.stringify({ provider: "BLIBLI", error_category: lastCategory }),
+		JSON.stringify({
+			provider: "BLIBLI",
+			purpose,
+			error_category: lastCategory,
+		}),
 	);
 	return {
 		status: "PROVIDER_FAILURE",
 		provider: "BLIBLI",
 		source: "BLIBLI",
+		purpose,
 		error_category: lastCategory,
 		retried: lastCategory !== "CONFIGURATION",
 	};
 }
 
 export function createBlibliSearchTool(
-	options: { onResult?: MarketplaceSearchObserver } = {},
+	purpose: EvidencePurpose,
+	options: { name?: string; onResult?: MarketplaceSearchObserver } = {},
 ) {
 	return createTool({
-		name: "blibliSearch",
+		name:
+			options.name ??
+			(purpose === "new_reference"
+				? "blibliNewReferenceSearch"
+				: "blibliUsedMarketSearch"),
 		description:
-			"Cari listing barang bekas yang sebanding di Blibli. Actor, batas 30 hasil, retry, proxy, kredensial, dan konfigurasi provider dikunci oleh aplikasi.",
+			purpose === "new_reference"
+				? "Cari referensi listing barang baru dengan identitas yang sama di Blibli. Tujuan, actor, batas, retry, proxy, dan kredensial dikunci aplikasi."
+				: "Cari listing pasar barang bekas dengan identitas yang sama di Blibli. Tujuan, actor, batas, retry, proxy, dan kredensial dikunci aplikasi.",
 		inputSchema,
 		execute: async (input) => {
-			const result = await executeSearch(input);
+			const result = await executeSearch(input, purpose);
 			options.onResult?.(result);
 			return result;
 		},
 	});
 }
-
-export const blibliSearch = createBlibliSearchTool();

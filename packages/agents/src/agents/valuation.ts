@@ -10,10 +10,6 @@ import {
 	type MarketplaceSearchObserver as BlibliSearchObserver,
 	createBlibliSearchTool,
 } from "../tools/blibli-search.js";
-import {
-	createFacebookMarketplaceSearchTool,
-	type MarketplaceSearchObserver as FacebookSearchObserver,
-} from "../tools/facebook-search.js";
 
 const explanationSchema = z.string().trim().min(1).max(2_000);
 const explanationItemSchema = z.string().trim().min(1).max(300);
@@ -66,9 +62,9 @@ export interface CreateValuationAgentOptions
 	additionalTools?: AnyTool[];
 	additionalInstructions?: string[];
 	memory?: MemoryStore;
-	/** @deprecated The PRD allows only the two fixed marketplace tools. */
+	/** @deprecated The PRD permits no tools beyond the two fixed Blibli searches. */
 	includeWebTools?: boolean;
-	onMarketplaceResult?: BlibliSearchObserver & FacebookSearchObserver;
+	onMarketplaceResult?: BlibliSearchObserver;
 }
 
 export function createValuationAgent(
@@ -84,8 +80,10 @@ export function createValuationAgent(
 			...(options.additionalInstructions ?? []),
 		].join("\n\n"),
 		tools: [
-			createBlibliSearchTool({ onResult: options.onMarketplaceResult }),
-			createFacebookMarketplaceSearchTool({
+			createBlibliSearchTool("new_reference", {
+				onResult: options.onMarketplaceResult,
+			}),
+			createBlibliSearchTool("used_market", {
 				onResult: options.onMarketplaceResult,
 			}),
 		],
