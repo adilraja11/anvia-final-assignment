@@ -92,6 +92,10 @@ text, listing data, or tool result. Its schema-validated output is the only resu
 returns; an extraction failure must be handled explicitly and never replaced with a guessed product
 or generic supported result.
 
+The package implementation stops at this schema-validated handoff. Upload quarantine, retention,
+browser transport, and the seller confirmation screen remain application work; `SUPPORTED` does
+not authorize a marketplace search by itself.
+
 The helper accepts optional run-level `abortSignal` and `trace` settings. It forwards cancellation
 to both the image-agent generation and the structured extraction call; trace metadata must never
 contain image bytes, filenames, image content, or user-provided text.
