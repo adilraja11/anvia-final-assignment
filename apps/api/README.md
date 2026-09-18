@@ -16,11 +16,11 @@ Do not expose them to the public internet. See the [agent API contract](docs/con
 for the complete request and response shapes.
 
 These routes expose agent stages for local integration only. They are not the seller-first,
-second-hand-only product API defined by the PRD: that future API must omit an asking-price field,
-use the two approved evidence providers, and return a deterministic listing-price range and
-weighted-median suggested listing price. A legacy valuation-agent `SUCCESS` is not a final
-`VALUATED` result; authentication, persistent jobs, public rate limits, R2 upload, and the browser
-workflow also remain deferred.
+second-hand-only product API defined by the PRD: that future API must omit asking and original-price
+fields, use the fixed Blibli actor for separate new-reference and used-market evidence, and return
+a condition-adjusted suggestion plus a separately labeled mixed-condition market range. A legacy
+valuation-agent `SUCCESS` is not a final `VALUATED` result; authentication, persistent jobs, public
+rate limits, R2 upload, and the browser workflow also remain deferred.
 
 ## Commands
 

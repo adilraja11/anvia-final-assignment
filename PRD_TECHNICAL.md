@@ -2,51 +2,54 @@
 
 [← Part 1: Product Requirements](PRD.md)
 
+This document specifies the intended valuation contract; it does not assert that the current client-only mock or legacy API/agent stages implement it.
+
 ## 10. Deterministic Valuation
 ### 10.1 Separation of responsibilities
 - AI may identify, normalize, match, categorize, and explain.
 - Application code validates evidence and calculates all prices.
 - The model cannot modify the calculation or substitute a price.
-- The seller does not supply a target or asking price; the recommendation derives only from accepted comparable evidence.
+- The seller does not supply a target, asking, or original price. The application derives its new-reference price and market evidence from Blibli.
 ### 10.2 Calculation
-1. Begin with listings that pass schema, identity, variant, condition, currency, and duplication checks.
-2. Calculate the first and third quartiles (`Q1` and `Q3`) of comparable prices.
-3. Calculate `IQR = Q3 - Q1` and remove prices outside `Q1 - 1.5 × IQR` and `Q3 + 1.5 × IQR`.
-4. Require at least ten accepted comparables after filtering.
-5. When both sources contribute evidence, give each source 50% of the total distribution weight and divide that source's weight equally among its accepted listings. When one source contributes, it receives 100% of the weight.
-6. Calculate weighted percentiles from the accepted evidence:
-   - Recommended listing-price minimum: weighted 25th percentile.
-   - Recommended listing-price maximum: weighted 75th percentile.
-   - Comparable median: weighted 50th percentile.
-7. Use the comparable median as the suggested listing price for a balanced sale.
-8. Round and format all displayed values consistently as Indonesian rupiah.
+1. Split validated Blibli evidence into an explicitly new `new_reference` set and an explicitly used `used_market` set. Both sets must pass schema, exact identity, price, currency, lifecycle, and duplication checks. The used set is condition-agnostic: it does not require a listing condition comparable to the submitted item.
+2. For each set with at least four records, calculate `Q1`, `Q3`, and `IQR = Q3 - Q1`; remove prices outside `Q1 - 1.5 × IQR` and `Q3 + 1.5 × IQR`. Do not apply IQR exclusion to a three-record `new_reference` set.
+3. Require at least three accepted new-reference listings and at least five accepted used-market listings after filtering.
+4. Calculate `P₀` as the median price of the accepted new-reference set. `P₀` is an unverified Blibli new-price reference, not an official or historical original price.
+5. Calculate `t` in years. The seller may optionally supply exactly one of: a purchase month/year or an approximate age band. A purchase month/year is converted to complete elapsed months at valuation time and divided by 12; it must resolve to an age from zero through 240 whole months. Age bands map to fixed month values: `<6 bulan = 3`, `6–12 bulan = 9`, `1–2 tahun = 18`, `2–3 tahun = 30`, `3–5 tahun = 48`, and `>5 tahun = 72`. When no age input is supplied, use the versioned category default: computer `24` months, gaming console `24`, handphone `18`, tablet `24`, and camera `36`.
+6. Select the versioned, application-owned annual depreciation rate `d`: computer `0.25`, gaming console `0.20`, handphone `0.35`, tablet `0.30`, and camera `0.20`. AI cannot select or alter a rate.
+7. Select the deterministic condition multiplier `C`: `Seperti baru = 0.95`, `Baik = 0.825`, `Cukup = 0.675`, and `Rusak = 0.50`. A missing or unknown condition returns `MORE_INFORMATION_REQUIRED`.
+8. Calculate the pre-market baseline: `B = P₀ × (1 − d)^t × C`.
+9. Calculate the advertised-market adjustment: `M = clamp(median(used_market.price_idr) / B, 0.85, 1.15)`. Record the unclamped and applied values. `M` is an advertised-market proxy, not a completed-sales or demand measurement.
+10. Calculate the suggested price: `Price_suggested = P₀ × (1 − d)^t × C × M × L`, where `L = 1.0` for this MVP. The liquidity/urgency factor is not a seller input.
+11. Calculate the observed market range as the unweighted P25–P75 range of accepted used-market prices. It is a condition-agnostic current Blibli market range and does not represent the submitted item's condition.
+12. Round every displayed price using deterministic half-up rounding to the nearest Rp1.000.
 ### 10.3 Confidence
-- `HIGH`: at least ten accepted comparables, including at least three from Blibli and three from Facebook Marketplace.
-- `MEDIUM`: at least ten accepted comparables, but the `HIGH` cross-source requirement is not met.
-- `INSUFFICIENT_EVIDENCE`: fewer than ten accepted comparables remain after filtering.
-An item with condition `Tidak diketahui` cannot receive `HIGH` confidence.
-The UI explains the evidence count and source coverage behind the confidence level.
+- `HIGH`: at least three accepted new-reference listings and at least 15 accepted used-market listings.
+- `MEDIUM`: at least three accepted new-reference listings and five through 14 accepted used-market listings.
+- `INSUFFICIENT_EVIDENCE`: fewer than three accepted new-reference listings or fewer than five accepted used-market listings remain after filtering.
+- A valuation using a category-default age cannot receive `HIGH` confidence.
+The UI explains both evidence counts, whether it used a supplied or default age, and the single-source limitation behind the confidence level.
 ## 11. Results Screen
 A successful result displays:
 
 - Confirmed product identity and condition.
-- Recommended minimum and maximum listing price.
-- Suggested listing price for a balanced sale.
+- Condition-adjusted suggested listing price.
+- An observed market range labeled **"Rentang harga pasar saat ini di Blibli (berbagai kondisi)"**.
 - Confidence level and its reason.
 - A grounded explanation of the listing-price recommendation.
 - Relevant pros and cons.
 - The statement **"Estimasi hanya mencakup harga barang."**
 - A limitation notice that the result does not verify authenticity, ownership, safety, or hidden physical condition.
+- A disclosure that **"Harga referensi barang baru dari Blibli"** is an advertised reference, not an official or historical original price.
 ### 11.1 Evidence transparency
 The evidence section displays:
 
-- Total accepted comparable count.
-- Accepted count from each marketplace.
+- Accepted new-reference and used-market counts.
 - Evidence retrieval timestamp in Indonesian local time.
 - Three to five representative accepted listings.
-- Marketplace, listing title, item price, condition, and city when available.
+- Marketplace, evidence purpose, listing title, item price, condition, and city when available.
 - A direct link to the original listing.
-- A notice that displayed marketplace prices are asking prices unless a completed-sale status was verified.
+- A notice that displayed Blibli prices are advertised asking prices, not completed-sale, official, or historical original prices.
 Seller names and profile information are not displayed.
 ### 11.2 Explanation grounding
 Every material statement must derive from one of these internal source classes:
@@ -62,9 +65,8 @@ Pros and cons focus on transaction-relevant evidence such as condition, warranty
 - Target completion time is 60 seconds.
 - Hard timeout is 90 seconds.
 - Each failed actor may be retried once if time remains.
-- If one provider fails but at least ten accepted comparables remain, return `MEDIUM` confidence.
-- If both providers fail, return `SERVICE_FAILURE`, not `INSUFFICIENT_EVIDENCE`.
-- If providers succeed but fewer than ten comparables remain, return `INSUFFICIENT_EVIDENCE`.
+- If Blibli fails after its allowed retry, return `SERVICE_FAILURE`, not `INSUFFICIENT_EVIDENCE`.
+- If Blibli succeeds but fewer than three new references or five used-market listings remain, return `INSUFFICIENT_EVIDENCE`.
 - Malformed responses and timeouts never become pricing evidence.
 
 ## 13. Cost and Abuse Controls
@@ -72,8 +74,8 @@ The MVP is freely accessible without authentication, subject to these controls:
 
 - Maximum of five valuations per anonymous user or client per day.
 - No paid actor run before the user confirms identity and condition.
-- Maximum of two normal actor runs and one retry per failed actor per valuation.
-- Maximum result count of 30 per actor.
+- Maximum of two normal Blibli actor runs, one `new_reference` and one `used_market`, plus one retry per failed purpose per valuation.
+- Maximum of three query variants per purpose and ten results per query, for at most 30 results per purpose.
 - Six-hour evidence caching.
 - Idempotency for repeat submissions, refreshes, and double-clicks.
 - A configurable global daily spending limit and circuit breaker.
@@ -85,7 +87,7 @@ The MVP is freely accessible without authentication, subject to these controls:
 - Uploaded images are handled through the private R2 quarantine and sanitization flow.
 - Raw images, credentials, presigned URLs, and seller personal information are excluded from application logs.
 - Apify and R2 credentials remain server-side and are never provided to the model or browser.
-- The agent may call only the two approved actor integrations.
+- The agent may call only the approved Blibli actor integration for the two fixed retrieval purposes.
 - Application code enforces actor IDs, call count, retries, timeouts, result limits, cache policy, and spending limits.
 - Presigned URLs grant only the minimum operation, object, and lifetime required.
 - Marketplace response URLs, types, and prices are validated before use.
@@ -100,8 +102,8 @@ The MVP records only the anonymous operational events necessary to evaluate the 
 - Supported category.
 - Title corrected or accepted.
 - Outcome status and confidence.
-- Accepted evidence count and source coverage.
-- Actor success, failure, retry, and estimated usage cost.
+- Accepted new-reference and used-market evidence counts.
+- Blibli purpose success, failure, retry, and estimated usage cost.
 Analytics must not include raw images, user-entered free text, credentials, seller identity, or full actor responses.
 
 ## 16. Automated Evaluation Plan
@@ -123,11 +125,11 @@ Requirements:
 Because the harness supports only text input and expected text, these evals do not independently prove image-recognition accuracy, live scraper reliability, or mathematical correctness. Claims about the demo must reflect that limitation.
 
 ## 17. MVP Exclusions
-- Product categories outside smartphones, laptops, tablets, and gaming consoles.
+- Product categories outside computers, handphones, tablets, gaming consoles, and cameras.
 - New products.
 - Guaranteed product authentication, ownership verification, safety verification, or physical-condition inspection.
 - General-purpose web search or unapproved marketplace actors.
-- More than the two approved marketplace evidence providers.
+- Marketplace evidence providers other than the approved Blibli actor.
 - User-supplied marketplace listing URLs.
 - Automatic seller messaging or negotiation.
 - Payments, escrow, purchasing, financing, repair estimates, shipping, or delivery.
@@ -155,11 +157,11 @@ Because the harness supports only text input and expected text, these evals do n
 > Give individual sellers a useful, evidence-based listing-price recommendation without pretending the AI knows more than it does.
 
 1. **Seller first:** Help individual sellers price second-hand items they own for a balanced sale.
-2. **Use ranges:** Avoid false precision.
+2. **Explain two price views:** Show a condition-adjusted suggestion separately from the mixed-condition observed market range.
 3. **Require exact identity:** Do not compare materially different variants.
 4. **Use current evidence:** Ground prices in approved marketplace listings.
 5. **Calculate deterministically:** Keep valuation mathematics outside the language model.
-6. **Expose uncertainty:** Show evidence count, source coverage, confidence, and missing information.
+6. **Expose uncertainty:** Show new-reference and used-market evidence counts, confidence, and missing information.
 7. **Separate sources:** Distinguish visible observations, user-provided details, marketplace evidence, and unknowns.
 8. **Do not claim authenticity or condition:** Image analysis and listing text cannot guarantee either.
 9. **Protect privacy:** Minimize image retention and avoid collecting seller personal information.

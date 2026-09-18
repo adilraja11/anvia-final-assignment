@@ -8,16 +8,17 @@ AsliSegini? seller listing-price recommendation contract.
 
 ## PRD alignment
 
-The current PRD is for individual Indonesian sellers of second-hand electronics. Its public
-workflow collects identity, second-hand condition, optional listing details, and optional location;
-it does not collect an asking price. Its deterministic result is a 25th–75th percentile
-listing-price range and a weighted-median suggested listing price for a balanced sale, using only
-the two approved evidence providers.
+The current PRD is for individual Indonesian sellers of second-hand computers, handphones, tablets,
+gaming consoles, and cameras. Its public workflow collects identity, second-hand condition,
+optional purchase month/year or age band, listing details, and location; it does not collect an
+asking or original price. Its deterministic result uses separate Blibli `new_reference` and
+`used_market` sets to produce a condition-adjusted suggested price and a separately labeled,
+mixed-condition observed market range.
 
 The implemented routes below predate that contract. They retain a four-field buyer-era request,
-including `productAskingPriceIdr`, and legacy provider behavior. They are local-only integration
-routes and must not be presented as a PRD-compliant product API. A replacement public contract
-requires a separately reviewed implementation.
+including `productAskingPriceIdr`, and legacy provider behavior, including Facebook tooling. They
+are local-only integration routes and must not be presented as a PRD-compliant product API. A
+replacement public contract requires a separately reviewed implementation.
 
 ## Route scope
 

@@ -20,8 +20,8 @@ listing-price recommendation workflow.
   valuation result, and browser integration remain unimplemented.
 - The valuation helper returns evidence-grounded narrative fields and evidence IDs. The API also
   derives a narrow legacy deterministic `finalRecommendation` from captured accepted comparable
-  evidence; it returns a reasonable-buy price range, not the PRD's seller listing-price range,
-  suggested listing price, or confidence.
+  evidence; it returns a reasonable-buy price range, not the PRD's depreciation-based suggestion,
+  observed market range, or confidence.
 
 ## Accepted implementation scope
 
@@ -35,11 +35,11 @@ The implementation follows these accepted boundaries:
    in memory before invoking the agent. This gives the agent sanitized bytes but does not implement
    the PRD's future private R2 quarantine/presigned-upload lifecycle.
 3. **Product and provider contract mismatch:** the current PRD is seller-first and second-hand-only:
-   it has no asking-price input, returns a listing-price range plus a weighted-median suggested
-   listing price, and names Blibli plus a different Facebook actor. The implemented valuation
-   agent retains a buyer-era four-field payload, a legacy Blibli configuration, and
-   `curious_coder/facebook-marketplace`. This plan connects that legacy implementation unchanged
-   and does not claim PRD compliance.
+   it has no asking or original-price input, uses Blibli-only `new_reference` and `used_market`
+   evidence, and returns a condition-adjusted suggestion plus a separately labeled observed market
+   range. The implemented valuation agent retains a buyer-era four-field payload, a legacy Blibli
+   configuration, and `curious_coder/facebook-marketplace`. This plan connects that legacy
+   implementation unchanged and does not claim PRD compliance.
 4. **Result meaning:** a valuation-agent `SUCCESS` means the evidence/explanation agent stage
    completed. It must not be renamed to `VALUATED`; the API's narrow recommendation does not yet
    provide the full range, confidence, job, and evidence-presentation contract required for that
@@ -132,9 +132,11 @@ platform UI and `finding/agents` fixtures. Those unrelated files were not change
   and the 90-second job boundary;
 - five-per-day anonymous limits, global spending limits, bot challenge, and persistent evidence
   cache enforcement at the application layer;
-- the PRD's listing-price range, weighted-median suggested listing price, confidence,
-  representative-listing persistence, and a final `VALUATED` response;
+- the PRD's Blibli new-reference and used-market retrieval, depreciation-based suggestion,
+  observed market range, confidence, representative-listing persistence, and final `VALUATED`
+  response;
 - evidence persistence and the representative-listing response required by the results screen;
 - platform UI integration and client-side state;
-- replacement of the legacy Blibli configuration and Facebook tool with PRD-compliant provider integrations;
+- replacement of the legacy Blibli configuration and Facebook tool with the PRD-compliant
+  Blibli-only provider integration;
 - automated API tests and agent behavioral eval expansion.

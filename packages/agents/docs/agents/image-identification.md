@@ -4,7 +4,8 @@
 
 This agent is the first step of the AsliSegini? listing-price recommendation workflow. It receives exactly one
 sanitized product image and determines whether its primary product is in the MVP-supported
-categories from [PRD.md](../../../../PRD.md): smartphone, laptop, tablet, or gaming console.
+categories from [PRD.md](../../../../PRD.md): computer, handphone, tablet, gaming console, or
+camera.
 
 For a supported, identifiable product, the agent returns only the product name. It does not
 produce a product specification, condition assessment, price, marketplace search term,
@@ -44,7 +45,7 @@ steps.
 - Return `SUPPORTED` only when the image contains one identifiable primary product in a
   supported category. Set `productName` to that product's concise name.
 - Return `UNSUPPORTED_CATEGORY` when the primary product is outside the MVP categories or is an
-  explicitly rejected type: component, accessory, TV or monitor, camera, audio equipment, home
+  explicitly rejected type: component, accessory, TV or monitor, audio equipment, home
   appliance, repair-only or parts-only item, or a bundle with multiple primary products.
 - Return `MORE_INFORMATION_REQUIRED` when a supported primary product may be present but the
   image is too unclear, incomplete, conflicting, or ambiguous to name without guessing. Do not
@@ -72,7 +73,8 @@ would otherwise be supported.
 
 1. The application sanitizes one uploaded image and invokes this agent with that image only.
 2. For `SUPPORTED`, the application displays `productName` as an editable proposal and collects
-   the required identity fields, a second-hand condition, and optional listing details and location.
+   the required identity fields, a second-hand condition, optional age information, listing details,
+   and location.
 3. For `UNSUPPORTED_CATEGORY`, the application ends the recommendation flow without a generic or
    low-confidence price recommendation.
 4. For `MORE_INFORMATION_REQUIRED`, the application asks for a clearer eligible image; it does
@@ -111,7 +113,7 @@ and application streaming work, and preserve the PRD's single-image, privacy, an
 Add schema-level and behavioral tests for at least:
 
 - one identifiable item in each supported category;
-- an accessory, component, camera, audio device, and TV or monitor;
+- an accessory, component, audio device, and TV or monitor;
 - a repair-only or parts-only image and an image with multiple primary products;
 - a blurry or obstructed supported item that must return `MORE_INFORMATION_REQUIRED`; and
 - a supported item with incidental accessories that must still return its product name only.

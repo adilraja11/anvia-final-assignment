@@ -1,8 +1,9 @@
 # Apify JavaScript Client Setup
 
-This guide covers the server-only `apify-client` setup used by the two approved marketplace
-tools. Provider request, normalization, validation, and failure rules are in
-[APIFY_INTEGRATION.md](APIFY_INTEGRATION.md).
+This guide covers the server-only `apify-client` setup for the intended Blibli valuation
+integration. Provider request, normalization, validation, and failure rules are in
+[APIFY_INTEGRATION.md](APIFY_INTEGRATION.md). The current code still contains a legacy Facebook
+tool; this guide does not make that tool part of the intended PRD contract.
 
 ## Install and credentials
 
@@ -23,7 +24,7 @@ response. The client is imported only by server-side tool code.
 
 ## Client boundary
 
-Each provider tool creates its client privately with the same bounded settings:
+The Blibli tool creates its client privately with the bounded settings:
 
 ```ts
 const client = new ApifyClient({
@@ -54,5 +55,6 @@ pnpm --filter @repo/agents build
 ```
 
 With valid configuration, manually verify a successful result, a successful empty result, a
-provider failure, one retry, invalid IDR/URL/status records, second-hand condition filtering, and
-the 30-result limit. Do not expose the provider output in issue reports or traces.
+provider failure, one retry, invalid IDR/URL/status records, exact identity and explicit lifecycle
+validation, condition-agnostic used-market acceptance, and the ten-results-per-query limit. Do not
+expose the provider output in issue reports or traces.

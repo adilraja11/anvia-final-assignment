@@ -12,11 +12,12 @@ write browser storage. It must not present mock evidence as live market data or 
 live provider fails.
 
 The intended flow lets a seller confirm a product's identity, second-hand condition, optional
-details, and optional listing location. It does not ask for an asking price. A completed live result
-will show a server-calculated 25th–75th percentile listing-price range and a weighted-median
-suggested listing price for a balanced sale, with confidence and evidence disclosure.
+purchase month/year or age band, details, and optional listing location. It does not ask for an
+asking or original price. A completed live result will show a server-calculated condition-adjusted
+suggested price and separately labeled **"Rentang harga pasar saat ini di Blibli (berbagai kondisi)"**,
+with confidence and Blibli evidence disclosure.
 
-The browser never calculates or invents the range, suggested listing price, confidence, or
+The browser never calculates or invents the market range, suggested listing price, confidence, or
 marketplace evidence. The current API agent-stage routes are also legacy local-only endpoints; they
 are not the product API for this flow.
 

@@ -14,10 +14,11 @@ Before implementing or revising the dedicated image-identification or valuation-
 read the [agent API integration plan](docs/plans/agent-api-integration.md).
 When changing those routes' request, response, validation, authentication, or error behavior, also
 read the [agent API contract](docs/contracts/agent-api.md).
-The intended public product contract is seller-first and second-hand-only: it accepts no asking
-price and returns a listing-price range plus a suggested listing price. The current local-only
-agent routes are a legacy stage contract; preserve and document that mismatch until a replacement
-is implemented rather than presenting those routes as the public product API.
+The intended public product contract is seller-first and second-hand-only: it accepts no asking or
+original price, derives a Blibli new-reference price and condition-adjusted suggestion, and returns
+a separate mixed-condition Blibli market range. The current local-only agent routes are a legacy
+stage contract; preserve and document that mismatch until a replacement is implemented rather than
+presenting those routes as the public product API.
 
 ## Persistence and contracts
 

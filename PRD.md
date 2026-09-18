@@ -5,10 +5,11 @@
 ## 1. Document Context
 This document defines the requirements for a two-week demo MVP. The goal is to demonstrate a complete, evidence-grounded valuation workflow; it is not a claim of production readiness or production-grade market accuracy.
 The product interface and generated responses will use Bahasa Indonesia. Internal status codes and technical identifiers may remain in English.
+This is the intended product contract. The current client-only mock and legacy API/agent stages do not yet implement every requirement in this document and must not be presented as if they do.
 
 ## 2. Product Summary
-AsliSegini? is an AI-assisted listing-price evaluator for people in Indonesia selling second-hand consumer electronics that they own on an online marketplace. The MVP is intended for individual sellers, not stores, resellers, or professional refurbishers. It does not verify ownership. A user uploads a product image, confirms the product identity and condition, and optionally provides listing details and a city or region.
-The application retrieves comparable listings from Blibli and Facebook Marketplace, filters them for relevance, and uses deterministic application logic to produce:
+AsliSegini? is an AI-assisted listing-price evaluator for people in Indonesia selling second-hand consumer electronics that they own on an online marketplace. The MVP is intended for individual sellers, not stores, resellers, or professional refurbishers. It does not verify ownership. A user uploads a product image, confirms the product identity and condition, and optionally provides listing details, age information, and a city or region.
+The application retrieves current Blibli evidence in separate new-reference and used-market sets, filters it for relevance, and uses deterministic application logic to produce:
 
 - An evidence-based listing-price range.
 - A suggested listing price for a balanced sale.
@@ -24,14 +25,14 @@ AsliSegini? reduces that effort by combining image-assisted identification, user
 ## 4. Goals and Success Criteria
 ### 4.1 MVP goals
 - Demonstrate an end-to-end listing-price recommendation flow for supported second-hand electronics.
-- Ground every price result in current Blibli and/or Facebook Marketplace listings.
+- Ground every price result in current Blibli listings.
 - Make uncertainty and evidence coverage visible.
 - Prevent the AI from inventing prices, sources, product details, or tool results.
 - Keep the anonymous public demo within explicit storage, latency, and paid-tool limits.
 ### 4.2 Demo success criteria
 - At least 80% of valid, supported submissions finish within 90 seconds.
 - Fewer than 5% of submissions end in `SERVICE_FAILURE`.
-- Completion, unsupported-category, insufficient-evidence, title-correction, evidence-count, source-coverage, and latency metrics can be measured by category.
+- Completion, unsupported-category, insufficient-evidence, title-correction, new-reference and used-market evidence counts, and latency metrics can be measured by category.
 - No confirmed case invents a marketplace source or price.
 - At least 27 of 30 automated evaluation cases pass.
 - All safety and permission evaluation cases pass; any failure in this category blocks demo readiness.
@@ -42,7 +43,7 @@ The primary users are people in Indonesia who want to sell a supported second-ha
 Typical needs include:
 
 - Choosing a defensible listing price and price range.
-- Understanding the comparable median as a balanced suggested listing price.
+- Understanding the evidence, age assumption, condition, and market adjustment behind the suggested listing price.
 - Understanding which product and listing details materially affect the comparison.
 - Seeing the evidence and limitations behind the estimate.
 
@@ -50,16 +51,16 @@ Typical needs include:
 ### 6.1 Supported categories
 The MVP supports only second-hand:
 
-- Smartphones.
-- Laptops.
+- Computers, including laptops, desktop PCs, and all-in-ones.
+- Handphones.
 - Tablets.
 - Gaming consoles.
+- Cameras.
 The MVP explicitly rejects:
 
 - New products.
 - Components and accessories.
 - TVs and monitors.
-- Cameras.
 - Audio equipment.
 - Home appliances.
 - Repair-only or parts-only listings.
@@ -69,9 +70,10 @@ Unsupported products return `UNSUPPORTED_CATEGORY`; the application must not att
 ### 6.2 Minimum product identity
 Paid marketplace searches must not begin until the user confirms the minimum price-critical identity:
 
-- Smartphone or tablet: brand, exact model, storage capacity, and connectivity variant when relevant.
-- Laptop: brand/model, CPU, RAM, storage, and dedicated GPU when applicable.
+- Handphone or tablet: brand, exact model, storage capacity, and connectivity variant when relevant.
+- Computer: form factor, brand/model, CPU, RAM, storage, dedicated GPU when applicable, and included display or peripherals when those affect the price.
 - Gaming console: generation/model, edition such as digital or disc, storage, and bundle contents.
+- Camera: body brand/model and whether a lens is included; included lens, bundle, and other price-critical details when applicable.
 The AI proposes these values from the uploaded image and user text. The user can correct them through the editable product title and details. If a required value remains unknown, return `MORE_INFORMATION_REQUIRED` and explain what must be added.
 ### 6.3 Price scope
 The recommendation covers the item price only. It excludes:
@@ -89,16 +91,17 @@ Accessories are included only when equivalent accessories are present in both th
 3. AI determines whether the image contains a supported, identifiable product.
 4. AI generates an editable product title and proposed price-critical identity.
 5. The user confirms or corrects the identity.
-6. The user selects a required condition: `Seperti baru`, `Baik`, `Cukup`, `Rusak`, or `Tidak diketahui`.
-7. The user optionally adds listing details such as defects, warranty, repairs, and included accessories.
-8. The user optionally enters the city or region where they intend to list the item.
-9. The application confirms that minimum identity requirements are satisfied.
-10. The user starts the analysis.
-11. The application creates one idempotent valuation job and displays progress.
-12. The application retrieves, validates, and filters marketplace evidence.
-13. Deterministic application code calculates the result.
-14. AI produces a Bahasa Indonesia explanation grounded in the calculated result and accepted evidence.
-15. The results screen displays the listing-price recommendation, confidence, evidence summary, and applicable limitations.
+6. The user selects a required condition: `Seperti baru`, `Baik`, `Cukup`, or `Rusak`.
+7. The user optionally selects either a purchase month/year or an approximate age band. If neither is supplied, the application applies and discloses a category default age.
+8. The user optionally adds listing details such as defects, warranty, repairs, and included accessories.
+9. The user optionally enters the city or region where they intend to list the item.
+10. The application confirms that minimum identity requirements are satisfied.
+11. The user starts the analysis.
+12. The application creates one idempotent valuation job and displays progress.
+13. The application retrieves, validates, and filters marketplace evidence.
+14. Deterministic application code calculates the result.
+15. AI produces a Bahasa Indonesia explanation grounded in the calculated result and accepted evidence.
+16. The results screen displays the listing-price recommendation, confidence, evidence summary, and applicable limitations.
 ### 7.2 Progress states
 The interface displays these localized stages:
 
@@ -113,10 +116,10 @@ The following internal statuses are distinct and must not be collapsed into a ge
 | Internal status | Bahasa Indonesia presentation | Meaning |
 | --- | --- | --- |
 | `VALUATED` | Result and recommendation | A deterministic listing-price recommendation was produced. |
-| `UNSUPPORTED_CATEGORY` | Kategori produk belum didukung | The product is outside the four supported categories or is not second-hand. |
+| `UNSUPPORTED_CATEGORY` | Kategori produk belum didukung | The product is outside the five supported categories or is not second-hand. |
 | `MORE_INFORMATION_REQUIRED` | Informasi produk perlu dilengkapi | A price-critical identity field is missing. |
-| `INSUFFICIENT_EVIDENCE` | Bukti harga belum cukup | Tools worked, but fewer than ten usable comparables remained. |
-| `SERVICE_FAILURE` | Layanan sedang bermasalah | Both evidence providers failed or the valuation job could not complete. |
+| `INSUFFICIENT_EVIDENCE` | Bukti harga belum cukup | Blibli worked, but fewer than three usable new references or fewer than five usable used-market listings remained. |
+| `SERVICE_FAILURE` | Layanan sedang bermasalah | Blibli failed after its bounded retry or the valuation job could not complete. |
 | `RATE_LIMITED` | Batas penggunaan tercapai | A user or global usage limit prevented a new paid run. |
 
 ## 8. Image Upload and Storage
@@ -144,34 +147,37 @@ The following internal statuses are distinct and must not be collapsed into a ge
 The R2 bucket must remain private. Presigned URLs are treated as bearer credentials and must be short-lived, operation-specific, and object-specific. CORS permits only the required methods, headers, and application origins.
 
 ## 9. Marketplace Evidence
-### 9.1 Approved evidence providers
-The MVP uses a maximum of two normal actor runs per valuation:
+### 9.1 Approved evidence provider
+The MVP uses only `fanndev/blibli-product-price-monitor`. It may perform a maximum of two normal actor runs per valuation, one for each fixed application-owned purpose:
 
-1. `fanndev/blibli-product-price-monitor` for second-hand Blibli listings.
-2. `apify/facebook-marketplace-scraper` for second-hand Facebook Marketplace listings.
-Both sources are queried when applicable. They are approved sources of pricing evidence only; AsliSegini? does not publish a listing and its recommendation may be used on any Indonesian online marketplace. Evidence represents advertised listing prices unless a completed-sale state is explicitly and reliably present; the system must not describe advertised prices as completed transaction prices.
+1. `new_reference`, which finds explicitly new identity-matched Blibli listings for the retail reference price (`P₀`).
+2. `used_market`, which finds explicitly used identity-matched Blibli listings for the market adjustment and observed market range.
+
+Blibli is approved as a source of pricing evidence only; AsliSegini? does not publish a listing and its recommendation may be used on any Indonesian online marketplace. All evidence represents advertised asking prices. The system must not describe them as official prices, historical original prices, or completed transactions.
 Marketplace data collection is limited to publicly visible listing data obtained through approved third-party providers and remains subject to legal, terms-of-service, privacy, and data-retention review. Use of Apify alone must not be described as marketplace authorization.
 ### 9.2 Evidence retrieval
 - AI generates normalized Bahasa Indonesia search terms while preserving official brand and model names.
-- The application, not the model, selects the fixed actor IDs and enforces parameters.
+- The application, not the model, selects the fixed actor ID, retrieval purpose, lifecycle terms, and parameters.
 - An optional city or region is used to prefer geographically relevant evidence. If it is omitted, the search is nationwide.
 - If too few local results are available, nationwide evidence may be used and the wider coverage must be disclosed.
 - Location affects evidence selection only; the AI must not invent a regional price adjustment.
-- Each actor returns no more than 30 results per valuation.
-- Each failed actor may be retried once within the job time budget.
-- Successful evidence is cached for six hours by normalized product identity, condition, and region.
+- Each purpose may use at most three application-owned normalized query variants. `MAX_ITEMS_PER_QUERY` is always 10, so each purpose returns no more than 30 records before validation.
+- Each failed purpose may be retried once within the job time budget.
+- Successful evidence is cached for six hours by purpose, normalized product identity, and region.
 - A normal in-date cache hit may be reused to avoid a duplicate paid run.
-- Expired cache data is not used as a hidden fallback when both actors fail.
+- Expired cache data is not used as a hidden fallback when Blibli fails.
 - The live presentation does not substitute hard-coded or fabricated marketplace prices.
 ### 9.3 Normalized evidence schema
 Every comparable considered by the valuation engine uses this normalized structure:
 ```text
 source
+purpose
 listing_id
 listing_url
 title
 price_idr
 condition
+lifecycle
 city
 seller_type
 product_attributes
@@ -187,13 +193,15 @@ Before valuation, the application must:
 
 - Validate actor output against a strict schema.
 - Accept only numeric IDR item prices.
-- Accept evidence links only from approved Blibli and Facebook domains.
+- Accept evidence links only from approved Blibli domains.
 - Reject accessories, components, repair-only products, and unrelated listings.
 - Reject wrong models, material specification mismatches, and irrelevant bundles.
 - Reject misleading minimum variant prices when the matched variant has another price.
-- Reject duplicates across repeated searches and actors.
-- Reject listings whose condition is not comparable to the submitted item.
-- For `Tidak diketahui`, use only listings identified as second-hand, allow multiple used-condition labels, and cap the final confidence at `MEDIUM`.
-- Remove statistical price outliers after identity and condition filtering.
+- Reject duplicates across repeated queries and purposes.
+- Require the confirmed brand, exact model, and every price-critical variant after safe normalization. A similar product family, incompatible variant, or ambiguous model is not evidence.
+- Use title and normalized attributes as the primary identity evidence. Bounded product-detail descriptions may corroborate a match but cannot override a missing or contradictory identity field.
+- Include a listing only when its lifecycle is explicit: new listings belong only to `new_reference`; used listings belong only to `used_market`. Exclude all unclear lifecycle records with `LIFECYCLE_UNCLASSIFIED`.
+- Do not reject an explicitly used listing merely because its condition category differs from the submitted item. Submitted condition affects the deterministic condition multiplier only.
+- Remove statistical price outliers after identity and lifecycle filtering.
 - Preserve a machine-readable exclusion reason for every rejected result.
 User text and scraped content are untrusted data. Instructions embedded in titles or descriptions must never change system behavior, actor selection, tool limits, or the valuation formula.
