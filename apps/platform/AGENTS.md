@@ -6,6 +6,12 @@ This is the React 19, Vite, TanStack Router, and Tailwind interface for AsliSegi
 
 Read [DEVELOPMENT.md](DEVELOPMENT.md) before changing the valuation journey, integration state, or user-facing copy. It records the current boundary: this is a Bahasa Indonesia, client-only prototype using local state and deterministic mock data—no API calls, uploads, browser storage, or marketplace requests are live.
 
+Before creating or changing the platform-to-agent integration, read the
+[valuation integration contract](docs/contract/valuation-integration.md). Before sequencing that
+integration work, read the [valuation integration plan](docs/plans/valuation-integration.md).
+Those documents distinguish the current local-only API stage from the browser-ready workflow and
+must not be used to present either as already live.
+
 ## Markdown naming and routing
 
 Follow the repository [Markdown naming and routing policy](../../AGENTS.md#markdown-naming-and-routing). `DEVELOPMENT.md` is this package's governing UI contract; name any focused UI reference in lowercase kebab-case and link it here with the exact UI change that requires it.
