@@ -4,7 +4,7 @@
 	"scripts": {
 		"check": "biome check .",
 		"check:fix": "biome check --write .",
-		"dev": "dotenv -e .env -- pnpm --parallel --filter @repo/agents --filter @repo/platform --filter @repo/api dev",
+		"dev": "dotenv -e .env -- concurrently --kill-others-on-fail --names agents,platform,api,worker \"pnpm --filter @repo/agents dev\" \"pnpm --filter @repo/platform dev\" \"pnpm --filter @repo/api dev\" \"pnpm --filter @repo/api worker:dev\"",
 		"dev:platform": "dotenv -e .env -- pnpm --filter @repo/platform dev",
 		"dev:api": "dotenv -e .env -- pnpm --filter @repo/api dev",
 		"worker:dev": "dotenv -e .env -- pnpm --filter @repo/api worker:dev",
@@ -20,6 +20,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.7",
+		"concurrently": "^9.2.1",
 		"dotenv-cli": "^11.0.0"
 	},
 	"packageManager": "pnpm@11.9.0"
