@@ -2,17 +2,15 @@
 
 ## Current status
 
-`cases.ts` and `run.ts` currently run the legacy employee-handbook retrieval suite. That suite
-does not validate image identification, valuation quality, marketplace retrieval, or the price
-calculation contract.
+`cases.ts` and `run.ts` implement the 30-case product-agent baseline. The runner executes image
+identification against the local fixtures and valuation against a per-case mock `blibliSearch`
+tool. It never performs live marketplace retrieval.
 
-The planned product-agent baseline is specified by the [agent evaluation
-contract](../../docs/contracts/agent-eval-contract.md) and [30-case baseline
-plan](../../docs/plans/agent-eval-baseline.md). It has not yet been implemented in this directory.
-Do not cite the current handbook results as evidence that the planned product-agent baseline has
-passed.
+The previous employee-handbook runner and catalogue remain available as
+`run-legacy-handbook.ts` and `legacy-handbook-cases.ts`. Handbook results are not evidence that the
+product-agent baseline has passed.
 
-## Planned product-agent baseline
+## Product-agent baseline
 
 The baseline contains exactly 30 independent cases:
 
@@ -20,7 +18,7 @@ The baseline contains exactly 30 independent cases:
 - 12 valuation cases (`V-01` through `V-12`) using controlled mock identification output and
   comparable records.
 
-When the baseline is added, `src/evals/cases.ts` remains the single case catalogue. Each case entry
+`src/evals/cases.ts` is the single product-agent case catalogue. Each case entry
 contains its input, expected output, deterministic assertions, and—in valuation cases—its mock
 evidence. Do not add separate `fixture-manifest.ts` or `mocked-evidence.ts` files.
 
@@ -48,13 +46,20 @@ Retain failure traces, treat invalid evaluations as neither pass nor fail, and a
 for each new regression. See [ANVIA_EVALS.md](../../../../ANVIA_EVALS.md) for runtime evaluation,
 reporting, and release-gate guidance.
 
-## Running the current suite
+## Running the suites
 
-Run the currently implemented handbook suite from the repository root:
+Run the product-agent baseline from the repository root:
 
 ```sh
 pnpm eval
 ```
 
-The product-agent runner and its deterministic graders must be added before this command can be
-used as evidence for the 30-case product baseline.
+Run the preserved handbook suite directly when a legacy comparison is needed:
+
+```sh
+pnpm --filter @repo/agents exec tsx src/evals/run-legacy-handbook.ts
+```
+
+The product runner validates fixture hashes before model execution, uses schema and deterministic
+metrics for every case, and invokes the optional rubric only for cases that request it. A completed
+suite is evaluation evidence, not a deployment decision.
