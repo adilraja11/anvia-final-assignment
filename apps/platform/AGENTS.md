@@ -26,6 +26,12 @@ sequencing that work, also read the
 [valuation chat integration plan](docs/plans/valuation-chat-integration.md). The documents describe
 a proposed integration and do not make chat live.
 
+Before adding or changing anonymous browser-cookie transport, temporary per-browser history,
+cookie bootstrap/retry behavior, or owner-scoped valuation/chat UI states, read the
+[anonymous cookie ownership contract](docs/contract/anonymous-cookie-ownership.md). Before
+sequencing that work, also read the
+[anonymous cookie ownership platform plan](docs/plans/anonymous-cookie-ownership.md).
+
 ## Markdown naming and routing
 
 Follow the repository [Markdown naming and routing policy](../../AGENTS.md#markdown-naming-and-routing). `DEVELOPMENT.md` is this package's governing UI contract; name any focused UI reference in lowercase kebab-case and link it here with the exact UI change that requires it.
