@@ -7,6 +7,7 @@ import {
 	valuationCreateResponseSchema,
 	valuationErrorResponseSchema,
 	valuationEvidenceResponseSchema,
+	valuationListResponseSchema,
 	valuationReadResponseSchema,
 } from "./schema.js";
 import {
@@ -17,6 +18,7 @@ import {
 	readEvidence,
 	readResponse,
 	readValuation,
+	readValuations,
 	ValuationServiceError,
 } from "./valuation-service.js";
 
@@ -94,6 +96,17 @@ export const valuationRouter = new Hono()
 			return errorResponse("INTERNAL_SERVICE_FAILURE");
 		}
 		await next();
+	})
+	.get("/", async (c) => {
+		try {
+			return c.json(
+				valuationListResponseSchema.parse({
+					valuations: await readValuations(),
+				}),
+			);
+		} catch {
+			return errorResponse("INTERNAL_SERVICE_FAILURE");
+		}
 	})
 	.post(
 		"/",

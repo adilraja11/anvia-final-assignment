@@ -40,6 +40,14 @@ export const valuationStageSchema = z.enum([
 	"COMPLETED",
 ]);
 
+const terminalValuationStatusSchema = z.enum([
+	"VALUATED",
+	"UNSUPPORTED_CATEGORY",
+	"MORE_INFORMATION_REQUIRED",
+	"INSUFFICIENT_EVIDENCE",
+	"SERVICE_FAILURE",
+]);
+
 export const valuationErrorCodeSchema = z.enum([
 	"INVALID_REQUEST",
 	"RESOURCE_NOT_FOUND",
@@ -73,6 +81,24 @@ const publicValuationSchema = z
 		expiresAt: dateSchema,
 		pollAfterMs: z.number().int().positive(),
 	})
+	.strict();
+
+const valuationListItemSchema = z
+	.object({
+		id: z.string().trim().min(1).max(64),
+		productName: productNameSchema,
+		productCondition: productConditionSchema,
+		productDescription: productDescriptionSchema.nullable(),
+		state: z.enum(["QUEUED", "RUNNING", "COMPLETED"]),
+		stage: valuationStageSchema.nullable(),
+		status: terminalValuationStatusSchema.nullable(),
+		createdAt: dateSchema,
+		expiresAt: dateSchema,
+	})
+	.strict();
+
+export const valuationListResponseSchema = z
+	.object({ valuations: z.array(valuationListItemSchema) })
 	.strict();
 
 const explanatoryTextSchema = z.string().trim().min(1).max(2_000);

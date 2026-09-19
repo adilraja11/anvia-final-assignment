@@ -85,13 +85,16 @@ model ValuationEvidence {
 
 ## Rules and mappings
 
-- The unauthenticated demo reads a valuation by its opaque ID alone. Treat that ID as a short-lived
-  read capability; it is not returned in lists or aliases.
+- The unauthenticated demo lists non-expired valuation summaries through `GET /api/valuations` and
+  reads a valuation by its opaque ID for detail. IDs remain short-lived read capabilities, and
+  rows older than 24 hours are excluded.
 - `idempotencyKey` prevents duplicate submissions when the client supplies the optional
   header. On conflict, compare the three stored product fields: return the existing row when equal,
   otherwise `IDEMPOTENCY_CONFLICT`. The server generates an internal key when the header is absent.
 - Conditions map as follows: `Seperti baru` → `LIKE_NEW`, `Baik` → `GOOD`, `Cukup` → `FAIR`, and
   `Rusak` → `DAMAGED`.
+- The list response projects the stored `productName`, public `productCondition`, and
+  `productDescription` (`null` when absent). The description remains untrusted user-provided data.
 - `QUEUED` maps to public state `QUEUED`; `PROCESSING` maps to `RUNNING`; terminal statuses map to
   `COMPLETED` plus the corresponding result status.
 - The evidence relation count supplies `acceptedComparableCount`; coverage is always `NATIONAL` in
@@ -129,6 +132,6 @@ claim production-grade auditability or recovery.
 
 ## Verification
 
-Run `pnpm db:generate`, create a new migration with `pnpm db:migrate`, then verify opaque-ID reads,
-idempotent creation, queue failure, terminal outcomes, BigInt conversion, URL validation, and
-cascade deletion. Use explicit Prisma `select` objects and response mappers.
+Run `pnpm db:generate`, create a new migration with `pnpm db:migrate`, then verify opaque-ID and
+all-valuation reads, idempotent creation, queue failure, terminal outcomes, BigInt conversion, URL
+validation, and cascade deletion. Use explicit Prisma `select` objects and response mappers.

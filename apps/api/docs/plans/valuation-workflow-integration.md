@@ -19,6 +19,8 @@ in [valuation-data-model.md](../contracts/valuation-data-model.md).
   still needs to be replaced with valuation work.
 - Prisma stores Anvia memory but no valuation/evidence data.
 - Platform uses labelled mock mode or the local synchronous adapter.
+- The collection `GET /api/valuations` route is implemented as a newest-first listing of all
+  non-expired valuations and accepts no query parameters.
 
 Keep the local routes unchanged. Add the asynchronous MVP under `/api/valuations`.
 
@@ -45,7 +47,9 @@ Keep the local routes unchanged. Add the asynchronous MVP under `/api/valuations
 4. Worker atomically claims `QUEUED` as `PROCESSING`, validates identity, uses a valid cache hit or
    runs Blibli once, calculates deterministically, obtains a grounded explanation, and commits the
    terminal result plus accepted evidence.
-5. Browser polls the valuation, navigates to the ID-based result route, then reads its evidence.
+5. Browser may restore all retained cards with the confirmed name, condition, and optional
+   description through `GET /api/valuations`, polls an individual valuation, navigates to its
+   ID-based result route, then reads its evidence.
 
 ## Storage and runtime design
 
@@ -66,8 +70,8 @@ src/config/
 └── queue.ts               # shared Queue producer instance
 src/worker.ts              # Worker instance and valuation job processor
 src/modules/valuations/
-├── router.ts              # POST and scoped GET routes
-├── schema.ts              # strict public schemas
+├── router.ts              # POST and valuation GET routes
+├── schema.ts              # strict public schemas, including list response
 ├── valuation-service.ts   # idempotency and persistence
 ├── evidence-service.ts    # cache, validation, accepted evidence
 └── runner.ts              # bounded orchestration and calculation called by worker.ts
@@ -128,8 +132,9 @@ Exit: every outcome is recoverable from PostgreSQL and completed rows are immuta
 
 ### 4. Routes and platform
 
-1. Mount `POST /api/valuations` plus scoped result/evidence `GET` routes without changing chat or
-   local agent routes.
+1. Mount `POST /api/valuations`, the all-valuations `GET /api/valuations` route, and scoped
+   result/evidence `GET` routes without changing chat or local agent routes. Register the collection
+   route before `/:valuationId` so it cannot be captured as a parameterized read.
 2. Enforce request size, allowed origin, global spending breaker,
    queue health, `Cache-Control: no-store`, and safe errors.
 3. Add platform creation/polling/evidence gateway; it may retain one idempotency key per
@@ -157,10 +162,13 @@ sanitized retention. Keep the local multipart adapter development-only.
 
 ## Verification
 
-Cover strict schemas, opaque-ID reads, replay/conflict/concurrent duplicate creation, duplicate queue
-delivery, pre-provider rejection, cache hit/miss/malformed/expiry, single-run limit, provider failure
-versus insufficient evidence, deterministic math, evidence URL filtering, timeout/shutdown/queue
-failure, cascade deletion, and sensitive-data redaction.
+Cover strict schemas, opaque-ID reads, all-valuations listing, rejection of query parameters,
+newest-first ordering, projection of the stored product name, condition, and nullable description,
+and no provider/queue work for reads;
+replay/conflict/concurrent duplicate creation; duplicate queue delivery; pre-provider rejection;
+cache hit/miss/malformed/expiry; single-run limit; provider failure versus insufficient evidence;
+deterministic math; evidence URL filtering; timeout/shutdown/queue failure; cascade deletion; and
+sensitive-data redaction.
 
 Run:
 
@@ -178,8 +186,9 @@ credentials.
 
 ## MVP release gate
 
-- Opaque-ID reads, optional idempotency, usage controls, cleanup, refresh recovery, and
-  double-submit protection when a key is supplied work as documented.
+- Opaque-ID reads, active valuation listing, query-parameter rejection, optional idempotency, usage
+  controls, cleanup, refresh recovery, and double-submit protection when a key is supplied work as
+  documented.
 - At most one paid run occurs per valuation; all numeric fields trace to deterministic code.
 - Evidence is normalized/minimized and public responses expose only approved fields.
 - R2 replaces local multipart transport before public exposure.

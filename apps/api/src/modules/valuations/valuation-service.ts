@@ -72,6 +72,21 @@ function defaultStage(status: ValuationStatus) {
 	return status === ValuationStatus.QUEUED ? "QUEUED" : "COMPLETED";
 }
 
+function summaryStage(status: ValuationStatus) {
+	if (status === ValuationStatus.QUEUED) return "QUEUED" as const;
+	if (status === ValuationStatus.PROCESSING) return null;
+	return "COMPLETED" as const;
+}
+
+function summaryStatus(status: ValuationStatus) {
+	if (
+		status === ValuationStatus.QUEUED ||
+		status === ValuationStatus.PROCESSING
+	)
+		return null;
+	return status;
+}
+
 function storedResult(
 	valuation: Valuation,
 	acceptedComparableCount: number,
@@ -255,6 +270,43 @@ export async function readValuation(valuationId: string) {
 		valuation,
 		acceptedComparableCount: valuation._count.evidence,
 		evidenceRetrievedAt: valuation.evidence[0]?.createdAt,
+	};
+}
+
+export async function readValuations() {
+	const valuations = await prisma.valuation.findMany({
+		orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+		select: {
+			id: true,
+			productName: true,
+			productCondition: true,
+			productDescription: true,
+			status: true,
+			createdAt: true,
+		},
+	});
+
+	return valuations.map((valuation) => summary(valuation));
+}
+
+function summary(valuation: {
+	id: string;
+	productName: string;
+	productCondition: ProductCondition;
+	productDescription: string | null;
+	status: ValuationStatus;
+	createdAt: Date;
+}) {
+	return {
+		id: valuation.id,
+		productName: valuation.productName,
+		productCondition: conditionToPublic[valuation.productCondition],
+		productDescription: valuation.productDescription,
+		state: publicState(valuation.status),
+		stage: summaryStage(valuation.status),
+		status: summaryStatus(valuation.status),
+		createdAt: toDateString(valuation.createdAt),
+		expiresAt: toDateString(expiresAt(valuation.createdAt)),
 	};
 }
 

@@ -1,6 +1,7 @@
 # Valuation workflow API contract
 
-Status: proposed MVP; not implemented.
+Status: proposed MVP; the valuation listing route is implemented, while the remaining workflow
+contract is still delivered incrementally.
 
 This contract refines [brainstorming-idea.md](../brainstorming-idea.md) using
 [PRD.md](../../../../PRD.md), [PRD_TECHNICAL.md](../../../../PRD_TECHNICAL.md), and the
@@ -14,6 +15,7 @@ This contract refines [brainstorming-idea.md](../brainstorming-idea.md) using
 | --- | --- |
 | Local image proposal | `POST /api/agents/image-identification` |
 | Create/reuse valuation | `POST /api/valuations` |
+| List valuations | `GET /api/valuations` |
 | Poll/read result | `GET /api/valuations/:valuationId` |
 | Read accepted evidence | `GET /api/valuations/:valuationId/evidence` |
 
@@ -26,6 +28,9 @@ The valuation owns its evidence; do not add `/api/product/:id` or `/api/evidence
 - Mutations require an allowed `Origin`; credentialed cross-origin access is disabled.
 - Never return secrets, presigned URLs, raw runtime/tool/provider data, private errors, rejected
   evidence, or continuations.
+- `GET /api/valuations` lists active valuation summaries from the last 24 hours. It is not a
+  historical archive. `GET /api/valuations/` has the same meaning where the deployment preserves a
+  trailing slash.
 
 The existing multipart image route remains development-only. `SUPPORTED` proposes an editable
 title; it does not authorize paid retrieval. Public image transport still requires the PRD's private
@@ -72,6 +77,48 @@ different validated product fields returns `409 IDEMPOTENCY_CONFLICT`. Without t
 valid request creates a new valuation and has no replay semantics. The global usage limit returns
 `429 RATE_LIMITED` before a row or paid run is created. A valid cache hit still
 creates a valuation but avoids a live provider run.
+
+## `GET /api/valuations`
+
+This endpoint returns every non-expired valuation summary, ordered newest first, without any query
+parameters:
+
+```text
+GET /api/valuations
+```
+
+This route accepts no query parameters. Any query parameter, including `valuationId`, returns
+`400 INVALID_REQUEST`. Pagination, cursors, search, and arbitrary filters are not supported. The
+route exposes summaries only; clients use `GET /api/valuations/:valuationId` for a result and
+`GET /api/valuations/:valuationId/evidence` for accepted comparables.
+
+```json
+{
+	"valuations": [
+		{
+			"id": "cm123example",
+			"productName": "PlayStation 5 Slim Disc Edition 1 TB",
+			"productCondition": "Seperti baru",
+			"productDescription": "Original tanpa game, kelengkapan fullset, kondisi normal.",
+			"state": "COMPLETED",
+			"stage": "COMPLETED",
+			"status": "VALUATED",
+			"createdAt": "2026-09-18T04:00:00.000Z",
+			"expiresAt": "2026-09-19T04:00:00.000Z"
+		}
+	]
+}
+```
+
+Every returned summary includes the confirmed `productName` and `productCondition`.
+`productDescription` is the submitted trimmed description or `null` when the user omitted it; it
+remains untrusted user-provided data, not a valuation result or marketplace fact. For queued and
+running rows, `status` is `null`; `stage` is `QUEUED` for queued rows and `null` for running rows
+because the active BullMQ stage is not read by this batch endpoint. For completed rows, `stage` is
+`COMPLETED` and `status` is one of the terminal valuation statuses. The endpoint performs no queue,
+provider, model, or evidence work. A caller must only submit IDs received from its own valuation
+creation flow for the parameterized detail and evidence routes; opaque IDs remain short-lived read
+capabilities for those reads.
 
 ## `GET /api/valuations/:valuationId`
 
