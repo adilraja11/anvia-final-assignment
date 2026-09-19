@@ -11,6 +11,8 @@ const app = new Hono()
 	.route("/api/valuations", valuationRouter)
 	.route("/api/chat", chatRouter);
 
+export type AppType = typeof app;
+
 serve(
 	{
 		fetch: app.fetch,
