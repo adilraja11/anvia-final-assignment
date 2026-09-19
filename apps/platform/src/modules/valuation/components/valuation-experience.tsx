@@ -25,6 +25,7 @@ import {
 import {
 	createMockValuationResult,
 	getValuationRuntime,
+	isApiRuntime,
 	ValuationGatewayError,
 } from "../hooks/valuation-gateway";
 import {
@@ -52,6 +53,7 @@ type ImageOutcome = {
 };
 
 const valuationRuntime = getValuationRuntime();
+const hasApiRuntime = isApiRuntime(valuationRuntime);
 const progressLabels = [
 	"Mengidentifikasi produk",
 	"Mencari produk pembanding",
@@ -109,13 +111,16 @@ function SectionStamp({ children }: { children: string }) {
 
 function runtimeLabel() {
 	if (valuationRuntime.kind === "local-api") return "API LOKAL";
+	if (valuationRuntime.kind === "production-api") return "API AKTIF";
 	if (valuationRuntime.kind === "unavailable") return "INTEGRASI NONAKTIF";
 	return "DEMO MOCKUP";
 }
 
 function ValuationLayout({ children }: { children: ReactNode }) {
 	const footerMode =
-		valuationRuntime.kind === "local-api"
+		valuationRuntime.kind === "production-api"
+			? "Integrasi API server aktif"
+			: valuationRuntime.kind === "local-api"
 			? "Integrasi API lokal untuk pengembangan"
 			: valuationRuntime.kind === "mock"
 				? "Demo UI dengan data mockup (dipilih eksplisit)"
@@ -171,7 +176,9 @@ export function ValuationHomePage({
 }) {
 	const { setOutcome, setResultDetails } = useValuationSession();
 	const modeCopy =
-		valuationRuntime.kind === "local-api"
+		valuationRuntime.kind === "production-api"
+			? "Foto dan detail yang kamu konfirmasi dikirim ke layanan valuasi server."
+			: valuationRuntime.kind === "local-api"
 			? "Mode pengembangan lokal mengirim foto dan detail yang kamu konfirmasi ke API lokal."
 			: valuationRuntime.kind === "mock"
 				? "Mode mock dipilih secara eksplisit dan tidak mengirim permintaan ke layanan mana pun."
@@ -295,9 +302,8 @@ function formatDate(value: string) {
 export function CreateValuationPage() {
 	const navigate = useNavigate();
 	const session = useValuationSession();
-	const localGateway =
-		valuationRuntime.kind === "local-api" ? valuationRuntime.gateway : null;
-	const identifyImage = useImageIdentification(localGateway);
+	const apiGateway = hasApiRuntime ? valuationRuntime.gateway : null;
+	const identifyImage = useImageIdentification(apiGateway);
 	const [step, setStep] = useState<CreateStep>(() =>
 		session.correction || session.resumeAtDetails ? "details" : "upload",
 	);
@@ -541,7 +547,7 @@ export function CreateValuationPage() {
 			{step === "identifying" ? (
 				<LocalActivityScreen
 					title="Mengidentifikasi produk"
-					description="API lokal sedang memeriksa foto. Status rinci belum tersedia dari layanan ini."
+						description="Layanan sedang memeriksa foto. Status rinci belum tersedia dari layanan ini."
 					onCancel={cancelRequest}
 				/>
 			) : null}
@@ -567,7 +573,7 @@ export function CreateValuationPage() {
 				) : (
 					<LocalActivityScreen
 						title="Analisis harga sedang berjalan"
-						description="API lokal sedang mencari pembanding dan menghitung hasil. Tahap rinci belum dilaporkan oleh layanan ini."
+						description="Layanan sedang mencari pembanding dan menghitung hasil. Tahap rinci belum dilaporkan oleh layanan ini."
 						onCancel={cancelRequest}
 					/>
 				)
@@ -832,7 +838,7 @@ function PersistentOutcome({
 					<ExplanationSection result={result} />
 					<RequiredDisclosures />
 					<ValuationChat
-						enabled={valuationRuntime.kind === "local-api"}
+						enabled={hasApiRuntime}
 						valuationId={valuationId}
 					/>
 				</div>
@@ -952,8 +958,8 @@ function UploadScreen({
 				</label>
 				<FormError message={error} />
 				<p className="mt-4 text-center text-[0.62rem] leading-5 text-base-content/70">
-					{valuationRuntime.kind === "local-api"
-						? "Foto dikirim ke API lokal untuk validasi, sanitasi dalam memori, dan identifikasi."
+					{hasApiRuntime
+						? "Foto dikirim ke layanan valuasi untuk validasi, sanitasi dalam memori, dan identifikasi."
 						: valuationRuntime.kind === "mock"
 							? "Mode mock tidak mengunggah atau menyimpan foto yang dipilih."
 							: valuationRuntime.reason}
@@ -990,7 +996,7 @@ function DetailsScreen({
 	imagePreview: string | null;
 	missingFields: string[];
 	previewLabel: string;
-	runtimeKind: "mock" | "local-api" | "unavailable";
+	runtimeKind: "mock" | "local-api" | "production-api" | "unavailable";
 	onBack: () => void;
 	onChange: <Field extends keyof ValuationDetails>(
 		field: Field,
@@ -1150,7 +1156,7 @@ function DetailsScreen({
 					</button>
 				</div>
 				<p className="mt-4 text-center text-[0.62rem] leading-5 text-base-content/70">
-					{runtimeKind === "local-api"
+					{runtimeKind === "local-api" || runtimeKind === "production-api"
 						? "Permintaan hanya berisi nama, kondisi, dan detail tambahan."
 						: "Mode mock memakai pembanding contoh tanpa permintaan API."}
 				</p>

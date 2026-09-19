@@ -46,7 +46,9 @@ rather than copying unsupported sources or buyer-oriented pricing framing.
 Set `VITE_VALUATION_MODE=local-api` in the root `.env` and run `pnpm dev`. The Vite server proxies
 relative `/api` requests to `http://127.0.0.1:$PORT` (default `8000`). Do not add a `VITE_*` API base
 URL. Production builds fail closed if `local-api` is selected. Use `mock` or omit the variable for
-the labelled deterministic demo.
+the labelled deterministic demo. `production-api` explicitly enables the currently implemented
+server routes in a production build; it remains an operator-enabled local-demo stage until its
+authentication, ownership, rate-limit, and secure-upload requirements are implemented.
 
 ## Integration guardrails
 

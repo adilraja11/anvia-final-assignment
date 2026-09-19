@@ -129,6 +129,12 @@ export function createLocalValuationGateway(): ValuationGateway {
 	};
 }
 
+export function isApiRuntime(
+	runtime: ValuationRuntime,
+): runtime is Extract<ValuationRuntime, { gateway: ValuationGateway }> {
+	return runtime.kind === "local-api" || runtime.kind === "production-api";
+}
+
 async function requestImageIdentification(
 	file: File,
 	signal?: AbortSignal,
@@ -170,10 +176,13 @@ export function getValuationRuntime(): ValuationRuntime {
 				"Integrasi valuasi hanya tersedia melalui server pengembangan Vite dan tidak dapat digunakan pada build produksi.",
 		};
 	}
+	if (configuredMode === "production-api") {
+		return { kind: "production-api", gateway: createLocalValuationGateway() };
+	}
 
 	return {
 		kind: "unavailable",
-		reason: `Mode valuasi "${configuredMode}" tidak dikenal. Gunakan "local-api" atau "mock".`,
+		reason: `Mode valuasi "${configuredMode}" tidak dikenal. Gunakan "local-api", "production-api", atau "mock".`,
 	};
 }
 

@@ -90,6 +90,7 @@ export type ValuationGateway = {
 export type ValuationRuntime =
 	| { kind: "mock" }
 	| { kind: "local-api"; gateway: ValuationGateway }
+	| { kind: "production-api"; gateway: ValuationGateway }
 	| { kind: "unavailable"; reason: string };
 
 export type ValuationDetails = {
