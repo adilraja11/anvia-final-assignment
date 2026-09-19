@@ -8,6 +8,8 @@
  *
  * 🟢 You can import this file directly.
  */
+export type * from './models/Valuation.js'
+export type * from './models/ValuationEvidence.js'
 export type * from './models/AgentMemorySession.js'
 export type * from './models/AgentMemoryMessage.js'
 export type * from './models/AgentMemoryError.js'

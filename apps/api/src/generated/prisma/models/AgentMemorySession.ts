@@ -378,18 +378,6 @@ export type AgentMemorySessionScalarRelationFilter = {
   isNot?: Prisma.AgentMemorySessionWhereInput
 }
 
-export type StringFieldUpdateOperationsInput = {
-  set?: string
-}
-
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
-}
-
 export type AgentMemorySessionCreateNestedOneWithoutMessagesInput = {
   create?: Prisma.XOR<Prisma.AgentMemorySessionCreateWithoutMessagesInput, Prisma.AgentMemorySessionUncheckedCreateWithoutMessagesInput>
   connectOrCreate?: Prisma.AgentMemorySessionCreateOrConnectWithoutMessagesInput

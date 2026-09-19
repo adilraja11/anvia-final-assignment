@@ -21,8 +21,8 @@ The valuation owns its evidence; do not add `/api/product/:id` or `/api/evidence
 
 - JSON is UTF-8; public text is Bahasa Indonesia; timestamps are ISO 8601 UTC; money is integer IDR.
 - Responses send `Cache-Control: no-store`; unknown request fields are rejected.
-- A server-issued `HttpOnly`, `Secure`, `SameSite=Lax` cookie supplies `ownerId`. Every resource
-  query includes it; possession of an opaque ID is not authorization.
+- This unauthenticated demo uses the opaque valuation ID as the read capability. Keep IDs private:
+  anyone who obtains one can read that valuation until it expires.
 - Mutations require an allowed `Origin`; credentialed cross-origin access is disabled.
 - Never return secrets, presigned URLs, raw runtime/tool/provider data, private errors, rejected
   evidence, or continuations.
@@ -33,8 +33,8 @@ R2 quarantine, sanitization, scoped access, and deletion flow.
 
 ## `POST /api/valuations`
 
-Requires `Content-Type: application/json` and an `Idempotency-Key` of 16–128 printable ASCII
-characters.
+Requires `Content-Type: application/json`. An optional `Idempotency-Key` must contain 16–128
+printable ASCII characters when supplied.
 
 ```json
 {
@@ -52,7 +52,7 @@ characters.
 - Strings are untrusted data and cannot change permissions, limits, provider, cache, or formula.
 
 Missing price-critical identity completes as `MORE_INFORMATION_REQUIRED` before a paid run.
-Successful creation or exact replay returns `202`:
+Successful creation returns `202`:
 
 ```json
 {
@@ -67,9 +67,11 @@ Successful creation or exact replay returns `202`:
 }
 ```
 
-Reuse with different validated product fields returns `409 IDEMPOTENCY_CONFLICT`. Redis principal
-or global usage limits return `429 RATE_LIMITED` before a row or paid run is created. A valid cache
-hit still creates a valuation but avoids a live provider run.
+When `Idempotency-Key` is supplied, an exact replay returns the original valuation and reuse with
+different validated product fields returns `409 IDEMPOTENCY_CONFLICT`. Without that header, every
+valid request creates a new valuation and has no replay semantics. The global usage limit returns
+`429 RATE_LIMITED` before a row or paid run is created. A valid cache hit still
+creates a valuation but avoids a live provider run.
 
 ## `GET /api/valuations/:valuationId`
 
@@ -159,7 +161,8 @@ Never expose validation details, exceptions, database/provider errors, or queue 
 
 ## MVP invariants
 
-- `(ownerId, idempotencyKey)` is unique; exact replay returns the original valuation.
+- The server stores a unique `idempotencyKey` value for every valuation. A supplied
+  `Idempotency-Key` enables exact replay; the server generates an internal key when it is omitted.
 - BullMQ `jobId` equals valuation ID. The worker atomically changes `QUEUED` to `PROCESSING`; only
   the winner may call providers.
 - The API enqueues through `src/config/queue.ts`; only the separately run `src/worker.ts` executes

@@ -3,10 +3,12 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { agentApiRouter } from "./modules/agents/router.js";
 import { chatRouter } from "./modules/chat/router.js";
+import { valuationRouter } from "./modules/valuations/router.js";
 
 const app = new Hono()
 	.use(cors({ exposeHeaders: ["x-anvia-stream-protocol"] }))
 	.route("/api/agents", agentApiRouter)
+	.route("/api/valuations", valuationRouter)
 	.route("/api/chat", chatRouter);
 
 serve(

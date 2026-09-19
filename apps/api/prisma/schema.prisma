@@ -4,7 +4,68 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+	provider = "postgresql"
+}
+
+enum ProductCondition {
+	LIKE_NEW
+	GOOD
+	FAIR
+	DAMAGED
+}
+
+enum ValuationStatus {
+	QUEUED
+	PROCESSING
+	VALUATED
+	UNSUPPORTED_CATEGORY
+	MORE_INFORMATION_REQUIRED
+	INSUFFICIENT_EVIDENCE
+	SERVICE_FAILURE
+}
+
+enum ValuationConfidence {
+	HIGH
+	MEDIUM
+}
+
+model Valuation {
+	id             String @id @default(cuid())
+	idempotencyKey String @unique @db.VarChar(128)
+
+	productName        String           @db.VarChar(160)
+	productCondition   ProductCondition
+	productDescription String?          @db.VarChar(2000)
+	status             ValuationStatus  @default(QUEUED)
+
+	suggestedListingPriceIdr BigInt?
+	marketRangeMinimumIdr    BigInt?
+	marketRangeMaximumIdr    BigInt?
+	confidence               ValuationConfidence?
+	explanation              String?              @db.VarChar(2000)
+	pros                     String[]             @default([])
+	cons                     String[]             @default([])
+	missingFields            String[]             @default([])
+
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+	evidence  ValuationEvidence[]
+
+	@@index([createdAt])
+	@@index([status])
+}
+
+model ValuationEvidence {
+	id           String   @id @default(cuid())
+	valuationId  String
+	productName  String   @db.VarChar(500)
+	productPrice BigInt
+	productLink  String   @db.VarChar(2048)
+	createdAt    DateTime @default(now())
+
+	valuation Valuation @relation(fields: [valuationId], references: [id], onDelete: Cascade)
+
+	@@index([valuationId])
 }
 
 model AgentMemorySession {

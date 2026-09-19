@@ -18,6 +18,16 @@ export { Prisma }
 export * as $Enums from './enums.js'
 export * from './enums.js';
 /**
+ * Model Valuation
+ * 
+ */
+export type Valuation = Prisma.ValuationModel
+/**
+ * Model ValuationEvidence
+ * 
+ */
+export type ValuationEvidence = Prisma.ValuationEvidenceModel
+/**
  * Model AgentMemorySession
  * 
  */

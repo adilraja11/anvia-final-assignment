@@ -9,7 +9,32 @@
 * 🟢 You can import this file directly.
 */
 
+export const ProductCondition = {
+  LIKE_NEW: 'LIKE_NEW',
+  GOOD: 'GOOD',
+  FAIR: 'FAIR',
+  DAMAGED: 'DAMAGED'
+} as const
+
+export type ProductCondition = (typeof ProductCondition)[keyof typeof ProductCondition]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const ValuationStatus = {
+  QUEUED: 'QUEUED',
+  PROCESSING: 'PROCESSING',
+  VALUATED: 'VALUATED',
+  UNSUPPORTED_CATEGORY: 'UNSUPPORTED_CATEGORY',
+  MORE_INFORMATION_REQUIRED: 'MORE_INFORMATION_REQUIRED',
+  INSUFFICIENT_EVIDENCE: 'INSUFFICIENT_EVIDENCE',
+  SERVICE_FAILURE: 'SERVICE_FAILURE'
+} as const
+
+export type ValuationStatus = (typeof ValuationStatus)[keyof typeof ValuationStatus]
+
+
+export const ValuationConfidence = {
+  HIGH: 'HIGH',
+  MEDIUM: 'MEDIUM'
+} as const
+
+export type ValuationConfidence = (typeof ValuationConfidence)[keyof typeof ValuationConfidence]

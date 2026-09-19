@@ -397,6 +397,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
+  Valuation: 'Valuation',
+  ValuationEvidence: 'ValuationEvidence',
   AgentMemorySession: 'AgentMemorySession',
   AgentMemoryMessage: 'AgentMemoryMessage',
   AgentMemoryError: 'AgentMemoryError'
@@ -415,10 +417,158 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "agentMemorySession" | "agentMemoryMessage" | "agentMemoryError"
+    modelProps: "valuation" | "valuationEvidence" | "agentMemorySession" | "agentMemoryMessage" | "agentMemoryError"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
+    Valuation: {
+      payload: Prisma.$ValuationPayload<ExtArgs>
+      fields: Prisma.ValuationFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ValuationFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ValuationFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationPayload>
+        }
+        findFirst: {
+          args: Prisma.ValuationFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ValuationFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationPayload>
+        }
+        findMany: {
+          args: Prisma.ValuationFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationPayload>[]
+        }
+        create: {
+          args: Prisma.ValuationCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationPayload>
+        }
+        createMany: {
+          args: Prisma.ValuationCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ValuationCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationPayload>[]
+        }
+        delete: {
+          args: Prisma.ValuationDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationPayload>
+        }
+        update: {
+          args: Prisma.ValuationUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationPayload>
+        }
+        deleteMany: {
+          args: Prisma.ValuationDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ValuationUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ValuationUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationPayload>[]
+        }
+        upsert: {
+          args: Prisma.ValuationUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationPayload>
+        }
+        aggregate: {
+          args: Prisma.ValuationAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateValuation>
+        }
+        groupBy: {
+          args: Prisma.ValuationGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ValuationGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ValuationCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ValuationCountAggregateOutputType> | number
+        }
+      }
+    }
+    ValuationEvidence: {
+      payload: Prisma.$ValuationEvidencePayload<ExtArgs>
+      fields: Prisma.ValuationEvidenceFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ValuationEvidenceFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationEvidencePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ValuationEvidenceFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationEvidencePayload>
+        }
+        findFirst: {
+          args: Prisma.ValuationEvidenceFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationEvidencePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ValuationEvidenceFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationEvidencePayload>
+        }
+        findMany: {
+          args: Prisma.ValuationEvidenceFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationEvidencePayload>[]
+        }
+        create: {
+          args: Prisma.ValuationEvidenceCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationEvidencePayload>
+        }
+        createMany: {
+          args: Prisma.ValuationEvidenceCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ValuationEvidenceCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationEvidencePayload>[]
+        }
+        delete: {
+          args: Prisma.ValuationEvidenceDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationEvidencePayload>
+        }
+        update: {
+          args: Prisma.ValuationEvidenceUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationEvidencePayload>
+        }
+        deleteMany: {
+          args: Prisma.ValuationEvidenceDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ValuationEvidenceUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ValuationEvidenceUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationEvidencePayload>[]
+        }
+        upsert: {
+          args: Prisma.ValuationEvidenceUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ValuationEvidencePayload>
+        }
+        aggregate: {
+          args: Prisma.ValuationEvidenceAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateValuationEvidence>
+        }
+        groupBy: {
+          args: Prisma.ValuationEvidenceGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ValuationEvidenceGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ValuationEvidenceCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ValuationEvidenceCountAggregateOutputType> | number
+        }
+      }
+    }
     AgentMemorySession: {
       payload: Prisma.$AgentMemorySessionPayload<ExtArgs>
       fields: Prisma.AgentMemorySessionFieldRefs
@@ -680,6 +830,40 @@ export const TransactionIsolationLevel = runtime.makeStrictEnum({
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+export const ValuationScalarFieldEnum = {
+  id: 'id',
+  idempotencyKey: 'idempotencyKey',
+  productName: 'productName',
+  productCondition: 'productCondition',
+  productDescription: 'productDescription',
+  status: 'status',
+  suggestedListingPriceIdr: 'suggestedListingPriceIdr',
+  marketRangeMinimumIdr: 'marketRangeMinimumIdr',
+  marketRangeMaximumIdr: 'marketRangeMaximumIdr',
+  confidence: 'confidence',
+  explanation: 'explanation',
+  pros: 'pros',
+  cons: 'cons',
+  missingFields: 'missingFields',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ValuationScalarFieldEnum = (typeof ValuationScalarFieldEnum)[keyof typeof ValuationScalarFieldEnum]
+
+
+export const ValuationEvidenceScalarFieldEnum = {
+  id: 'id',
+  valuationId: 'valuationId',
+  productName: 'productName',
+  productPrice: 'productPrice',
+  productLink: 'productLink',
+  createdAt: 'createdAt'
+} as const
+
+export type ValuationEvidenceScalarFieldEnum = (typeof ValuationEvidenceScalarFieldEnum)[keyof typeof ValuationEvidenceScalarFieldEnum]
+
+
 export const AgentMemorySessionScalarFieldEnum = {
   id: 'id',
   scopeKey: 'scopeKey',
@@ -751,6 +935,14 @@ export const QueryMode = {
 export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
+export const NullsOrder = {
+  first: 'first',
+  last: 'last'
+} as const
+
+export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
 export const JsonNullValueFilter = {
   DbNull: DbNull,
   JsonNull: JsonNull,
@@ -758,14 +950,6 @@ export const JsonNullValueFilter = {
 } as const
 
 export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
-
-
-export const NullsOrder = {
-  first: 'first',
-  last: 'last'
-} as const
-
-export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
 
 
 
@@ -789,16 +973,58 @@ export type ListStringFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMod
 
 
 /**
- * Reference to a field of type 'Json'
+ * Reference to a field of type 'ProductCondition'
  */
-export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+export type EnumProductConditionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ProductCondition'>
     
 
 
 /**
- * Reference to a field of type 'QueryMode'
+ * Reference to a field of type 'ProductCondition[]'
  */
-export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+export type ListEnumProductConditionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ProductCondition[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ValuationStatus'
+ */
+export type EnumValuationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ValuationStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'ValuationStatus[]'
+ */
+export type ListEnumValuationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ValuationStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'BigInt'
+ */
+export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
+
+/**
+ * Reference to a field of type 'BigInt[]'
+ */
+export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
+    
+
+
+/**
+ * Reference to a field of type 'ValuationConfidence'
+ */
+export type EnumValuationConfidenceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ValuationConfidence'>
+    
+
+
+/**
+ * Reference to a field of type 'ValuationConfidence[]'
+ */
+export type ListEnumValuationConfidenceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ValuationConfidence[]'>
     
 
 
@@ -813,6 +1039,20 @@ export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel
  * Reference to a field of type 'DateTime[]'
  */
 export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -994,6 +1234,8 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
  */
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
+  valuation?: Prisma.ValuationOmit
+  valuationEvidence?: Prisma.ValuationEvidenceOmit
   agentMemorySession?: Prisma.AgentMemorySessionOmit
   agentMemoryMessage?: Prisma.AgentMemoryMessageOmit
   agentMemoryError?: Prisma.AgentMemoryErrorOmit

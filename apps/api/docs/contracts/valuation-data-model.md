@@ -45,8 +45,7 @@ enum ValuationConfidence {
 
 model Valuation {
   id             String @id @default(cuid())
-  ownerId        String @db.VarChar(64)
-  idempotencyKey String @db.VarChar(128)
+  idempotencyKey String @unique @db.VarChar(128)
 
   productName        String           @db.VarChar(160)
   productCondition   ProductCondition
@@ -66,8 +65,7 @@ model Valuation {
   updatedAt DateTime @updatedAt
   evidence  ValuationEvidence[]
 
-  @@unique([ownerId, idempotencyKey])
-  @@index([ownerId, createdAt])
+  @@index([createdAt])
   @@index([status])
 }
 
@@ -87,10 +85,11 @@ model ValuationEvidence {
 
 ## Rules and mappings
 
-- `ownerId` is read from a server-issued opaque cookie, never the JSON body. Reads filter by both
-  `id` and `ownerId`; an ID alone is not authorization.
-- `(ownerId, idempotencyKey)` prevents duplicate submissions. On conflict, compare the three stored
-  product fields: return the existing row when equal, otherwise `IDEMPOTENCY_CONFLICT`.
+- The unauthenticated demo reads a valuation by its opaque ID alone. Treat that ID as a short-lived
+  read capability; it is not returned in lists or aliases.
+- `idempotencyKey` prevents duplicate submissions when the client supplies the optional
+  header. On conflict, compare the three stored product fields: return the existing row when equal,
+  otherwise `IDEMPOTENCY_CONFLICT`. The server generates an internal key when the header is absent.
 - Conditions map as follows: `Seperti baru` → `LIKE_NEW`, `Baik` → `GOOD`, `Cukup` → `FAIR`, and
   `Rusak` → `DAMAGED`.
 - `QUEUED` maps to public state `QUEUED`; `PROCESSING` maps to `RUNNING`; terminal statuses map to
@@ -130,6 +129,6 @@ claim production-grade auditability or recovery.
 
 ## Verification
 
-Run `pnpm db:generate`, create a new migration with `pnpm db:migrate`, then verify owner isolation,
+Run `pnpm db:generate`, create a new migration with `pnpm db:migrate`, then verify opaque-ID reads,
 idempotent creation, queue failure, terminal outcomes, BigInt conversion, URL validation, and
 cascade deletion. Use explicit Prisma `select` objects and response mappers.
