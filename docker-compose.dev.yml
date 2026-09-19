@@ -10,14 +10,6 @@ services:
     volumes:
       - exploration_final_project_postgres_data:/var/lib/postgresql/data
 
-  qdrant:
-    image: qdrant/qdrant:v1.18.2
-    ports:
-      - "6333:6333"
-      - "6334:6334"
-    volumes:
-      - exploration_final_project_qdrant_data:/qdrant/storage
-
   redis:
     image: redis:7.2.4
     restart: always
@@ -27,5 +19,3 @@ services:
 volumes:
   exploration_final_project_postgres_data:
     name: exploration_final_project_postgres_data
-  exploration_final_project_qdrant_data:
-    name: exploration_final_project_qdrant_data
