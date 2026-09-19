@@ -301,6 +301,7 @@ export type ValuationWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Valuation"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Valuation"> | Date | string
   evidence?: Prisma.ValuationEvidenceListRelationFilter
+  chatSession?: Prisma.XOR<Prisma.AgentMemorySessionNullableScalarRelationFilter, Prisma.AgentMemorySessionWhereInput> | null
 }
 
 export type ValuationOrderByWithRelationInput = {
@@ -321,6 +322,7 @@ export type ValuationOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   evidence?: Prisma.ValuationEvidenceOrderByRelationAggregateInput
+  chatSession?: Prisma.AgentMemorySessionOrderByWithRelationInput
 }
 
 export type ValuationWhereUniqueInput = Prisma.AtLeast<{
@@ -344,6 +346,7 @@ export type ValuationWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Valuation"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Valuation"> | Date | string
   evidence?: Prisma.ValuationEvidenceListRelationFilter
+  chatSession?: Prisma.XOR<Prisma.AgentMemorySessionNullableScalarRelationFilter, Prisma.AgentMemorySessionWhereInput> | null
 }, "id" | "idempotencyKey">
 
 export type ValuationOrderByWithAggregationInput = {
@@ -410,6 +413,7 @@ export type ValuationCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   evidence?: Prisma.ValuationEvidenceCreateNestedManyWithoutValuationInput
+  chatSession?: Prisma.AgentMemorySessionCreateNestedOneWithoutValuationInput
 }
 
 export type ValuationUncheckedCreateInput = {
@@ -430,6 +434,7 @@ export type ValuationUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   evidence?: Prisma.ValuationEvidenceUncheckedCreateNestedManyWithoutValuationInput
+  chatSession?: Prisma.AgentMemorySessionUncheckedCreateNestedOneWithoutValuationInput
 }
 
 export type ValuationUpdateInput = {
@@ -450,6 +455,7 @@ export type ValuationUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   evidence?: Prisma.ValuationEvidenceUpdateManyWithoutValuationNestedInput
+  chatSession?: Prisma.AgentMemorySessionUpdateOneWithoutValuationNestedInput
 }
 
 export type ValuationUncheckedUpdateInput = {
@@ -470,6 +476,7 @@ export type ValuationUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   evidence?: Prisma.ValuationEvidenceUncheckedUpdateManyWithoutValuationNestedInput
+  chatSession?: Prisma.AgentMemorySessionUncheckedUpdateOneWithoutValuationNestedInput
 }
 
 export type ValuationCreateManyInput = {
@@ -605,6 +612,11 @@ export type ValuationScalarRelationFilter = {
   isNot?: Prisma.ValuationWhereInput
 }
 
+export type ValuationNullableScalarRelationFilter = {
+  is?: Prisma.ValuationWhereInput | null
+  isNot?: Prisma.ValuationWhereInput | null
+}
+
 export type ValuationCreateprosInput = {
   set: string[]
 }
@@ -678,6 +690,22 @@ export type ValuationUpdateOneRequiredWithoutEvidenceNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ValuationUpdateToOneWithWhereWithoutEvidenceInput, Prisma.ValuationUpdateWithoutEvidenceInput>, Prisma.ValuationUncheckedUpdateWithoutEvidenceInput>
 }
 
+export type ValuationCreateNestedOneWithoutChatSessionInput = {
+  create?: Prisma.XOR<Prisma.ValuationCreateWithoutChatSessionInput, Prisma.ValuationUncheckedCreateWithoutChatSessionInput>
+  connectOrCreate?: Prisma.ValuationCreateOrConnectWithoutChatSessionInput
+  connect?: Prisma.ValuationWhereUniqueInput
+}
+
+export type ValuationUpdateOneWithoutChatSessionNestedInput = {
+  create?: Prisma.XOR<Prisma.ValuationCreateWithoutChatSessionInput, Prisma.ValuationUncheckedCreateWithoutChatSessionInput>
+  connectOrCreate?: Prisma.ValuationCreateOrConnectWithoutChatSessionInput
+  upsert?: Prisma.ValuationUpsertWithoutChatSessionInput
+  disconnect?: Prisma.ValuationWhereInput | boolean
+  delete?: Prisma.ValuationWhereInput | boolean
+  connect?: Prisma.ValuationWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ValuationUpdateToOneWithWhereWithoutChatSessionInput, Prisma.ValuationUpdateWithoutChatSessionInput>, Prisma.ValuationUncheckedUpdateWithoutChatSessionInput>
+}
+
 export type ValuationCreateWithoutEvidenceInput = {
   id?: string
   idempotencyKey: string
@@ -695,6 +723,7 @@ export type ValuationCreateWithoutEvidenceInput = {
   missingFields?: Prisma.ValuationCreatemissingFieldsInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
+  chatSession?: Prisma.AgentMemorySessionCreateNestedOneWithoutValuationInput
 }
 
 export type ValuationUncheckedCreateWithoutEvidenceInput = {
@@ -714,6 +743,7 @@ export type ValuationUncheckedCreateWithoutEvidenceInput = {
   missingFields?: Prisma.ValuationCreatemissingFieldsInput | string[]
   createdAt?: Date | string
   updatedAt?: Date | string
+  chatSession?: Prisma.AgentMemorySessionUncheckedCreateNestedOneWithoutValuationInput
 }
 
 export type ValuationCreateOrConnectWithoutEvidenceInput = {
@@ -749,6 +779,7 @@ export type ValuationUpdateWithoutEvidenceInput = {
   missingFields?: Prisma.ValuationUpdatemissingFieldsInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  chatSession?: Prisma.AgentMemorySessionUpdateOneWithoutValuationNestedInput
 }
 
 export type ValuationUncheckedUpdateWithoutEvidenceInput = {
@@ -768,6 +799,103 @@ export type ValuationUncheckedUpdateWithoutEvidenceInput = {
   missingFields?: Prisma.ValuationUpdatemissingFieldsInput | string[]
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  chatSession?: Prisma.AgentMemorySessionUncheckedUpdateOneWithoutValuationNestedInput
+}
+
+export type ValuationCreateWithoutChatSessionInput = {
+  id?: string
+  idempotencyKey: string
+  productName: string
+  productCondition: $Enums.ProductCondition
+  productDescription?: string | null
+  status?: $Enums.ValuationStatus
+  suggestedListingPriceIdr?: bigint | number | null
+  marketRangeMinimumIdr?: bigint | number | null
+  marketRangeMaximumIdr?: bigint | number | null
+  confidence?: $Enums.ValuationConfidence | null
+  explanation?: string | null
+  pros?: Prisma.ValuationCreateprosInput | string[]
+  cons?: Prisma.ValuationCreateconsInput | string[]
+  missingFields?: Prisma.ValuationCreatemissingFieldsInput | string[]
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  evidence?: Prisma.ValuationEvidenceCreateNestedManyWithoutValuationInput
+}
+
+export type ValuationUncheckedCreateWithoutChatSessionInput = {
+  id?: string
+  idempotencyKey: string
+  productName: string
+  productCondition: $Enums.ProductCondition
+  productDescription?: string | null
+  status?: $Enums.ValuationStatus
+  suggestedListingPriceIdr?: bigint | number | null
+  marketRangeMinimumIdr?: bigint | number | null
+  marketRangeMaximumIdr?: bigint | number | null
+  confidence?: $Enums.ValuationConfidence | null
+  explanation?: string | null
+  pros?: Prisma.ValuationCreateprosInput | string[]
+  cons?: Prisma.ValuationCreateconsInput | string[]
+  missingFields?: Prisma.ValuationCreatemissingFieldsInput | string[]
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  evidence?: Prisma.ValuationEvidenceUncheckedCreateNestedManyWithoutValuationInput
+}
+
+export type ValuationCreateOrConnectWithoutChatSessionInput = {
+  where: Prisma.ValuationWhereUniqueInput
+  create: Prisma.XOR<Prisma.ValuationCreateWithoutChatSessionInput, Prisma.ValuationUncheckedCreateWithoutChatSessionInput>
+}
+
+export type ValuationUpsertWithoutChatSessionInput = {
+  update: Prisma.XOR<Prisma.ValuationUpdateWithoutChatSessionInput, Prisma.ValuationUncheckedUpdateWithoutChatSessionInput>
+  create: Prisma.XOR<Prisma.ValuationCreateWithoutChatSessionInput, Prisma.ValuationUncheckedCreateWithoutChatSessionInput>
+  where?: Prisma.ValuationWhereInput
+}
+
+export type ValuationUpdateToOneWithWhereWithoutChatSessionInput = {
+  where?: Prisma.ValuationWhereInput
+  data: Prisma.XOR<Prisma.ValuationUpdateWithoutChatSessionInput, Prisma.ValuationUncheckedUpdateWithoutChatSessionInput>
+}
+
+export type ValuationUpdateWithoutChatSessionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
+  productName?: Prisma.StringFieldUpdateOperationsInput | string
+  productCondition?: Prisma.EnumProductConditionFieldUpdateOperationsInput | $Enums.ProductCondition
+  productDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumValuationStatusFieldUpdateOperationsInput | $Enums.ValuationStatus
+  suggestedListingPriceIdr?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  marketRangeMinimumIdr?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  marketRangeMaximumIdr?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  confidence?: Prisma.NullableEnumValuationConfidenceFieldUpdateOperationsInput | $Enums.ValuationConfidence | null
+  explanation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pros?: Prisma.ValuationUpdateprosInput | string[]
+  cons?: Prisma.ValuationUpdateconsInput | string[]
+  missingFields?: Prisma.ValuationUpdatemissingFieldsInput | string[]
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  evidence?: Prisma.ValuationEvidenceUpdateManyWithoutValuationNestedInput
+}
+
+export type ValuationUncheckedUpdateWithoutChatSessionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
+  productName?: Prisma.StringFieldUpdateOperationsInput | string
+  productCondition?: Prisma.EnumProductConditionFieldUpdateOperationsInput | $Enums.ProductCondition
+  productDescription?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumValuationStatusFieldUpdateOperationsInput | $Enums.ValuationStatus
+  suggestedListingPriceIdr?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  marketRangeMinimumIdr?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  marketRangeMaximumIdr?: Prisma.NullableBigIntFieldUpdateOperationsInput | bigint | number | null
+  confidence?: Prisma.NullableEnumValuationConfidenceFieldUpdateOperationsInput | $Enums.ValuationConfidence | null
+  explanation?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pros?: Prisma.ValuationUpdateprosInput | string[]
+  cons?: Prisma.ValuationUpdateconsInput | string[]
+  missingFields?: Prisma.ValuationUpdatemissingFieldsInput | string[]
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  evidence?: Prisma.ValuationEvidenceUncheckedUpdateManyWithoutValuationNestedInput
 }
 
 
@@ -819,6 +947,7 @@ export type ValuationSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   createdAt?: boolean
   updatedAt?: boolean
   evidence?: boolean | Prisma.Valuation$evidenceArgs<ExtArgs>
+  chatSession?: boolean | Prisma.Valuation$chatSessionArgs<ExtArgs>
   _count?: boolean | Prisma.ValuationCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["valuation"]>
 
@@ -882,6 +1011,7 @@ export type ValuationSelectScalar = {
 export type ValuationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "idempotencyKey" | "productName" | "productCondition" | "productDescription" | "status" | "suggestedListingPriceIdr" | "marketRangeMinimumIdr" | "marketRangeMaximumIdr" | "confidence" | "explanation" | "pros" | "cons" | "missingFields" | "createdAt" | "updatedAt", ExtArgs["result"]["valuation"]>
 export type ValuationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   evidence?: boolean | Prisma.Valuation$evidenceArgs<ExtArgs>
+  chatSession?: boolean | Prisma.Valuation$chatSessionArgs<ExtArgs>
   _count?: boolean | Prisma.ValuationCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ValuationIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -891,6 +1021,7 @@ export type $ValuationPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   name: "Valuation"
   objects: {
     evidence: Prisma.$ValuationEvidencePayload<ExtArgs>[]
+    chatSession: Prisma.$AgentMemorySessionPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1304,6 +1435,7 @@ readonly fields: ValuationFieldRefs;
 export interface Prisma__ValuationClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   evidence<T extends Prisma.Valuation$evidenceArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Valuation$evidenceArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ValuationEvidencePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  chatSession<T extends Prisma.Valuation$chatSessionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Valuation$chatSessionArgs<ExtArgs>>): Prisma.Prisma__AgentMemorySessionClient<runtime.Types.Result.GetResult<Prisma.$AgentMemorySessionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1763,6 +1895,25 @@ export type Valuation$evidenceArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.ValuationEvidenceScalarFieldEnum | Prisma.ValuationEvidenceScalarFieldEnum[]
+}
+
+/**
+ * Valuation.chatSession
+ */
+export type Valuation$chatSessionArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AgentMemorySession
+   */
+  select?: Prisma.AgentMemorySessionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AgentMemorySession
+   */
+  omit?: Prisma.AgentMemorySessionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgentMemorySessionInclude<ExtArgs> | null
+  where?: Prisma.AgentMemorySessionWhereInput
 }
 
 /**

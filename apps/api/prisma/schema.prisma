@@ -50,6 +50,7 @@ model Valuation {
 	createdAt DateTime @default(now())
 	updatedAt DateTime @updatedAt
 	evidence  ValuationEvidence[]
+	chatSession AgentMemorySession?
 
 	@@index([createdAt])
 	@@index([status])
@@ -69,19 +70,26 @@ model ValuationEvidence {
 }
 
 model AgentMemorySession {
-  id        String   @id @default(cuid())
-  scopeKey  String   @unique
-  sessionId String
-  userId    String?
-  metadata  Json
-  compactionState Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(cuid())
+  scopeKey          String   @unique
+  sessionId         String
+  userId            String?
+  valuationId       String?  @unique
+  metadata          Json
+  compactionState   Json?
+  activeTurnId      String?
+  activeTurnAt      DateTime?
+  acceptedUserTurns Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  valuation Valuation? @relation(fields: [valuationId], references: [id], onDelete: Cascade)
 
   messages AgentMemoryMessage[]
   errors   AgentMemoryError[]
 
   @@index([sessionId, userId])
+  @@index([activeTurnAt])
 }
 
 model AgentMemoryMessage {

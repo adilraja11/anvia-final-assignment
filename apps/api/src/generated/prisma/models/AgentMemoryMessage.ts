@@ -475,14 +475,6 @@ export type AgentMemoryMessageUncheckedUpdateManyWithoutMemorySessionNestedInput
   deleteMany?: Prisma.AgentMemoryMessageScalarWhereInput | Prisma.AgentMemoryMessageScalarWhereInput[]
 }
 
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type AgentMemoryMessageCreateWithoutMemorySessionInput = {
   id?: string
   runId: string

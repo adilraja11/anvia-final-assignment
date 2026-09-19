@@ -6,7 +6,21 @@ import { chatRouter } from "./modules/chat/router.js";
 import { valuationRouter } from "./modules/valuations/router.js";
 
 const app = new Hono()
-	.use(cors({ exposeHeaders: ["x-anvia-stream-protocol"] }))
+	.use(
+		cors({
+			origin: (origin) => {
+				try {
+					return origin ===
+						new URL(process.env.PLATFORM_URL ?? "http://localhost:3000").origin
+						? origin
+						: undefined;
+				} catch {
+					return undefined;
+				}
+			},
+			exposeHeaders: ["x-anvia-stream-protocol"],
+		}),
+	)
 	.route("/api/agents", agentApiRouter)
 	.route("/api/valuations", valuationRouter)
 	.route("/api/chat", chatRouter);

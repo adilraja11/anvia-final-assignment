@@ -30,6 +30,12 @@ Before adding or changing Prisma models, enums, relations, indexes, migrations, 
 worker-claim fields for that workflow, read the
 [valuation data-model contract](docs/contracts/valuation-data-model.md).
 
+Before implementing or revising valuation-scoped follow-up chat routes, chat-session binding,
+valuation-result grounding, or the dedicated explainer agent, read the
+[valuation chat API contract](docs/contracts/valuation-chat-api.md). Before sequencing that work,
+also read the [valuation chat integration plan](docs/plans/valuation-chat-integration.md). These
+documents describe a proposed tool-free explanation surface and do not make it live.
+
 ## Persistence and contracts
 
 - Update `prisma/schema.prisma` for data-model changes, create a migration through Prisma, then regenerate the client. Do not edit `src/generated/prisma/` or existing migration files by hand.

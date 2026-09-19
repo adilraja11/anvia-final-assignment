@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { valuationQueue } from "../../config/queue.js";
+import { valuationChatRouter } from "../valuation-chat/router.js";
 import {
 	createValuationRequestSchema,
 	type ValuationErrorCode,
@@ -178,4 +179,5 @@ export const valuationRouter = new Hono()
 		} catch {
 			return errorResponse("INTERNAL_SERVICE_FAILURE");
 		}
-	});
+	})
+	.route("/:valuationId/chat", valuationChatRouter);
