@@ -36,6 +36,7 @@ import {
 	type ValuationInput,
 } from "../type";
 import { formatRupiah } from "./tools/format-rupiah";
+import { ValuationChat } from "./valuation-chat";
 
 type CreateStep =
 	| "upload"
@@ -637,9 +638,14 @@ export function PersistentValuationResultPage({
 	const navigate = useNavigate();
 	const [read, setRead] = useState<ValuationRead | null>(null);
 	const [evidence, setEvidence] = useState<ValuationEvidence | null>(null);
+	const [evidenceError, setEvidenceError] = useState<string | null>(null);
 	const [error, setError] = useState<string | null>(null);
 
 	useEffect(() => {
+		setRead(null);
+		setEvidence(null);
+		setEvidenceError(null);
+		setError(null);
 		const controller = new AbortController();
 		let timer: number | undefined;
 		let stopped = false;
@@ -689,10 +695,11 @@ export function PersistentValuationResultPage({
 	useEffect(() => {
 		if (read?.result?.status !== "VALUATED") return;
 		const controller = new AbortController();
+		setEvidenceError(null);
 		void readEvidence(valuationId, controller.signal)
 			.then(setEvidence)
 			.catch((e) =>
-				setError(
+				setEvidenceError(
 					e instanceof Error ? e.message : "Evidence tidak dapat dibaca.",
 				),
 			);
@@ -715,8 +722,10 @@ export function PersistentValuationResultPage({
 				/>
 			) : read.result ? (
 				<PersistentOutcome
+					valuationId={valuationId}
 					result={read.result}
 					evidence={evidence}
+					evidenceError={evidenceError}
 					onRestart={() => navigate({ to: "/create" })}
 				/>
 			) : null}
@@ -761,12 +770,16 @@ function PersistentActivityScreen({
 }
 
 function PersistentOutcome({
+	valuationId,
 	result,
 	evidence,
+	evidenceError,
 	onRestart,
 }: {
+	valuationId: string;
 	result: ServerValuationResult;
 	evidence: ValuationEvidence | null;
+	evidenceError: string | null;
 	onRestart: () => void;
 }) {
 	if (result.status !== "VALUATED")
@@ -818,6 +831,10 @@ function PersistentOutcome({
 					<PricePanel result={result} />
 					<ExplanationSection result={result} />
 					<RequiredDisclosures />
+					<ValuationChat
+						enabled={valuationRuntime.kind === "local-api"}
+						valuationId={valuationId}
+					/>
 				</div>
 			</article>
 			<aside className="card relative border-2 border-base-content bg-base-100 shadow-none">
@@ -829,7 +846,14 @@ function PersistentOutcome({
 					<p className="mt-3 text-xs leading-5">
 						Harga di bawah adalah harga penawaran yang diiklankan.
 					</p>
-					{evidence ? (
+					{evidenceError ? (
+						<p
+							className="mt-5 border border-base-content bg-base-200 p-3 text-xs leading-5"
+							role="alert"
+						>
+							{evidenceError}
+						</p>
+					) : evidence ? (
 						<div className="mt-5 divide-y divide-base-content border border-base-content">
 							{evidence.listings.map((item) => (
 								<a

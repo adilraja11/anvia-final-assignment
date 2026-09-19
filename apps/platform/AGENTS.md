@@ -19,6 +19,13 @@ focused endpoint set, also read the [API route integration plan](docs/plans/api-
 These references describe current source behavior and its local-demo security gaps; they do not
 make the routes public-safe.
 
+Before adding or changing the valuation-scoped chat on `/result/$valuationId`, its stream
+transport, session restoration, result grounding, or user-facing chat states, read the
+[valuation chat integration contract](docs/contract/valuation-chat-integration.md). Before
+sequencing that work, also read the
+[valuation chat integration plan](docs/plans/valuation-chat-integration.md). The documents describe
+a proposed integration and do not make chat live.
+
 ## Markdown naming and routing
 
 Follow the repository [Markdown naming and routing policy](../../AGENTS.md#markdown-naming-and-routing). `DEVELOPMENT.md` is this package's governing UI contract; name any focused UI reference in lowercase kebab-case and link it here with the exact UI change that requires it.
