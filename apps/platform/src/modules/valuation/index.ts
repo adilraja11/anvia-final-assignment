@@ -1,5 +1,6 @@
 export {
 	CreateValuationPage,
+	PersistentValuationResultPage,
 	ValuationHomePage,
 	ValuationResultPage,
 } from "./components/valuation-experience";

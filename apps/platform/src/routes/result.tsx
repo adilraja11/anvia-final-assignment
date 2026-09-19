@@ -1,6 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ValuationResultPage } from "#/modules/valuation";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/result")({
-	component: ValuationResultPage,
+	component: ResultLayout,
 });
+
+function ResultLayout() {
+	return <Outlet />;
+}

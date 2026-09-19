@@ -1,30 +1,44 @@
 # Platform valuation integration contract
 
-Status: implemented for labelled mock mode and local development validation. It does not make the
-local API a public browser contract.
+Status: the persistent asynchronous API workflow is implemented in `@repo/api`; the platform has
+not yet integrated it. The platform still defaults to labelled mock mode and its optional local
+adapter still calls the legacy synchronous valuation route.
 
 ## Purpose and boundary
 
-This contract lets `@repo/platform` depend on a small valuation domain adapter instead of binding
-routes and components directly to an HTTP endpoint. The adapter has two modes:
+The live integration uses `POST /api/agents/image-identification` to propose an editable identity,
+then uses the persistent `/api/valuations*` workflow for valuation. The exact HTTP shapes, errors,
+and `src/utils/api.ts` selectors are defined in the focused
+[API route contract](api-routes.md); this document defines how the platform consumes them.
 
-- A development-only implementation maps to the synchronous local API routes in `@repo/api`.
-- A future browser-ready implementation keeps the platform-facing input and outcome model, but
-  supplies secure upload, persistent idempotent jobs, access control, rate limits, and evidence
-  presentation.
+These implemented endpoints remain local-demo infrastructure, not a public-safe browser contract.
+Authentication, owner-scoped reads, production CORS, and secure public image transport are still
+required before public deployment.
 
-The current routes are `POST /api/agents/image-identification` and `POST /api/agents/valuation`.
-They are unauthenticated local-demo endpoints that may trigger paid services. They must not be
-called by a public deployment. See the API [agent API contract](../../../api/docs/contracts/agent-api.md)
-for their server-side validation and public error envelope.
+## Why progress is asynchronous
 
-The client only renders server-calculated numeric fields and returned explanation fields. It never
-calculates a suggestion, a market range, confidence, or a fallback evidence set. All user-facing
-copy remains Bahasa Indonesia.
+A normal synchronous `POST` cannot return intermediate progress labels: it produces one final HTTP
+response. Keeping the connection open would also tie expensive provider and model work to the HTTP
+request lifecycle. Do not add a synchronous valuation request solely to drive `progressLabels`.
 
-## Platform adapter
+The existing asynchronous contract already supplies truthful progress:
 
-The platform depends on these domain operations:
+1. `POST /api/valuations` validates input, creates or reuses a PostgreSQL row, enqueues one BullMQ
+   job, and returns `202 Accepted` immediately.
+2. The platform retains the returned valuation ID and polls
+   `GET /api/valuations/:valuationId` after `pollAfterMs`.
+3. The separate worker, run locally with `pnpm worker:dev`, performs the expensive work and updates
+   BullMQ progress.
+4. Polling stops when `valuation.state === "COMPLETED"`; the UI then branches on `result.status`.
+
+Do not run valuation inside the HTTP handler, start an in-process fire-and-forget promise, or use
+timer-simulated progress in live mode. Those approaches are not durable across restarts and do not
+represent server work.
+
+## Platform gateway
+
+Keep HTTP details out of route components. The platform-facing adapter should expose operations
+equivalent to:
 
 ```ts
 type ProductCondition = "Seperti baru" | "Baik" | "Cukup" | "Rusak";
@@ -37,121 +51,90 @@ type ValuationInput = {
 
 type ValuationGateway = {
 	identifyImage(file: File, signal?: AbortSignal): Promise<ImageIdentificationResult>;
-	requestValuation(
+	createValuation(
 		input: ValuationInput,
+		idempotencyKey: string,
 		signal?: AbortSignal,
-	): Promise<ValuationResult>;
+	): Promise<ValuationProgress>;
+	readValuation(id: string, signal?: AbortSignal): Promise<ValuationRead>;
+	readEvidence(id: string, signal?: AbortSignal): Promise<ValuationEvidence>;
 };
 ```
 
-`productName` is the seller-confirmed price-critical product text. `productDescription` is optional,
-untrusted context; it cannot replace confirmed identity or condition. The local API accepts exactly
-these fields: a non-empty name of at most 160 characters, one allowed condition, and an optional
-description of at most 2,000 characters. It accepts neither an asking price nor a location.
+`productName` is the seller-confirmed price-critical identity. `productDescription` is optional,
+untrusted context. Asking/original price and location are not accepted by the current creation
+route and must not be serialized into it.
 
-The current form's `askingPrice` and mock-source result comparison are not part of this contract.
-They must be removed before a live or development-only gateway drives the journey. Location may
-remain a mock-only UI field until a later API contract accepts it; it must not be silently added to
-the local valuation request.
+Use a stable idempotency key for retries of one submission. Reusing that key with changed product
+fields is a conflict. Cancelling a browser fetch stops only that fetch; it does not cancel a job
+already durably created.
 
-## Development-only HTTP mapping
+## Create, poll, and restore
 
-The local gateway translates only as follows:
+Successful creation returns `202` with a valuation whose initial state and stage are `QUEUED`, plus
+`id`, retention timestamps, and `pollAfterMs`. The client must:
 
-| Adapter operation | Local request | Local response |
-| --- | --- | --- |
-| `identifyImage` | `POST /api/agents/image-identification`, `multipart/form-data`, one `image` part | `{ result: ImageIdentificationResult }` |
-| `requestValuation` | `POST /api/agents/valuation`, `application/json`, exact `ValuationInput` shape | `{ result: ValuationResult }` |
+- store the opaque ID in the ID-based result route so refresh can resume polling;
+- validate every decoded response at the browser boundary;
+- wait at least `pollAfterMs` between reads and avoid overlapping polls;
+- continue while state is `QUEUED` or `RUNNING` and `result` is `null`;
+- stop on `COMPLETED`, terminal HTTP errors, route exit, or expiry; and
+- never create another valuation merely because a poll failed.
 
-Image preflight in the browser may give prompt feedback, but is not security validation. The server
-is authoritative: it accepts exactly one JPEG, PNG, or WebP decoded from its actual content, up to
-10 MB, at least 300 x 300 pixels, at most 25 megapixels, and not animated. It sanitizes the image
-in memory before identification.
+`GET /api/valuations` can restore retained summaries, but active progress must come from the detail
+route because the list response does not read temporary BullMQ progress.
 
-This gateway is enabled only in an explicitly local development configuration. It must fail closed
-for production builds and hosted environments, rather than falling back to simulated progress,
-mock prices, or mock evidence.
+## Progress-label mapping
 
-## Result model
+Render only the latest server-reported stage in live mode:
 
-`ImageIdentificationResult` is one of:
+| Server stage | Bahasa Indonesia label |
+| --- | --- |
+| `QUEUED` | `Menunggu antrean` |
+| `VALIDATING_IDENTITY` | `Mengidentifikasi produk` |
+| `FINDING_COMPARABLES` | `Mencari produk pembanding` |
+| `CALCULATING_PRICE` | `Menghitung estimasi harga` |
+| `PREPARING_EXPLANATION` | `Menyiapkan penjelasan` |
+| `COMPLETED` | `Selesai` |
 
-```ts
-type ImageIdentificationResult =
-	| { status: "SUPPORTED"; productName: string }
-	| { status: "UNSUPPORTED_CATEGORY" }
-	| { status: "MORE_INFORMATION_REQUIRED" };
-```
+Stages communicate current work, not a guaranteed percentage. Poll responses may repeat or skip a
+stage, so the UI must not require every label to appear before completion. `COMPLETED` means inspect
+the result; it does not necessarily mean a price was produced.
 
-`ValuationResult` is one of the following shapes:
+## Terminal outcomes and evidence
 
-| Status | Required fields available to the platform | UI behavior |
-| --- | --- | --- |
-| `VALUATED` | explanation, pros, cons, evidence IDs, calculated suggested price, calculated Blibli P25--P75 range, confidence, confidence reason, accepted count, coverage, outlier count | Render result. Keep the item-price, uncertainty, and advertised-asking-price disclosures. |
-| `UNSUPPORTED_CATEGORY` | explanation | Show a dedicated unsupported-category outcome; do not offer a low-confidence price. |
-| `MORE_INFORMATION_REQUIRED` | explanation, `missingFields` | Return to product details, preserve entered values, expose the missing fields, and move focus to the first correction. |
-| `INSUFFICIENT_EVIDENCE` | explanation, evidence IDs, accepted count, coverage, outlier count | Show the dedicated evidence-shortage outcome without price fields. |
-| `SERVICE_FAILURE` | explanation | Show a service-failure outcome and a retry action. Never substitute mock evidence. |
+When state is `COMPLETED`, `result` must be non-null and has one of these statuses:
 
-The future browser-ready workflow also maps `RATE_LIMITED` to its own outcome and explains that a
-new paid run was not started. It is not returned by the current local agent route.
+| Result status | Platform behavior |
+| --- | --- |
+| `VALUATED` | Render only server-calculated price, market range, confidence, explanation, pros, cons, and limitations; then request evidence. |
+| `UNSUPPORTED_CATEGORY` | Show the dedicated unsupported-category outcome without price fields. |
+| `MORE_INFORMATION_REQUIRED` | Preserve input, show `missingFields`, and focus the first field needing correction. |
+| `INSUFFICIENT_EVIDENCE` | Show evidence shortage and accepted count without a price. |
+| `SERVICE_FAILURE` | Show a service-failure outcome and an intentional retry action; never substitute mock data. |
 
-For `VALUATED`, display the API's server-rounded `suggestedListingPriceIdr` separately from
-`observedMarketRangeIdr`, labelled **"Rentang harga pasar saat ini di Blibli"**. Keep
-**"Estimasi hanya mencakup harga barang."** and the limitation that authenticity, ownership,
-transaction safety, and hidden physical condition are not verified.
+Evidence is read from `GET /api/valuations/:valuationId/evidence` only after `VALUATED`. Render only
+the approved listing fields returned there. Keep the item-price-only statement, label the market
+range as **"Rentang harga pasar saat ini di Blibli"**, disclose that listings are advertised asking
+prices, and retain the authenticity, ownership, transaction-safety, and hidden-condition limits.
 
-The local result exposes only `evidenceIds`, not representative listing title, price, condition,
-city, or URL. A UI driven by this route may display the returned summary fields and IDs only; it
-cannot claim it has the PRD's live evidence-listing panel. It must not enrich the result with mock
-listings. A browser-ready result needs a separately approved representative-evidence response.
+`429 RATE_LIMITED` is a creation failure and does not create a terminal valuation result. Transport
+errors remain distinct from business outcomes; reject malformed envelopes and unknown statuses.
 
-## Transport failures
+## Durable runtime ownership
 
-The local API uses this browser-safe envelope for route failures:
+- PostgreSQL is authoritative for durable input, coarse state, terminal result, and accepted
+  evidence. A result survives browser navigation and Redis progress loss until retention expiry.
+- BullMQ/Redis owns delivery and temporary active-stage progress. The worker, not the API process,
+  performs valuation work.
+- Redis also supports temporary cache and usage controls; it is not the terminal result store.
+- Application code calculates prices and confidence. AI may identify, normalize, match, and
+  explain, but never supplies the final calculation.
 
-```json
-{
-	"error": {
-		"code": "INVALID_REQUEST",
-		"message": "Permintaan tidak valid."
-	}
-}
-```
+## Public-readiness blockers
 
-| HTTP status | Code | Platform treatment |
-| --- | --- | --- |
-| 400 | `INVALID_REQUEST` | Keep the user on the relevant step and show the supplied Indonesian validation message. |
-| 413 | `IMAGE_TOO_LARGE` | Return to image selection and show the size error. |
-| 415 | `UNSUPPORTED_IMAGE_TYPE` | Return to image selection and show the format error. |
-| 422 | `INVALID_IMAGE` | Return to image selection and show the invalid-image error. |
-| 499 | `REQUEST_CANCELLED` | Treat as cancelled; do not show a false successful result. |
-| 500 | `AGENT_SERVICE_FAILURE` | Show a service-failure state with retry. |
-
-An adapter must reject malformed envelopes and unknown statuses rather than trying to render them.
-Request cancellation is passed through `AbortSignal`; a cancelled request does not create a mock
-result.
-
-## Browser-ready job transition
-
-The synchronous adapter is temporary. The browser-ready adapter will create a server-owned,
-idempotent valuation job and query or subscribe to it by `jobId`. The result route should carry
-only `jobId`, so a refresh can resume its status; it must never place prices, product details,
-presigned URLs, or raw evidence in the URL. The server remains the authority for job access and
-status.
-
-The four intended progress labels are `Mengidentifikasi produk`, `Mencari produk pembanding`,
-`Menghitung estimasi harga`, and `Menyiapkan penjelasan`. The current synchronous API has no
-progress transport, so a development-only gateway must not present timed simulated stages as live
-status.
-
-## Non-negotiable integration rules
-
-- Treat image bytes, user text, response evidence IDs, and all URLs as untrusted data.
-- Do not expose provider credentials, raw provider payloads, model output beyond the approved
-  response, or server configuration.
-- Do not turn the local endpoint into a public API via a `VITE_*` base URL or permissive hosted
-  CORS configuration.
-- Do not use hard-coded marketplace data as a live-provider fallback.
-- Do not show a result solely from image identification; valuation still requires seller-confirmed
-  name and condition.
+Do not present this integration as publicly ready until all valuation reads authenticate and enforce
+ownership, production CORS is narrow, and image upload uses private quarantine, validation,
+sanitization, scoped access, and deletion. An opaque valuation ID and an `Origin` check are not
+authorization. Keep provider credentials, presigned URLs, raw payloads, queue metadata, and private
+errors out of browser responses and logs.

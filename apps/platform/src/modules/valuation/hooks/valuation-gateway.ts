@@ -1,9 +1,8 @@
+import { api } from "#/utils/api";
 import type {
 	ImageIdentificationResult,
 	MockValuationResult,
 	ValuationGateway,
-	ValuationInput,
-	ValuationResult,
 	ValuationRuntime,
 } from "../type";
 
@@ -60,40 +59,6 @@ function isNonEmptyString(value: unknown, maximum = 2_000): value is string {
 	);
 }
 
-function isStringArray(
-	value: unknown,
-	maximumItems: number,
-	maximumLength: number,
-): value is string[] {
-	return (
-		Array.isArray(value) &&
-		value.length <= maximumItems &&
-		value.every((item) => isNonEmptyString(item, maximumLength))
-	);
-}
-
-function isBoundedInteger(
-	value: unknown,
-	minimum: number,
-	maximum = Number.MAX_SAFE_INTEGER,
-): value is number {
-	return (
-		typeof value === "number" &&
-		Number.isInteger(value) &&
-		value >= minimum &&
-		value <= maximum
-	);
-}
-
-function isValuationSummary(value: Record<string, unknown>) {
-	return (
-		isBoundedInteger(value.acceptedComparableCount, 0, 30) &&
-		(value.evidenceCoverage === "LOCAL" ||
-			value.evidenceCoverage === "NATIONAL") &&
-		isBoundedInteger(value.outlierCount, 0, 30)
-	);
-}
-
 function malformedResponse(): never {
 	throw new ValuationGatewayError(
 		"MALFORMED_RESPONSE",
@@ -126,97 +91,6 @@ function parseImageIdentificationResult(
 	return malformedResponse();
 }
 
-function parseValuationResult(value: unknown): ValuationResult {
-	if (!isRecord(value) || typeof value.status !== "string")
-		return malformedResponse();
-
-	if (value.status === "VALUATED") {
-		const keys = [
-			"status",
-			"explanation",
-			"pros",
-			"cons",
-			"evidenceIds",
-			"suggestedListingPriceIdr",
-			"observedMarketRangeIdr",
-			"confidence",
-			"confidenceReason",
-			"acceptedComparableCount",
-			"evidenceCoverage",
-			"outlierCount",
-		];
-		const range = value.observedMarketRangeIdr;
-		if (
-			!hasExactKeys(value, keys) ||
-			!isNonEmptyString(value.explanation) ||
-			!isStringArray(value.pros, 8, 300) ||
-			!isStringArray(value.cons, 8, 300) ||
-			!isStringArray(value.evidenceIds, 30, 160) ||
-			!isBoundedInteger(value.suggestedListingPriceIdr, 1) ||
-			!isRecord(range) ||
-			!hasExactKeys(range, ["minimum", "maximum"]) ||
-			!isBoundedInteger(range.minimum, 1) ||
-			!isBoundedInteger(range.maximum, 1) ||
-			range.minimum > range.maximum ||
-			(value.confidence !== "HIGH" && value.confidence !== "MEDIUM") ||
-			!isNonEmptyString(value.confidenceReason) ||
-			!isValuationSummary(value)
-		)
-			return malformedResponse();
-		return value as ValuationResult;
-	}
-
-	if (value.status === "UNSUPPORTED_CATEGORY") {
-		if (
-			!hasExactKeys(value, ["status", "explanation"]) ||
-			!isNonEmptyString(value.explanation)
-		)
-			return malformedResponse();
-		return value as ValuationResult;
-	}
-
-	if (value.status === "MORE_INFORMATION_REQUIRED") {
-		if (
-			!hasExactKeys(value, ["status", "explanation", "missingFields"]) ||
-			!isNonEmptyString(value.explanation) ||
-			!isStringArray(value.missingFields, 12, 300) ||
-			value.missingFields.length === 0
-		)
-			return malformedResponse();
-		return value as ValuationResult;
-	}
-
-	if (value.status === "INSUFFICIENT_EVIDENCE") {
-		const keys = [
-			"status",
-			"explanation",
-			"evidenceIds",
-			"acceptedComparableCount",
-			"evidenceCoverage",
-			"outlierCount",
-		];
-		if (
-			!hasExactKeys(value, keys) ||
-			!isNonEmptyString(value.explanation) ||
-			!isStringArray(value.evidenceIds, 30, 160) ||
-			!isValuationSummary(value)
-		)
-			return malformedResponse();
-		return value as ValuationResult;
-	}
-
-	if (value.status === "SERVICE_FAILURE") {
-		if (
-			!hasExactKeys(value, ["status", "explanation"]) ||
-			!isNonEmptyString(value.explanation)
-		)
-			return malformedResponse();
-		return value as ValuationResult;
-	}
-
-	return malformedResponse();
-}
-
 async function readJson(response: Response): Promise<unknown> {
 	try {
 		return await response.json();
@@ -244,17 +118,26 @@ async function throwApiError(response: Response): Promise<never> {
 	);
 }
 
-async function request(
-	input: string,
-	init: RequestInit,
+export function createLocalValuationGateway(): ValuationGateway {
+	return {
+		async identifyImage(file, signal) {
+			const body = await requestImageIdentification(file, signal);
+			if (!isRecord(body) || !hasExactKeys(body, ["result"]))
+				return malformedResponse();
+			return parseImageIdentificationResult(body.result);
+		},
+	};
+}
+
+async function requestImageIdentification(
+	file: File,
 	signal?: AbortSignal,
 ): Promise<unknown> {
 	try {
-		const response = await fetch(input, {
-			...init,
-			signal,
-			headers: { accept: "application/json", ...init.headers },
-		});
+		const response = await api.api.agents["image-identification"].$post(
+			{ form: { image: file } } as never,
+			{ init: { signal } },
+		);
 		if (!response.ok) return await throwApiError(response);
 		return await readJson(response);
 	} catch (error) {
@@ -274,60 +157,23 @@ async function request(
 	}
 }
 
-export function createLocalValuationGateway(): ValuationGateway {
-	return {
-		async identifyImage(file, signal) {
-			const formData = new FormData();
-			formData.append("image", file);
-			const body = await request(
-				"/api/agents/image-identification",
-				{ method: "POST", body: formData },
-				signal,
-			);
-			if (!isRecord(body) || !hasExactKeys(body, ["result"]))
-				return malformedResponse();
-			return parseImageIdentificationResult(body.result);
-		},
-		async requestValuation(input, signal) {
-			const productDescription = input.productDescription?.trim();
-			const payload: ValuationInput = {
-				productName: input.productName.trim(),
-				productCondition: input.productCondition,
-				...(productDescription ? { productDescription } : {}),
-			};
-			const body = await request(
-				"/api/agents/valuation",
-				{
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body: JSON.stringify(payload),
-				},
-				signal,
-			);
-			if (!isRecord(body) || !hasExactKeys(body, ["result"]))
-				return malformedResponse();
-			return parseValuationResult(body.result);
-		},
-	};
-}
-
 export function getValuationRuntime(): ValuationRuntime {
 	const configuredMode = import.meta.env.VITE_VALUATION_MODE?.trim();
-	if (!configuredMode || configuredMode === "mock") return { kind: "mock" };
+	if (configuredMode === "mock") return { kind: "mock" };
 
-	if (configuredMode === "local-api") {
+	if (!configuredMode || configuredMode === "local-api") {
 		if (import.meta.env.DEV)
 			return { kind: "local-api", gateway: createLocalValuationGateway() };
 		return {
 			kind: "unavailable",
 			reason:
-				"Mode API lokal hanya tersedia melalui server pengembangan Vite dan tidak dapat digunakan pada build produksi.",
+				"Integrasi valuasi hanya tersedia melalui server pengembangan Vite dan tidak dapat digunakan pada build produksi.",
 		};
 	}
 
 	return {
 		kind: "unavailable",
-		reason: `Mode valuasi "${configuredMode}" tidak dikenal. Gunakan "mock" atau "local-api".`,
+		reason: `Mode valuasi "${configuredMode}" tidak dikenal. Gunakan "local-api" atau "mock".`,
 	};
 }
 

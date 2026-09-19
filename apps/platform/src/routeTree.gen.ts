@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CreateRouteImport } from './routes/create'
 import { Route as ResultRouteImport } from './routes/result'
+import { Route as ResultIndexRouteImport } from './routes/result/index'
+import { Route as ResultValuationIdRouteImport } from './routes/result/$valuationId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +30,56 @@ const ResultRoute = ResultRouteImport.update({
   path: '/result',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResultIndexRoute = ResultIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ResultRoute,
+} as any)
+const ResultValuationIdRoute = ResultValuationIdRouteImport.update({
+  id: '/$valuationId',
+  path: '/$valuationId',
+  getParentRoute: () => ResultRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
-  '/result': typeof ResultRoute
+  '/result': typeof ResultRouteWithChildren
+  '/result/$valuationId': typeof ResultValuationIdRoute
+  '/result/': typeof ResultIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
-  '/result': typeof ResultRoute
+  '/result/$valuationId': typeof ResultValuationIdRoute
+  '/result': typeof ResultIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
-  '/result': typeof ResultRoute
+  '/result': typeof ResultRouteWithChildren
+  '/result/$valuationId': typeof ResultValuationIdRoute
+  '/result/': typeof ResultIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/create' | '/result'
+  fullPaths: '/' | '/create' | '/result' | '/result/$valuationId' | '/result/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/create' | '/result'
-  id: '__root__' | '/' | '/create' | '/result'
+  to: '/' | '/create' | '/result/$valuationId' | '/result'
+  id:
+    | '__root__'
+    | '/'
+    | '/create'
+    | '/result'
+    | '/result/$valuationId'
+    | '/result/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CreateRoute: typeof CreateRoute
-  ResultRoute: typeof ResultRoute
+  ResultRoute: typeof ResultRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -82,13 +105,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResultRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/result/': {
+      id: '/result/'
+      path: '/'
+      fullPath: '/result/'
+      preLoaderRoute: typeof ResultIndexRouteImport
+      parentRoute: typeof ResultRoute
+    }
+    '/result/$valuationId': {
+      id: '/result/$valuationId'
+      path: '/$valuationId'
+      fullPath: '/result/$valuationId'
+      preLoaderRoute: typeof ResultValuationIdRouteImport
+      parentRoute: typeof ResultRoute
+    }
   }
 }
+
+interface ResultRouteChildren {
+  ResultValuationIdRoute: typeof ResultValuationIdRoute
+  ResultIndexRoute: typeof ResultIndexRoute
+}
+
+const ResultRouteChildren: ResultRouteChildren = {
+  ResultValuationIdRoute: ResultValuationIdRoute,
+  ResultIndexRoute: ResultIndexRoute,
+}
+
+const ResultRouteWithChildren =
+  ResultRoute._addFileChildren(ResultRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CreateRoute: CreateRoute,
-  ResultRoute: ResultRoute,
+  ResultRoute: ResultRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

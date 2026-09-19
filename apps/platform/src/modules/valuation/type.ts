@@ -85,10 +85,6 @@ export type ValuationGateway = {
 		file: File,
 		signal?: AbortSignal,
 	): Promise<ImageIdentificationResult>;
-	requestValuation(
-		input: ValuationInput,
-		signal?: AbortSignal,
-	): Promise<ValuationResult>;
 };
 
 export type ValuationRuntime =

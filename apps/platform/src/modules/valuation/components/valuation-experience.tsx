@@ -7,8 +7,17 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { ApiError } from "#/utils/api/errors";
+import {
+	createValuation,
+	readEvidence,
+	readValuation,
+	type ServerValuationResult,
+	type ValuationEvidence,
+	type ValuationRead,
+	type ValuationSummary,
+} from "#/utils/api/valuations";
 import { useImageIdentification } from "../hooks/use-image-identification";
-import { useValuation } from "../hooks/use-valuation";
 import {
 	defaultValuationDetails,
 	useValuationSession,
@@ -108,7 +117,7 @@ function ValuationLayout({ children }: { children: ReactNode }) {
 		valuationRuntime.kind === "local-api"
 			? "Integrasi API lokal untuk pengembangan"
 			: valuationRuntime.kind === "mock"
-				? "Demo UI dengan data mockup"
+				? "Demo UI dengan data mockup (dipilih eksplisit)"
 				: "Integrasi valuasi tidak tersedia";
 	return (
 		<div
@@ -152,53 +161,134 @@ function ValuationLayout({ children }: { children: ReactNode }) {
 	);
 }
 
-export function ValuationHomePage() {
+export function ValuationHomePage({
+	summaries,
+	error,
+}: {
+	summaries: ValuationSummary[];
+	error: string | null;
+}) {
 	const { setOutcome, setResultDetails } = useValuationSession();
 	const modeCopy =
 		valuationRuntime.kind === "local-api"
 			? "Mode pengembangan lokal mengirim foto dan detail yang kamu konfirmasi ke API lokal."
 			: valuationRuntime.kind === "mock"
-				? "Mode mock memakai data contoh dan tidak mengirim permintaan ke layanan mana pun."
+				? "Mode mock dipilih secara eksplisit dan tidak mengirim permintaan ke layanan mana pun."
 				: valuationRuntime.reason;
 	return (
 		<ValuationLayout>
-			<section className="w-full max-w-4xl border-2 border-base-content bg-base-100 p-6 sm:p-12">
-				<span className="badge badge-primary rounded-none px-2 py-3 text-[0.62rem] font-bold uppercase tracking-[0.07em]">
-					Penilaian barang bekas
-				</span>
-				<h1 className="mt-10 max-w-3xl font-display text-5xl leading-[0.9] tracking-[-0.04em] uppercase sm:text-7xl">
-					Tahu harga barang sebelum{" "}
-					<span className="text-primary">pasang iklan.</span>
-				</h1>
-				<p className="mt-6 max-w-2xl text-sm leading-7 text-base-content/80">
-					Unggah foto, konfirmasi identitas dan kondisi barang, lalu tinjau
-					saran harga listing yang dipisahkan dari rentang pasar Blibli.{" "}
-					{modeCopy}
-				</p>
-				<div className="mt-10 flex flex-col gap-3 sm:flex-row">
-					<Link
-						className="btn btn-primary min-h-13 rounded-none uppercase"
-						to="/create"
-					>
-						<Sparkle /> Mulai cek harga
-					</Link>
-					<Link
-						className="btn btn-outline min-h-13 rounded-none uppercase"
-						to="/result"
-						onClick={() => {
-							setResultDetails(defaultValuationDetails);
-							setOutcome({
-								source: "mock",
-								result: createMockValuationResult(),
-							});
-						}}
-					>
-						Lihat contoh hasil
-					</Link>
-				</div>
-			</section>
+			<div className="w-full max-w-4xl space-y-12 sm:space-y-16">
+				<section className="border-2 border-base-content bg-base-100 p-6 sm:p-12">
+					<span className="badge badge-primary rounded-none px-2 py-3 text-[0.62rem] font-bold uppercase tracking-[0.07em]">
+						Penilaian barang bekas
+					</span>
+					<h1 className="mt-10 max-w-3xl font-display text-5xl leading-[0.9] tracking-[-0.04em] uppercase sm:text-7xl">
+						Tahu harga barang sebelum{" "}
+						<span className="text-primary">pasang iklan.</span>
+					</h1>
+					<p className="mt-6 max-w-2xl text-sm leading-7 text-base-content/80">
+						Unggah foto, konfirmasi identitas dan kondisi barang, lalu tinjau
+						saran harga listing yang dipisahkan dari rentang pasar Blibli.{" "}
+						{modeCopy}
+					</p>
+					<div className="mt-10 flex flex-col gap-3 sm:flex-row">
+						<Link
+							className="btn btn-primary min-h-13 rounded-none uppercase"
+							to="/create"
+						>
+							<Sparkle /> Mulai cek harga
+						</Link>
+						{valuationRuntime.kind === "mock" ? (
+							<Link
+								className="btn btn-outline min-h-13 rounded-none uppercase"
+								to="/result"
+								onClick={() => {
+									setResultDetails(defaultValuationDetails);
+									setOutcome({
+										source: "mock",
+										result: createMockValuationResult(),
+									});
+								}}
+							>
+								Lihat contoh hasil
+							</Link>
+						) : null}
+					</div>
+				</section>
+				<ValuationSummaryList summaries={summaries} error={error} />
+			</div>
 		</ValuationLayout>
 	);
+}
+
+function ValuationSummaryList({
+	summaries,
+	error,
+}: {
+	summaries: ValuationSummary[];
+	error: string | null;
+}) {
+	return (
+		<section className="border-2 border-base-content bg-base-100 p-5 sm:p-8">
+			<h2 className="font-display text-3xl leading-[0.92] tracking-[-0.04em] uppercase sm:text-4xl">
+				Valuasi tersimpan
+			</h2>
+			<p className="mt-3 max-w-prose text-xs leading-6 text-base-content/75">
+				Riwayat ini berasal dari API lokal dan belum dipisahkan per akun.
+			</p>
+			{error ? (
+				<p
+					className="mt-6 border border-base-content bg-base-200 p-4 text-xs leading-6"
+					role="status"
+				>
+					{error}
+				</p>
+			) : summaries.length === 0 ? (
+				<p className="mt-6 border border-base-content bg-base-200 p-4 text-xs leading-6">
+					Belum ada valuasi tersimpan. Mulai cek harga untuk membuat valuasi
+					pertama.
+				</p>
+			) : (
+				<div className="mt-6 divide-y-2 divide-base-content border-2 border-base-content">
+					{summaries.map((summary) => (
+						<Link
+							className="group grid gap-3 p-4 transition-colors hover:bg-primary hover:text-primary-content sm:grid-cols-[1fr_auto] sm:items-center"
+							key={summary.id}
+							params={{ valuationId: summary.id }}
+							to="/result/$valuationId"
+						>
+							<div className="min-w-0">
+								<h3 className="[overflow-wrap:anywhere] text-sm font-bold uppercase">
+									{summary.productName}
+								</h3>
+								<p className="mt-1 text-[0.66rem] leading-5 opacity-75">
+									Kondisi {summary.productCondition} · dibuat{" "}
+									{formatDate(summary.createdAt)}
+								</p>
+							</div>
+							<span className="w-fit border border-current px-2 py-1 text-[0.58rem] font-bold tracking-[0.08em]">
+								{summary.state === "COMPLETED"
+									? summary.status === "VALUATED"
+										? "HASIL SIAP"
+										: "SELESAI"
+									: liveProgressLabels[summary.stage ?? "QUEUED"]}
+							</span>
+						</Link>
+					))}
+				</div>
+			)}
+		</section>
+	);
+}
+
+function formatDate(value: string) {
+	const date = new Date(value);
+	return Number.isNaN(date.getTime())
+		? "waktu tidak tersedia"
+		: new Intl.DateTimeFormat("id-ID", {
+				dateStyle: "medium",
+				timeStyle: "short",
+			}).format(date);
 }
 
 export function CreateValuationPage() {
@@ -207,7 +297,6 @@ export function CreateValuationPage() {
 	const localGateway =
 		valuationRuntime.kind === "local-api" ? valuationRuntime.gateway : null;
 	const identifyImage = useImageIdentification(localGateway);
-	const requestValuation = useValuation(localGateway);
 	const [step, setStep] = useState<CreateStep>(() =>
 		session.correction || session.resumeAtDetails ? "details" : "upload",
 	);
@@ -386,20 +475,15 @@ export function CreateValuationPage() {
 			...(description ? { productDescription: description } : {}),
 		};
 		try {
-			const result = await requestValuation(input, controller.signal);
-			if (result.status === "MORE_INFORMATION_REQUIRED") {
-				const correction = {
-					explanation: result.explanation,
-					missingFields: result.missingFields,
-				};
-				session.setCorrection(correction);
-				setMissingFields(result.missingFields);
-				setFormError(result.explanation);
-				setStep("details");
-				return;
-			}
-			session.setOutcome({ source: "local-api", result });
-			navigate({ to: "/result" });
+			const valuation = await createValuation(
+				input,
+				crypto.randomUUID(),
+				controller.signal,
+			);
+			navigate({
+				to: "/result/$valuationId",
+				params: { valuationId: valuation.id },
+			});
 		} catch (requestError) {
 			if (
 				requestError instanceof ValuationGatewayError &&
@@ -412,24 +496,21 @@ export function CreateValuationPage() {
 				return;
 			}
 			if (
-				requestError instanceof ValuationGatewayError &&
-				requestError.code === "INVALID_REQUEST"
+				requestError instanceof ApiError &&
+				["INVALID_REQUEST", "IDEMPOTENCY_CONFLICT", "RATE_LIMITED"].includes(
+					requestError.code,
+				)
 			) {
 				setFormError(requestError.message);
 				setStep("details");
 				return;
 			}
-			session.setOutcome({
-				source: "local-api",
-				result: {
-					status: "SERVICE_FAILURE",
-					explanation:
-						requestError instanceof Error
-							? requestError.message
-							: "Layanan valuasi sedang bermasalah. Silakan coba lagi.",
-				},
-			});
-			navigate({ to: "/result" });
+			setFormError(
+				requestError instanceof Error
+					? requestError.message
+					: "Layanan valuasi sedang bermasalah. Silakan coba lagi.",
+			);
+			setStep("details");
 		} finally {
 			if (controllerRef.current === controller) controllerRef.current = null;
 		}
@@ -536,6 +617,244 @@ export function ValuationResultPage() {
 				/>
 			)}
 		</ValuationLayout>
+	);
+}
+
+const liveProgressLabels = {
+	QUEUED: "Menunggu antrean",
+	VALIDATING_IDENTITY: "Mengidentifikasi produk",
+	FINDING_COMPARABLES: "Mencari produk pembanding",
+	CALCULATING_PRICE: "Menghitung estimasi harga",
+	PREPARING_EXPLANATION: "Menyiapkan penjelasan",
+	COMPLETED: "Selesai",
+} as const;
+
+export function PersistentValuationResultPage({
+	valuationId,
+}: {
+	valuationId: string;
+}) {
+	const navigate = useNavigate();
+	const [read, setRead] = useState<ValuationRead | null>(null);
+	const [evidence, setEvidence] = useState<ValuationEvidence | null>(null);
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		const controller = new AbortController();
+		let timer: number | undefined;
+		let stopped = false;
+		let failedPolls = 0;
+		async function poll() {
+			try {
+				const next = await readValuation(valuationId, controller.signal);
+				if (stopped) return;
+				setRead(next);
+				setError(null);
+				failedPolls = 0;
+				if (next.valuation.state === "COMPLETED") {
+					if (!next.result)
+						setError("Hasil valuasi tidak lengkap. Silakan mulai ulang.");
+					return;
+				}
+				timer = window.setTimeout(
+					poll,
+					Math.max(next.valuation.pollAfterMs, 250),
+				);
+			} catch (pollError) {
+				if (controller.signal.aborted) return;
+				if (
+					pollError instanceof ApiError &&
+					pollError.code === "RESOURCE_NOT_FOUND"
+				) {
+					setError(
+						"Valuasi ini tidak tersedia atau masa simpannya telah berakhir.",
+					);
+					return;
+				}
+				failedPolls += 1;
+				timer = window.setTimeout(
+					poll,
+					Math.min(1_000 * 2 ** failedPolls, 15_000),
+				);
+			}
+		}
+		void poll();
+		return () => {
+			stopped = true;
+			controller.abort();
+			if (timer) window.clearTimeout(timer);
+		};
+	}, [valuationId]);
+
+	useEffect(() => {
+		if (read?.result?.status !== "VALUATED") return;
+		const controller = new AbortController();
+		void readEvidence(valuationId, controller.signal)
+			.then(setEvidence)
+			.catch((e) =>
+				setError(
+					e instanceof Error ? e.message : "Evidence tidak dapat dibaca.",
+				),
+			);
+		return () => controller.abort();
+	}, [read?.result?.status, valuationId]);
+
+	return (
+		<ValuationLayout>
+			{error ? (
+				<SimpleOutcomeScreen
+					title="Hasil tidak tersedia"
+					explanation={error}
+					actionLabel="Kembali ke awal"
+					onAction={() => navigate({ to: "/create" })}
+				/>
+			) : read?.valuation.state !== "COMPLETED" ? (
+				<PersistentActivityScreen
+					stage={read?.valuation.stage ?? "QUEUED"}
+					onBack={() => navigate({ to: "/create" })}
+				/>
+			) : read.result ? (
+				<PersistentOutcome
+					result={read.result}
+					evidence={evidence}
+					onRestart={() => navigate({ to: "/create" })}
+				/>
+			) : null}
+		</ValuationLayout>
+	);
+}
+
+function PersistentActivityScreen({
+	stage,
+	onBack,
+}: {
+	stage: keyof typeof liveProgressLabels;
+	onBack: () => void;
+}) {
+	return (
+		<section
+			className="card w-full max-w-xl border-2 border-base-content bg-base-100 shadow-none"
+			aria-live="polite"
+			aria-busy="true"
+		>
+			<div className="card-body p-6 sm:p-12">
+				<span className="badge badge-primary w-fit rounded-none px-3 py-3 text-[0.62rem] font-bold">
+					API LOKAL · STATUS SERVER
+				</span>
+				<h1 className="mt-6 font-display text-3xl leading-[0.95] tracking-[-0.04em] uppercase sm:text-4xl">
+					{liveProgressLabels[stage]}
+				</h1>
+				<p className="mt-4 text-xs leading-6 text-base-content/75">
+					Pekerjaan tersimpan di server lokal. Halaman ini aman dimuat ulang;
+					status diperbarui saat server melaporkannya.
+				</p>
+				<button
+					className="btn btn-outline mt-7 rounded-none uppercase"
+					type="button"
+					onClick={onBack}
+				>
+					Kembali ke detail
+				</button>
+			</div>
+		</section>
+	);
+}
+
+function PersistentOutcome({
+	result,
+	evidence,
+	onRestart,
+}: {
+	result: ServerValuationResult;
+	evidence: ValuationEvidence | null;
+	onRestart: () => void;
+}) {
+	if (result.status !== "VALUATED")
+		return (
+			<section className="card relative w-full max-w-2xl border-2 border-base-content bg-base-100 shadow-none">
+				<SectionStamp>HASIL VALUASI</SectionStamp>
+				<div className="card-body p-6 sm:p-10">
+					<h1 className="font-display text-3xl leading-[.95] tracking-[-.04em] uppercase sm:text-5xl">
+						{result.status === "UNSUPPORTED_CATEGORY"
+							? "Kategori belum didukung"
+							: result.status === "MORE_INFORMATION_REQUIRED"
+								? "Informasi perlu dilengkapi"
+								: result.status === "INSUFFICIENT_EVIDENCE"
+									? "Bukti harga belum cukup"
+									: "Layanan sedang bermasalah"}
+					</h1>
+					<p className="mt-5 text-sm leading-7">{result.explanation}</p>
+					{result.status === "MORE_INFORMATION_REQUIRED" ? (
+						<ul className="mt-5 list-disc space-y-1 pl-5 text-xs">
+							{result.missingFields.map((field) => (
+								<li key={field}>{field}</li>
+							))}
+						</ul>
+					) : null}
+					{result.status === "INSUFFICIENT_EVIDENCE" ? (
+						<p className="mt-5 text-xs">
+							Pembanding diterima: {result.acceptedComparableCount} · cakupan
+							nasional
+						</p>
+					) : null}
+					<RestartButton onRestart={onRestart} />
+				</div>
+			</section>
+		);
+	return (
+		<section className="grid w-full max-w-7xl gap-4 lg:grid-cols-[1.32fr_.68fr]">
+			<article className="card relative border-2 border-base-content bg-base-100 shadow-none">
+				<SectionStamp>HASIL API LOKAL</SectionStamp>
+				<div className="card-body p-5 sm:p-10">
+					<ResultHeading
+						details={{
+							productName: result.productName,
+							productCondition: result.productCondition,
+							productDescription: "",
+							location: "",
+						}}
+						coverage="Nasional"
+					/>
+					<PricePanel result={result} />
+					<ExplanationSection result={result} />
+					<RequiredDisclosures />
+				</div>
+			</article>
+			<aside className="card relative border-2 border-base-content bg-base-100 shadow-none">
+				<SectionStamp>EVIDENCE BLIBLI</SectionStamp>
+				<div className="card-body p-5 sm:p-8">
+					<h2 className="font-display text-xl leading-none tracking-[-.03em] uppercase">
+						{result.acceptedComparableCount} pembanding diterima
+					</h2>
+					<p className="mt-3 text-xs leading-5">
+						Harga di bawah adalah harga penawaran yang diiklankan.
+					</p>
+					{evidence ? (
+						<div className="mt-5 divide-y divide-base-content border border-base-content">
+							{evidence.listings.map((item) => (
+								<a
+									className="block p-3 hover:bg-base-200"
+									href={item.listingUrl}
+									key={item.id}
+									rel="noreferrer"
+									target="_blank"
+								>
+									<h3 className="text-[.68rem] font-bold leading-5 uppercase">
+										{item.title}
+									</h3>
+									<strong className="mt-2 block text-xs tabular-nums">
+										{formatRupiah(item.priceIdr)}
+									</strong>
+								</a>
+							))}
+						</div>
+					) : (
+						<p className="mt-5 text-xs">Memuat evidence yang disetujui…</p>
+					)}
+					<RestartButton onRestart={onRestart} />
+				</div>
+			</aside>
+		</section>
 	);
 }
 

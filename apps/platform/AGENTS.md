@@ -12,6 +12,13 @@ integration work, read the [valuation integration plan](docs/plans/valuation-int
 Those documents distinguish the current local-only API stage from the browser-ready workflow and
 must not be used to present either as already live.
 
+Before connecting a platform route or data module to `POST /api/agents/image-identification` or an
+implemented `/api/valuations*` endpoint, or changing `src/utils/api.ts` for those routes, read the
+[implemented API route contract](docs/contract/api-routes.md). Before sequencing work across that
+focused endpoint set, also read the [API route integration plan](docs/plans/api-route-integration.md).
+These references describe current source behavior and its local-demo security gaps; they do not
+make the routes public-safe.
+
 ## Markdown naming and routing
 
 Follow the repository [Markdown naming and routing policy](../../AGENTS.md#markdown-naming-and-routing). `DEVELOPMENT.md` is this package's governing UI contract; name any focused UI reference in lowercase kebab-case and link it here with the exact UI change that requires it.
