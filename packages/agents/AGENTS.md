@@ -24,6 +24,11 @@ Preserve these boundaries in every agent or tool change:
 
 The legacy handbook ingestion/evaluation code is also present. For handbook retrieval or eval changes, read `src/evals/README.md`, then the matching root Anvia guide named by the repository `AGENTS.md`; do not apply marketplace assumptions to handbook behavior.
 
+Before creating or changing the tool-free agent that answers follow-up questions about a persisted
+valuation result, read the
+[valuation chat API contract](../../apps/api/docs/contracts/valuation-chat-api.md). That explainer
+must remain separate from the marketplace-enabled valuation agent.
+
 ## Verification
 
 - Create or modify automated tests only when the user explicitly requests automated-test work.
