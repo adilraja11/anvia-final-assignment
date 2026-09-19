@@ -36,6 +36,12 @@ valuation-result grounding, or the dedicated explainer agent, read the
 also read the [valuation chat integration plan](docs/plans/valuation-chat-integration.md). These
 documents describe a proposed tool-free explanation surface and do not make it live.
 
+Before adding or changing anonymous browser cookies, valuation ownership, owner-scoped
+idempotency, credentialed CORS, or owner authorization for valuation/chat routes, read the
+[anonymous cookie ownership contract](docs/contracts/anonymous-cookie-ownership.md). Before
+sequencing that work, also read the
+[anonymous cookie ownership implementation plan](docs/plans/anonymous-cookie-ownership.md).
+
 ## Persistence and contracts
 
 - Update `prisma/schema.prisma` for data-model changes, create a migration through Prisma, then regenerate the client. Do not edit `src/generated/prisma/` or existing migration files by hand.
