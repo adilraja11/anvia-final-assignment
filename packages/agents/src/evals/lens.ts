@@ -2,7 +2,7 @@ import { LensClient } from "@anvia/lens";
 
 const client = new LensClient({
 	optional: true,
-	serviceName: "rag-agent-evals",
+	serviceName: "aslis-egini-evals",
 });
 
 export const lensEval = {
