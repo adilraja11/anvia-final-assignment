@@ -161,7 +161,11 @@ function projectStreamEvent(
 		case "run_start":
 			return { runId, type: "run_start", source: "agent" };
 		case "turn_start":
-			return { runId, type: "turn_start" };
+			return {
+				runId,
+				type: "turn_start",
+				...(event.turn === undefined ? {} : { turn: event.turn }),
+			};
 		case "message_start":
 			return {
 				runId,
@@ -195,7 +199,11 @@ function projectStreamEvent(
 		case "message_end":
 			return { runId, type: "message_end", messageId: event.messageId };
 		case "turn_end":
-			return { runId, type: "turn_end" };
+			return {
+				runId,
+				type: "turn_end",
+				...(event.turn === undefined ? {} : { turn: event.turn }),
+			};
 		case "run_end":
 			return { runId, type: "run_end", status: event.status };
 		case "error":
