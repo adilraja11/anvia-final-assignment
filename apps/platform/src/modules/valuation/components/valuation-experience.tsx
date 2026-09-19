@@ -121,7 +121,7 @@ function ValuationLayout({ children }: { children: ReactNode }) {
 				: "Integrasi valuasi tidak tersedia";
 	return (
 		<div
-			className="flex min-h-[100dvh] flex-col bg-base-100 text-base-content"
+			className="flex min-h-dvh flex-col bg-base-100 text-base-content"
 			data-theme="asli"
 		>
 			<header className="border-b-2 border-base-content bg-base-100">
@@ -258,7 +258,7 @@ function ValuationSummaryList({
 							to="/result/$valuationId"
 						>
 							<div className="min-w-0">
-								<h3 className="[overflow-wrap:anywhere] text-sm font-bold uppercase">
+								<h3 className="wrap-anywhere text-sm font-bold uppercase">
 									{summary.productName}
 								</h3>
 								<p className="mt-1 text-[0.66rem] leading-5 opacity-75">
@@ -1326,7 +1326,7 @@ function ResultHeading({
 }) {
 	return (
 		<>
-			<h1 className="mt-5 [overflow-wrap:anywhere] font-display text-4xl leading-[0.9] tracking-[-0.04em] uppercase sm:text-6xl">
+			<h1 className="mt-5 wrap-anywhere font-display text-4xl leading-[0.9] tracking-[-0.04em] uppercase sm:text-6xl">
 				{details.productName}
 			</h1>
 			<p className="mt-3 text-xs text-base-content/75">
@@ -1415,7 +1415,7 @@ function ResultStat({ label, value }: { label: string; value: string }) {
 			<span className="block text-[0.58rem] uppercase leading-5 text-base-content/70">
 				{label}
 			</span>
-			<strong className="mt-1 block [overflow-wrap:anywhere] text-xs tabular-nums">
+			<strong className="mt-1 block wrap-anywhere text-xs tabular-nums">
 				{value}
 			</strong>
 		</div>
@@ -1437,7 +1437,7 @@ function Insight({
 			{items.length > 0 ? (
 				<ul className="mt-2 list-disc space-y-2 pl-4 text-xs leading-5 text-base-content/80">
 					{items.map((item) => (
-						<li className="[overflow-wrap:anywhere]" key={item}>
+						<li className="wrap-anywhere" key={item}>
 							{item}
 						</li>
 					))}
@@ -1500,7 +1500,7 @@ function MockEvidenceCard({
 							<span className="text-[0.57rem] font-bold tracking-[0.08em] text-primary">
 								BLIBLI CONTOH
 							</span>
-							<h3 className="mt-1 [overflow-wrap:anywhere] text-[0.68rem] font-bold leading-5 uppercase">
+							<h3 className="mt-1 wrap-anywhere text-[0.68rem] font-bold leading-5 uppercase">
 								{item.title}
 							</h3>
 							<div className="mt-2 flex flex-wrap items-end justify-between gap-2">
@@ -1548,7 +1548,7 @@ function LocalEvidenceCard({
 					<ul className="mt-3 space-y-2">
 						{result.evidenceIds.map((id) => (
 							<li
-								className="[overflow-wrap:anywhere] border border-base-content bg-base-200 p-3 text-[0.68rem]"
+								className="wrap-anywhere border border-base-content bg-base-200 p-3 text-[0.68rem]"
 								key={id}
 							>
 								{id}
