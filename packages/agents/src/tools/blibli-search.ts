@@ -19,6 +19,7 @@ import {
 } from "../marketplace.js";
 
 const ACTOR_ID = "fanndev/blibli-product-price-monitor";
+const MAX_ACTOR_SECONDS_PER_ATTEMPT = 40;
 
 const inputSchema = z
 	.object({
@@ -34,8 +35,23 @@ type Input = z.infer<typeof inputSchema>;
 type Success = Extract<MarketplaceToolResult, { status: "SUCCESS" }>;
 
 export type MarketplaceSearchObserver = (result: MarketplaceToolResult) => void;
+export type MarketplaceSearchCache = Map<
+	string,
+	{ expiresAt: number; value: Success }
+>;
 
-const cache = new Map<string, { expiresAt: number; value: Success }>();
+/** Server-validated identity supplied when constructing the fixed marketplace tool. */
+export type ConfirmedMarketplaceIdentity = Record<
+	string,
+	string | boolean | readonly string[] | undefined
+>;
+
+export type BlibliSearchContext = {
+	identity?: ConfirmedMarketplaceIdentity;
+	location?: string;
+};
+
+const defaultCache: MarketplaceSearchCache = new Map();
 
 const searchQualifierTokens = new Set([
 	"diskon",
@@ -73,10 +89,65 @@ function matchesSearchTerms(title: string, searchTerms: string[]) {
 	});
 }
 
+function identityText(identity: ConfirmedMarketplaceIdentity) {
+	return Object.entries(identity)
+		.filter(([key, value]) => key !== "category" && value !== undefined)
+		.flatMap(([, value]) => {
+			if (typeof value === "string") return [value];
+			return Array.isArray(value) ? value : [];
+		});
+}
+
+function matchesConfirmedIdentity(
+	title: string,
+	record: Record<string, unknown>,
+	identity?: ConfirmedMarketplaceIdentity,
+) {
+	if (!identity) return true;
+	const attributes = Object.values(allowedAttributes(record));
+	const evidenceTokens = new Set(tokens([title, ...attributes].join(" ")));
+	const textMatches = identityText(identity).every((value) => {
+		const expectedTokens = tokens(value);
+		return (
+			expectedTokens.length > 0 &&
+			expectedTokens.every((token) => evidenceTokens.has(token))
+		);
+	});
+	const booleanMatches = Object.entries(identity).every(
+		([key, value]) => typeof value !== "boolean" || record[key] === value,
+	);
+	return textMatches && booleanMatches;
+}
+
 function allowedAttributes(record: Record<string, unknown>) {
 	const attributes: Record<string, string> = {};
-	for (const key of ["brand", "model", "storage", "capacity", "variant"]) {
-		const value = boundedText(record[key], 80);
+	for (const key of [
+		"brand",
+		"model",
+		"storage",
+		"capacity",
+		"variant",
+		"connectivity",
+		"formFactor",
+		"cpu",
+		"ram",
+		"gpu",
+		"display",
+		"displayOrPeripherals",
+		"edition",
+		"bundleContents",
+		"lensIncluded",
+		"lens",
+	]) {
+		const rawValue = record[key];
+		const value = Array.isArray(rawValue)
+			? boundedText(
+					rawValue.filter((item) => typeof item === "string").join(", "),
+					160,
+				)
+			: typeof rawValue === "boolean"
+				? String(rawValue)
+				: boundedText(rawValue, 160);
 		if (value) attributes[key] = value;
 	}
 	return attributes;
@@ -99,6 +170,7 @@ export function normalizeBlibliRecord(
 	value: unknown,
 	input: Input,
 	seenIds: Set<string>,
+	identity?: ConfirmedMarketplaceIdentity,
 ) {
 	const source = "BLIBLI" as const;
 	if (typeof value !== "object" || value === null || Array.isArray(value))
@@ -125,6 +197,8 @@ export function normalizeBlibliRecord(
 	const title = boundedText(record.name ?? record.title, 400);
 	if (!title) return reject("MISSING_TITLE");
 	if (!matchesSearchTerms(title, input.searchTerms))
+		return reject("IDENTITY_MISMATCH");
+	if (!matchesConfirmedIdentity(title, record, identity))
 		return reject("IDENTITY_MISMATCH");
 	if (isRejectedTitle(title)) return reject("NON_COMPARABLE_LISTING");
 	const stockStatus = boundedText(
@@ -161,13 +235,24 @@ export function normalizeBlibliRecord(
 	};
 }
 
-async function fetch(input: Input): Promise<Success> {
+async function fetch(
+	input: Input,
+	context?: BlibliSearchContext,
+): Promise<Success> {
 	const client = getClient();
 	const run = await client
 		.actor(ACTOR_ID)
-		.call(buildBlibliActorInput(input), buildBlibliActorRunOptions());
+		.call(
+			buildBlibliActorInput(input),
+			buildBlibliActorRunOptions(MAX_ACTOR_SECONDS_PER_ATTEMPT),
+		);
 	if (!run || typeof run.defaultDatasetId !== "string" || !run.defaultDatasetId)
 		throw new ProviderBoundaryError("MISSING_DATASET");
+	if (run.status !== "SUCCEEDED") {
+		throw new ProviderBoundaryError(
+			run.status === "TIMED-OUT" ? "TIMEOUT" : "APIFY_ERROR",
+		);
+	}
 	const dataset = await client
 		.dataset<Record<string, unknown>>(run.defaultDatasetId)
 		.listItems({ limit: MAX_PROVIDER_RESULTS });
@@ -177,8 +262,14 @@ async function fetch(input: Input): Promise<Success> {
 	const evidence: Success["evidence"] = [];
 	const rejected: Success["rejected"] = [];
 	const seenIds = new Set<string>();
+	const location = context?.location ?? input.location;
 	for (const item of dataset.items.slice(0, MAX_PROVIDER_RESULTS)) {
-		const normalized = normalizeBlibliRecord(item, input, seenIds);
+		const normalized = normalizeBlibliRecord(
+			item,
+			input,
+			seenIds,
+			context?.identity,
+		);
 		if ("evidence" in normalized) evidence.push(normalized.evidence);
 		else rejected.push(normalized.rejected);
 	}
@@ -188,7 +279,7 @@ async function fetch(input: Input): Promise<Success> {
 		source: "BLIBLI",
 		search_terms: input.searchTerms,
 		region: "Indonesia",
-		...(input.location ? { location: input.location } : {}),
+		...(location ? { location } : {}),
 		fetched_at: new Date().toISOString(),
 		cache_hit: false,
 		evidence,
@@ -203,7 +294,7 @@ function getClient() {
 		token,
 		maxRetries: 1,
 		minDelayBetweenRetriesMillis: 500,
-		timeoutSecs: 360,
+		timeoutSecs: MAX_ACTOR_SECONDS_PER_ATTEMPT + 5,
 	});
 	client.logger.setLevel(client.logger.LEVELS.OFF);
 	return client;
@@ -213,7 +304,7 @@ export function buildBlibliActorInput(input: Input) {
 	return {
 		searchTerms: input.searchTerms,
 		fetchProductDetails: true,
-		includeOutOfStock: true,
+		includeOutOfStock: false,
 		maxItemsPerQuery: MAX_ITEMS_PER_QUERY,
 		sortBy: "relevance",
 		maxConcurrency: 8,
@@ -225,12 +316,29 @@ export function buildBlibliActorInput(input: Input) {
 	};
 }
 
-export function buildBlibliActorRunOptions() {
-	return { log: null };
+export function buildBlibliActorRunOptions(
+	timeoutSeconds = MAX_ACTOR_SECONDS_PER_ATTEMPT,
+) {
+	return {
+		log: null,
+		timeout: timeoutSeconds,
+		waitSecs: timeoutSeconds,
+	};
 }
 
-async function executeSearch(input: Input): Promise<MarketplaceToolResult> {
-	const key = cacheKey(input);
+async function executeSearch(
+	input: Input,
+	cache: MarketplaceSearchCache,
+	context?: BlibliSearchContext,
+): Promise<MarketplaceToolResult> {
+	const effectiveInput = {
+		...input,
+		...(context?.location ? { location: context.location } : {}),
+	};
+	const key = cacheKey({
+		...effectiveInput,
+		identity: context?.identity,
+	});
 	const cached = cache.get(key);
 	if (cached && cached.expiresAt > Date.now())
 		return { ...cached.value, cache_hit: true };
@@ -239,7 +347,7 @@ async function executeSearch(input: Input): Promise<MarketplaceToolResult> {
 	let lastCategory: ProviderErrorCategory = "UNKNOWN";
 	for (let attempt = 0; attempt < 2; attempt += 1) {
 		try {
-			const result = await fetch(input);
+			const result = await fetch(effectiveInput, context);
 			cache.set(key, { value: result, expiresAt: Date.now() + CACHE_TTL_MS });
 			return result;
 		} catch (error) {
@@ -266,7 +374,11 @@ async function executeSearch(input: Input): Promise<MarketplaceToolResult> {
 }
 
 export function createBlibliSearchTool(
-	options: { onResult?: MarketplaceSearchObserver } = {},
+	options: {
+		cache?: MarketplaceSearchCache;
+		context?: BlibliSearchContext;
+		onResult?: MarketplaceSearchObserver;
+	} = {},
 ) {
 	return createTool({
 		name: "blibliSearch",
@@ -274,7 +386,11 @@ export function createBlibliSearchTool(
 			"Cari listing Blibli dengan identitas produk yang sama. Actor, batas, retry, proxy, dan kredensial dikunci aplikasi.",
 		inputSchema,
 		execute: async (input) => {
-			const result = await executeSearch(input);
+			const result = await executeSearch(
+				input,
+				options.cache ?? defaultCache,
+				options.context,
+			);
 			options.onResult?.(result);
 			return result;
 		},

@@ -7,8 +7,10 @@ import {
 	createAgentRuntimeOptions,
 } from "../runtime.js";
 import {
+	type BlibliSearchContext,
 	type MarketplaceSearchObserver as BlibliSearchObserver,
 	createBlibliSearchTool,
+	type MarketplaceSearchCache,
 } from "../tools/blibli-search.js";
 
 const explanationSchema = z.string().trim().min(1).max(2_000);
@@ -60,10 +62,16 @@ export interface CreateValuationAgentOptions
 	agentId?: string;
 	/** Kept for source compatibility; unapproved tools are never attached. */
 	additionalTools?: AnyTool[];
+	/** @deprecated Fixed valuation instructions cannot be extended by callers. */
 	additionalInstructions?: string[];
+	/** @deprecated Valuation runs are intentionally stateless. */
 	memory?: MemoryStore;
 	/** @deprecated The PRD permits no tools beyond the fixed Blibli search. */
 	includeWebTools?: boolean;
+	/** Server-validated context used by the fixed marketplace tool, never model input. */
+	marketplaceContext?: BlibliSearchContext;
+	/** Host-owned cache for sharing the six-hour identity-scoped evidence cache. */
+	marketplaceCache?: MarketplaceSearchCache;
 	onMarketplaceResult?: BlibliSearchObserver;
 }
 
@@ -75,15 +83,17 @@ export function createValuationAgent(
 			...options,
 			agentId: options.agentId ?? "asli-segini-valuation",
 		}),
-		instructions: [
-			VALUATION_INSTRUCTIONS,
-			...(options.additionalInstructions ?? []),
-		].join("\n\n"),
-		tools: [createBlibliSearchTool({ onResult: options.onMarketplaceResult })],
+		instructions: VALUATION_INSTRUCTIONS,
+		tools: [
+			createBlibliSearchTool({
+				context: options.marketplaceContext,
+				cache: options.marketplaceCache,
+				onResult: options.onMarketplaceResult,
+			}),
+		],
 		temperature: 0,
 		maxTokens: 1_500,
-		maxTurns: 6,
-		...(options.memory ? { memory: { store: options.memory } } : {}),
+		maxTurns: 2,
 	});
 }
 

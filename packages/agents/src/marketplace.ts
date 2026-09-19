@@ -118,8 +118,8 @@ export function isRejectedTitle(title: string) {
 	const normalized = normalizeText(title);
 	return [
 		/\b(accessory|accessories|case|casing|cover|charger|kabel|cable|adapter|headset|earphone|strap|mouse|keyboard|tas|bag|tempered|screen protector|pelindung|stand|holder|dock|base|dudukan|plug|dust proof|anti debu)\b/,
-		/\b(lcd|display|baterai|battery|sparepart|suku cadang|service|servis|repair|perbaikan|for parts|kardus|dus)\b/,
-		/\b(bundle|paket|borongan|sepasang|\d+\s*(unit|pcs))\b/,
+		/\b(lcd|baterai|battery|sparepart|suku cadang|service|servis|repair|perbaikan|for parts|kardus|dus)\b/,
+		/\b(borongan|sepasang|(?:[2-9]|\d{2,})\s*(unit|pcs))\b/,
 	].some((pattern) => pattern.test(normalized));
 }
 
@@ -138,9 +138,27 @@ export function approvedMarketplaceUrl(value: unknown) {
 	}
 }
 
-export function cacheKey(input: { searchTerms: string[]; location?: string }) {
+export function cacheKey(input: {
+	searchTerms: string[];
+	location?: string;
+	identity?: Record<string, unknown>;
+}) {
 	return JSON.stringify({
-		searchTerms: input.searchTerms.map(normalizeText).sort(),
+		...(input.identity
+			? {
+					identity: Object.entries(input.identity)
+						.filter(([, value]) => value !== undefined)
+						.sort(([left], [right]) => left.localeCompare(right))
+						.map(([key, value]) => [
+							key,
+							Array.isArray(value)
+								? value.map(String).map(normalizeText).sort()
+								: typeof value === "string"
+									? normalizeText(value)
+									: value,
+						]),
+				}
+			: { searchTerms: input.searchTerms.map(normalizeText).sort() }),
 		location: input.location ? normalizeText(input.location) : undefined,
 		region: "Indonesia",
 	});

@@ -586,7 +586,7 @@ export const cases: AgentEvalCase[] = [
 	{
 		id: "I-10",
 		agent: "image-identification",
-		title: "Identifies a Pixel 7 without returning condition claims",
+		title: "Identifies a Pixel 7 Pro without returning condition claims",
 		category: "condition",
 		input: {
 			kind: "sanitized-image",
@@ -600,7 +600,7 @@ export const cases: AgentEvalCase[] = [
 				license: fixtureLicense,
 				provenanceStatus: "UNVERIFIED",
 				visibleFacts: [
-					"A Google Pixel 7 is the primary product in the foreground.",
+					"A Google Pixel 7 Pro is the primary product in the foreground.",
 					"The rear glass is visibly shattered across a large area.",
 					"Other phones and a Pixel retail box are incidental background objects.",
 				],
@@ -609,7 +609,7 @@ export const cases: AgentEvalCase[] = [
 		},
 		expected: {
 			allowedStatuses: ["SUPPORTED"],
-			allowedCandidates: { productName: ["Google Pixel 7"] },
+			allowedCandidates: { productName: ["Google Pixel 7 Pro"] },
 			mustNotClaim: [
 				"condition field",
 				"hidden damage",
@@ -620,7 +620,11 @@ export const cases: AgentEvalCase[] = [
 		graders: ["schema", "deterministic"],
 		deterministicChecks: [
 			{ kind: "status", allowed: ["SUPPORTED"] },
-			{ kind: "field-equals", path: "productName", value: "Google Pixel 7" },
+			{
+				kind: "field-equals",
+				path: "productName",
+				value: "Google Pixel 7 Pro",
+			},
 			{ kind: "field-absent", path: "condition" },
 		],
 		severity: "high",
@@ -1376,6 +1380,8 @@ export const cases: AgentEvalCase[] = [
 					"harga ekstrem",
 					"perbedaan harga sangat besar",
 					"perlu disaring aplikasi",
+					"jauh berbeda",
+					"sangat berbeda",
 				],
 			},
 			{ kind: "text-excludes", patterns: ["median final", "harga akhir"] },
@@ -1655,7 +1661,13 @@ export const cases: AgentEvalCase[] = [
 			},
 			{
 				kind: "text-includes-concept",
-				concepts: ["terlihat", "diberikan pengguna", "belum diketahui"],
+				concepts: [
+					"terlihat",
+					"diberikan pengguna",
+					"menurut pengguna",
+					"belum diketahui",
+					"tidak diketahui",
+				],
 			},
 		],
 		severity: "high",

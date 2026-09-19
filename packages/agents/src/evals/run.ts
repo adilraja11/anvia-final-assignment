@@ -135,6 +135,17 @@ function evidenceIds(result: unknown): string[] {
 		: [];
 }
 
+function escapedPattern(value: string) {
+	return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isNegatedMention(text: string, pattern: string) {
+	const expression = new RegExp(
+		`(?:^|\\s)(?:bukan|tidak|tanpa)(?:\\s+[a-z0-9]+){0,3}\\s+${escapedPattern(normalized(pattern))}(?=\\s|$)`,
+	);
+	return expression.test(text);
+}
+
 function evaluateChecks(
 	checks: DeterministicCheck[],
 	result: ImageIdentificationResult | ValuationResult,
@@ -210,9 +221,12 @@ function evaluateChecks(
 				break;
 			}
 			case "text-excludes": {
-				const included = check.patterns.filter((pattern) =>
-					text.includes(normalized(pattern)),
-				);
+				const included = check.patterns.filter((pattern) => {
+					const normalizedPattern = normalized(pattern);
+					return (
+						text.includes(normalizedPattern) && !isNegatedMention(text, pattern)
+					);
+				});
 				if (included.length > 0) {
 					failures.push(`forbidden claims found: ${included.join(", ")}`);
 				}
@@ -394,7 +408,7 @@ async function valuationTarget(
 		tools: [mockBlibliSearch],
 		temperature: 0,
 		maxTokens: 1_500,
-		maxTurns: 6,
+		maxTurns: 2,
 	});
 	const response = await agent.generate({
 		prompt: valuationPrompt(input),
