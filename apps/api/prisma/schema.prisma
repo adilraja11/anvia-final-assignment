@@ -31,7 +31,8 @@ enum ValuationConfidence {
 
 model Valuation {
 	id             String @id @default(cuid())
-	idempotencyKey String @unique @db.VarChar(128)
+	ownerKey       String? @db.Char(64)
+	idempotencyKey String  @db.VarChar(128)
 
 	productName        String           @db.VarChar(160)
 	productCondition   ProductCondition
@@ -52,7 +53,8 @@ model Valuation {
 	evidence  ValuationEvidence[]
 	chatSession AgentMemorySession?
 
-	@@index([createdAt])
+	@@unique([ownerKey, idempotencyKey])
+	@@index([ownerKey, createdAt])
 	@@index([status])
 }
 

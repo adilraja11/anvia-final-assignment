@@ -1,6 +1,10 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { valuationQueue } from "../../config/queue.js";
+import {
+	anonymousOwner,
+	anonymousOwnerMiddleware,
+} from "../../middleware/anonymous-owner.js";
 import { valuationChatRouter } from "../valuation-chat/router.js";
 import {
 	createValuationRequestSchema,
@@ -26,6 +30,8 @@ import {
 const MAX_REQUEST_BYTES = 64 * 1024;
 
 const errorMessages = {
+	ANONYMOUS_SESSION_REQUIRED:
+		"Sesi browser perlu disiapkan. Silakan coba lagi.",
 	INVALID_REQUEST: "Permintaan tidak valid.",
 	RESOURCE_NOT_FOUND: "Sumber daya tidak ditemukan.",
 	IDEMPOTENCY_CONFLICT:
@@ -37,6 +43,7 @@ const errorMessages = {
 } as const satisfies Record<ValuationErrorCode, string>;
 
 const errorStatuses = {
+	ANONYMOUS_SESSION_REQUIRED: 428,
 	INVALID_REQUEST: 400,
 	RESOURCE_NOT_FOUND: 404,
 	IDEMPOTENCY_CONFLICT: 409,
@@ -89,8 +96,13 @@ async function queueStage(valuationId: string) {
 }
 
 export const valuationRouter = new Hono()
+	.use("*", anonymousOwnerMiddleware)
 	.use("*", async (c, next) => {
 		c.header("cache-control", "no-store");
+		if (!anonymousOwner(c).hasValidCookie && c.req.method !== "GET") {
+			await next();
+			return;
+		}
 		try {
 			await cleanupExpiredValuations();
 		} catch {
@@ -99,10 +111,13 @@ export const valuationRouter = new Hono()
 		await next();
 	})
 	.get("/", async (c) => {
+		const owner = anonymousOwner(c);
+		if (!owner.hasValidCookie)
+			return c.json(valuationListResponseSchema.parse({ valuations: [] }));
 		try {
 			return c.json(
 				valuationListResponseSchema.parse({
-					valuations: await readValuations(),
+					valuations: await readValuations(owner.ownerKey),
 				}),
 			);
 		} catch {
@@ -121,6 +136,9 @@ export const valuationRouter = new Hono()
 				!allowedOrigin(c.req.header("origin"))
 			)
 				return errorResponse("INVALID_REQUEST");
+			const owner = anonymousOwner(c);
+			if (!owner.hasValidCookie)
+				return errorResponse("ANONYMOUS_SESSION_REQUIRED");
 			const idempotencyKey = c.req.header("idempotency-key");
 			if (
 				idempotencyKey !== undefined &&
@@ -137,6 +155,7 @@ export const valuationRouter = new Hono()
 			if (!parsed.success) return errorResponse("INVALID_REQUEST");
 			try {
 				const valuation = await createOrReuseValuation(
+					owner.ownerKey,
 					idempotencyKey,
 					parsed.data,
 				);
@@ -152,8 +171,13 @@ export const valuationRouter = new Hono()
 		},
 	)
 	.get("/:valuationId", async (c) => {
+		const owner = anonymousOwner(c);
+		if (!owner.hasValidCookie) return errorResponse("RESOURCE_NOT_FOUND");
 		try {
-			const stored = await readValuation(c.req.param("valuationId"));
+			const stored = await readValuation(
+				owner.ownerKey,
+				c.req.param("valuationId"),
+			);
 			if (!stored) return errorResponse("RESOURCE_NOT_FOUND");
 			const stage = await queueStage(stored.valuation.id);
 			return c.json(
@@ -171,8 +195,13 @@ export const valuationRouter = new Hono()
 		}
 	})
 	.get("/:valuationId/evidence", async (c) => {
+		const owner = anonymousOwner(c);
+		if (!owner.hasValidCookie) return errorResponse("RESOURCE_NOT_FOUND");
 		try {
-			const stored = await readEvidence(c.req.param("valuationId"));
+			const stored = await readEvidence(
+				owner.ownerKey,
+				c.req.param("valuationId"),
+			);
 			if (!stored) return errorResponse("RESOURCE_NOT_FOUND");
 			if (!("response" in stored)) return errorResponse("RESULT_NOT_AVAILABLE");
 			return c.json(valuationEvidenceResponseSchema.parse(stored.response));

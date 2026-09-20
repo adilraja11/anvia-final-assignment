@@ -76,6 +76,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const ValuationScalarFieldEnum = {
   id: 'id',
+  ownerKey: 'ownerKey',
   idempotencyKey: 'idempotencyKey',
   productName: 'productName',
   productCondition: 'productCondition',

@@ -18,6 +18,9 @@ const app = new Hono()
 					return undefined;
 				}
 			},
+			credentials: true,
+			allowHeaders: ["Content-Type", "Idempotency-Key"],
+			allowMethods: ["GET", "POST", "DELETE", "OPTIONS"],
 			exposeHeaders: ["x-anvia-stream-protocol"],
 		}),
 	)

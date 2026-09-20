@@ -40,6 +40,7 @@ export type ValuationSumAggregateOutputType = {
 
 export type ValuationMinAggregateOutputType = {
   id: string | null
+  ownerKey: string | null
   idempotencyKey: string | null
   productName: string | null
   productCondition: $Enums.ProductCondition | null
@@ -56,6 +57,7 @@ export type ValuationMinAggregateOutputType = {
 
 export type ValuationMaxAggregateOutputType = {
   id: string | null
+  ownerKey: string | null
   idempotencyKey: string | null
   productName: string | null
   productCondition: $Enums.ProductCondition | null
@@ -72,6 +74,7 @@ export type ValuationMaxAggregateOutputType = {
 
 export type ValuationCountAggregateOutputType = {
   id: number
+  ownerKey: number
   idempotencyKey: number
   productName: number
   productCondition: number
@@ -105,6 +108,7 @@ export type ValuationSumAggregateInputType = {
 
 export type ValuationMinAggregateInputType = {
   id?: true
+  ownerKey?: true
   idempotencyKey?: true
   productName?: true
   productCondition?: true
@@ -121,6 +125,7 @@ export type ValuationMinAggregateInputType = {
 
 export type ValuationMaxAggregateInputType = {
   id?: true
+  ownerKey?: true
   idempotencyKey?: true
   productName?: true
   productCondition?: true
@@ -137,6 +142,7 @@ export type ValuationMaxAggregateInputType = {
 
 export type ValuationCountAggregateInputType = {
   id?: true
+  ownerKey?: true
   idempotencyKey?: true
   productName?: true
   productCondition?: true
@@ -243,6 +249,7 @@ export type ValuationGroupByArgs<ExtArgs extends runtime.Types.Extensions.Intern
 
 export type ValuationGroupByOutputType = {
   id: string
+  ownerKey: string | null
   idempotencyKey: string
   productName: string
   productCondition: $Enums.ProductCondition
@@ -285,6 +292,7 @@ export type ValuationWhereInput = {
   OR?: Prisma.ValuationWhereInput[]
   NOT?: Prisma.ValuationWhereInput | Prisma.ValuationWhereInput[]
   id?: Prisma.StringFilter<"Valuation"> | string
+  ownerKey?: Prisma.StringNullableFilter<"Valuation"> | string | null
   idempotencyKey?: Prisma.StringFilter<"Valuation"> | string
   productName?: Prisma.StringFilter<"Valuation"> | string
   productCondition?: Prisma.EnumProductConditionFilter<"Valuation"> | $Enums.ProductCondition
@@ -306,6 +314,7 @@ export type ValuationWhereInput = {
 
 export type ValuationOrderByWithRelationInput = {
   id?: Prisma.SortOrder
+  ownerKey?: Prisma.SortOrderInput | Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
   productName?: Prisma.SortOrder
   productCondition?: Prisma.SortOrder
@@ -327,10 +336,12 @@ export type ValuationOrderByWithRelationInput = {
 
 export type ValuationWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  idempotencyKey?: string
+  ownerKey_idempotencyKey?: Prisma.ValuationOwnerKeyIdempotencyKeyCompoundUniqueInput
   AND?: Prisma.ValuationWhereInput | Prisma.ValuationWhereInput[]
   OR?: Prisma.ValuationWhereInput[]
   NOT?: Prisma.ValuationWhereInput | Prisma.ValuationWhereInput[]
+  ownerKey?: Prisma.StringNullableFilter<"Valuation"> | string | null
+  idempotencyKey?: Prisma.StringFilter<"Valuation"> | string
   productName?: Prisma.StringFilter<"Valuation"> | string
   productCondition?: Prisma.EnumProductConditionFilter<"Valuation"> | $Enums.ProductCondition
   productDescription?: Prisma.StringNullableFilter<"Valuation"> | string | null
@@ -347,10 +358,11 @@ export type ValuationWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"Valuation"> | Date | string
   evidence?: Prisma.ValuationEvidenceListRelationFilter
   chatSession?: Prisma.XOR<Prisma.AgentMemorySessionNullableScalarRelationFilter, Prisma.AgentMemorySessionWhereInput> | null
-}, "id" | "idempotencyKey">
+}, "id" | "ownerKey_idempotencyKey">
 
 export type ValuationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
+  ownerKey?: Prisma.SortOrderInput | Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
   productName?: Prisma.SortOrder
   productCondition?: Prisma.SortOrder
@@ -378,6 +390,7 @@ export type ValuationScalarWhereWithAggregatesInput = {
   OR?: Prisma.ValuationScalarWhereWithAggregatesInput[]
   NOT?: Prisma.ValuationScalarWhereWithAggregatesInput | Prisma.ValuationScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Valuation"> | string
+  ownerKey?: Prisma.StringNullableWithAggregatesFilter<"Valuation"> | string | null
   idempotencyKey?: Prisma.StringWithAggregatesFilter<"Valuation"> | string
   productName?: Prisma.StringWithAggregatesFilter<"Valuation"> | string
   productCondition?: Prisma.EnumProductConditionWithAggregatesFilter<"Valuation"> | $Enums.ProductCondition
@@ -397,6 +410,7 @@ export type ValuationScalarWhereWithAggregatesInput = {
 
 export type ValuationCreateInput = {
   id?: string
+  ownerKey?: string | null
   idempotencyKey: string
   productName: string
   productCondition: $Enums.ProductCondition
@@ -418,6 +432,7 @@ export type ValuationCreateInput = {
 
 export type ValuationUncheckedCreateInput = {
   id?: string
+  ownerKey?: string | null
   idempotencyKey: string
   productName: string
   productCondition: $Enums.ProductCondition
@@ -439,6 +454,7 @@ export type ValuationUncheckedCreateInput = {
 
 export type ValuationUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   productName?: Prisma.StringFieldUpdateOperationsInput | string
   productCondition?: Prisma.EnumProductConditionFieldUpdateOperationsInput | $Enums.ProductCondition
@@ -460,6 +476,7 @@ export type ValuationUpdateInput = {
 
 export type ValuationUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   productName?: Prisma.StringFieldUpdateOperationsInput | string
   productCondition?: Prisma.EnumProductConditionFieldUpdateOperationsInput | $Enums.ProductCondition
@@ -481,6 +498,7 @@ export type ValuationUncheckedUpdateInput = {
 
 export type ValuationCreateManyInput = {
   id?: string
+  ownerKey?: string | null
   idempotencyKey: string
   productName: string
   productCondition: $Enums.ProductCondition
@@ -500,6 +518,7 @@ export type ValuationCreateManyInput = {
 
 export type ValuationUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   productName?: Prisma.StringFieldUpdateOperationsInput | string
   productCondition?: Prisma.EnumProductConditionFieldUpdateOperationsInput | $Enums.ProductCondition
@@ -519,6 +538,7 @@ export type ValuationUpdateManyMutationInput = {
 
 export type ValuationUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   productName?: Prisma.StringFieldUpdateOperationsInput | string
   productCondition?: Prisma.EnumProductConditionFieldUpdateOperationsInput | $Enums.ProductCondition
@@ -544,8 +564,14 @@ export type StringNullableListFilter<$PrismaModel = never> = {
   isEmpty?: boolean
 }
 
+export type ValuationOwnerKeyIdempotencyKeyCompoundUniqueInput = {
+  ownerKey: string
+  idempotencyKey: string
+}
+
 export type ValuationCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  ownerKey?: Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
   productName?: Prisma.SortOrder
   productCondition?: Prisma.SortOrder
@@ -571,6 +597,7 @@ export type ValuationAvgOrderByAggregateInput = {
 
 export type ValuationMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  ownerKey?: Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
   productName?: Prisma.SortOrder
   productCondition?: Prisma.SortOrder
@@ -587,6 +614,7 @@ export type ValuationMaxOrderByAggregateInput = {
 
 export type ValuationMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
+  ownerKey?: Prisma.SortOrder
   idempotencyKey?: Prisma.SortOrder
   productName?: Prisma.SortOrder
   productCondition?: Prisma.SortOrder
@@ -633,12 +661,12 @@ export type StringFieldUpdateOperationsInput = {
   set?: string
 }
 
-export type EnumProductConditionFieldUpdateOperationsInput = {
-  set?: $Enums.ProductCondition
-}
-
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
+}
+
+export type EnumProductConditionFieldUpdateOperationsInput = {
+  set?: $Enums.ProductCondition
 }
 
 export type EnumValuationStatusFieldUpdateOperationsInput = {
@@ -708,6 +736,7 @@ export type ValuationUpdateOneWithoutChatSessionNestedInput = {
 
 export type ValuationCreateWithoutEvidenceInput = {
   id?: string
+  ownerKey?: string | null
   idempotencyKey: string
   productName: string
   productCondition: $Enums.ProductCondition
@@ -728,6 +757,7 @@ export type ValuationCreateWithoutEvidenceInput = {
 
 export type ValuationUncheckedCreateWithoutEvidenceInput = {
   id?: string
+  ownerKey?: string | null
   idempotencyKey: string
   productName: string
   productCondition: $Enums.ProductCondition
@@ -764,6 +794,7 @@ export type ValuationUpdateToOneWithWhereWithoutEvidenceInput = {
 
 export type ValuationUpdateWithoutEvidenceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   productName?: Prisma.StringFieldUpdateOperationsInput | string
   productCondition?: Prisma.EnumProductConditionFieldUpdateOperationsInput | $Enums.ProductCondition
@@ -784,6 +815,7 @@ export type ValuationUpdateWithoutEvidenceInput = {
 
 export type ValuationUncheckedUpdateWithoutEvidenceInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   productName?: Prisma.StringFieldUpdateOperationsInput | string
   productCondition?: Prisma.EnumProductConditionFieldUpdateOperationsInput | $Enums.ProductCondition
@@ -804,6 +836,7 @@ export type ValuationUncheckedUpdateWithoutEvidenceInput = {
 
 export type ValuationCreateWithoutChatSessionInput = {
   id?: string
+  ownerKey?: string | null
   idempotencyKey: string
   productName: string
   productCondition: $Enums.ProductCondition
@@ -824,6 +857,7 @@ export type ValuationCreateWithoutChatSessionInput = {
 
 export type ValuationUncheckedCreateWithoutChatSessionInput = {
   id?: string
+  ownerKey?: string | null
   idempotencyKey: string
   productName: string
   productCondition: $Enums.ProductCondition
@@ -860,6 +894,7 @@ export type ValuationUpdateToOneWithWhereWithoutChatSessionInput = {
 
 export type ValuationUpdateWithoutChatSessionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   productName?: Prisma.StringFieldUpdateOperationsInput | string
   productCondition?: Prisma.EnumProductConditionFieldUpdateOperationsInput | $Enums.ProductCondition
@@ -880,6 +915,7 @@ export type ValuationUpdateWithoutChatSessionInput = {
 
 export type ValuationUncheckedUpdateWithoutChatSessionInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string
   productName?: Prisma.StringFieldUpdateOperationsInput | string
   productCondition?: Prisma.EnumProductConditionFieldUpdateOperationsInput | $Enums.ProductCondition
@@ -931,6 +967,7 @@ export type ValuationCountOutputTypeCountEvidenceArgs<ExtArgs extends runtime.Ty
 
 export type ValuationSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  ownerKey?: boolean
   idempotencyKey?: boolean
   productName?: boolean
   productCondition?: boolean
@@ -953,6 +990,7 @@ export type ValuationSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
 
 export type ValuationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  ownerKey?: boolean
   idempotencyKey?: boolean
   productName?: boolean
   productCondition?: boolean
@@ -972,6 +1010,7 @@ export type ValuationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
 
 export type ValuationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
+  ownerKey?: boolean
   idempotencyKey?: boolean
   productName?: boolean
   productCondition?: boolean
@@ -991,6 +1030,7 @@ export type ValuationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
 
 export type ValuationSelectScalar = {
   id?: boolean
+  ownerKey?: boolean
   idempotencyKey?: boolean
   productName?: boolean
   productCondition?: boolean
@@ -1008,7 +1048,7 @@ export type ValuationSelectScalar = {
   updatedAt?: boolean
 }
 
-export type ValuationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "idempotencyKey" | "productName" | "productCondition" | "productDescription" | "status" | "suggestedListingPriceIdr" | "marketRangeMinimumIdr" | "marketRangeMaximumIdr" | "confidence" | "explanation" | "pros" | "cons" | "missingFields" | "createdAt" | "updatedAt", ExtArgs["result"]["valuation"]>
+export type ValuationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "ownerKey" | "idempotencyKey" | "productName" | "productCondition" | "productDescription" | "status" | "suggestedListingPriceIdr" | "marketRangeMinimumIdr" | "marketRangeMaximumIdr" | "confidence" | "explanation" | "pros" | "cons" | "missingFields" | "createdAt" | "updatedAt", ExtArgs["result"]["valuation"]>
 export type ValuationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   evidence?: boolean | Prisma.Valuation$evidenceArgs<ExtArgs>
   chatSession?: boolean | Prisma.Valuation$chatSessionArgs<ExtArgs>
@@ -1025,6 +1065,7 @@ export type $ValuationPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
+    ownerKey: string | null
     idempotencyKey: string
     productName: string
     productCondition: $Enums.ProductCondition
@@ -1466,6 +1507,7 @@ export interface Prisma__ValuationClient<T, Null = never, ExtArgs extends runtim
  */
 export interface ValuationFieldRefs {
   readonly id: Prisma.FieldRef<"Valuation", 'String'>
+  readonly ownerKey: Prisma.FieldRef<"Valuation", 'String'>
   readonly idempotencyKey: Prisma.FieldRef<"Valuation", 'String'>
   readonly productName: Prisma.FieldRef<"Valuation", 'String'>
   readonly productCondition: Prisma.FieldRef<"Valuation", 'ProductCondition'>

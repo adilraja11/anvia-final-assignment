@@ -26,9 +26,9 @@ const conditionToPublic = {
 
 const confidenceReason = {
 	[ValuationConfidence.HIGH]:
-		"Setidaknya 15 listing Blibli yang sebanding diterima.",
+		"Setidaknya 10 listing Blibli yang sebanding diterima.",
 	[ValuationConfidence.MEDIUM]:
-		"Lima sampai 14 listing Blibli yang sebanding diterima.",
+		"Tiga sampai sembilan listing Blibli yang sebanding diterima.",
 } as const;
 
 const limitations = [
@@ -79,9 +79,9 @@ function sessionEnvelope(
 	};
 }
 
-async function valuedValuation(valuationId: string) {
-	const valuation = await prisma.valuation.findUnique({
-		where: { id: valuationId },
+async function valuedValuation(ownerKey: string, valuationId: string) {
+	const valuation = await prisma.valuation.findFirst({
+		where: { id: valuationId, ownerKey },
 		select: { id: true, status: true, createdAt: true },
 	});
 	if (!valuation || isExpired(valuation.createdAt))
@@ -91,8 +91,11 @@ async function valuedValuation(valuationId: string) {
 	return valuation;
 }
 
-export async function createOrRecoverChatSession(valuationId: string) {
-	const valuation = await valuedValuation(valuationId);
+export async function createOrRecoverChatSession(
+	ownerKey: string,
+	valuationId: string,
+) {
+	const valuation = await valuedValuation(ownerKey, valuationId);
 	const existing = await prisma.agentMemorySession.findUnique({
 		where: { valuationId },
 		select: { sessionId: true, valuationId: true, createdAt: true },
@@ -136,7 +139,12 @@ export async function createOrRecoverChatSession(valuationId: string) {
 	}
 }
 
-async function boundSession(valuationId: string, sessionId: string) {
+async function boundSession(
+	ownerKey: string,
+	valuationId: string,
+	sessionId: string,
+) {
+	await valuedValuation(ownerKey, valuationId);
 	const session = await prisma.agentMemorySession.findFirst({
 		where: { valuationId, sessionId },
 		select: {
@@ -144,7 +152,9 @@ async function boundSession(valuationId: string, sessionId: string) {
 			sessionId: true,
 			valuationId: true,
 			createdAt: true,
-			valuation: { select: { id: true, status: true, createdAt: true } },
+			valuation: {
+				select: { id: true, status: true, createdAt: true },
+			},
 		},
 	});
 	if (!session?.valuation || isExpired(session.valuation.createdAt))
@@ -155,8 +165,12 @@ async function boundSession(valuationId: string, sessionId: string) {
 	return { ...session, valuation };
 }
 
-export async function readChatSession(valuationId: string, sessionId: string) {
-	const session = await boundSession(valuationId, sessionId);
+export async function readChatSession(
+	ownerKey: string,
+	valuationId: string,
+	sessionId: string,
+) {
+	const session = await boundSession(ownerKey, valuationId, sessionId);
 	const messages = await memory.load({ scope: { sessionId } });
 	return {
 		session: sessionEnvelope(session, session.valuation.createdAt),
@@ -190,19 +204,22 @@ function projectMessages(messages: Message[]): ClientChatMessage[] {
 }
 
 export async function deleteChatSession(
+	ownerKey: string,
 	valuationId: string,
 	sessionId: string,
 ) {
-	await boundSession(valuationId, sessionId);
+	await boundSession(ownerKey, valuationId, sessionId);
 	await prisma.agentMemorySession.deleteMany({
 		where: { valuationId, sessionId },
 	});
 }
 
 export async function acquireChatTurn(
+	ownerKey: string,
 	valuationId: string,
 	sessionId: string,
 ): Promise<string> {
+	await boundSession(ownerKey, valuationId, sessionId);
 	const turnId = randomUUID();
 	const now = new Date();
 	const updated = await prisma.agentMemorySession.updateMany({
@@ -226,7 +243,7 @@ export async function acquireChatTurn(
 		},
 	});
 	if (updated.count === 0) {
-		await boundSession(valuationId, sessionId);
+		await boundSession(ownerKey, valuationId, sessionId);
 		const session = await prisma.agentMemorySession.findFirst({
 			where: { valuationId, sessionId },
 			select: { activeTurnAt: true, acceptedUserTurns: true },
@@ -266,10 +283,11 @@ function approvedBlibliUrl(value: string) {
 }
 
 export async function loadValuationGrounding(
+	ownerKey: string,
 	valuationId: string,
 ): Promise<Document> {
-	const valuation = await prisma.valuation.findUnique({
-		where: { id: valuationId },
+	const valuation = await prisma.valuation.findFirst({
+		where: { id: valuationId, ownerKey },
 		select: {
 			id: true,
 			createdAt: true,

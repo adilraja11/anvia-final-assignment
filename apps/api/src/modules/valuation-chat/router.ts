@@ -9,6 +9,7 @@ import { createClientStreamResponse } from "@anvia/server";
 import { createValuationChatAgent, flushAgentTracing } from "@repo/agents";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
+import { anonymousOwner } from "../../middleware/anonymous-owner.js";
 import {
 	type ChatErrorCode,
 	chatErrorResponseSchema,
@@ -35,6 +36,8 @@ const RATE_LIMIT = 20;
 const rateBuckets = new Map<string, number[]>();
 
 const errorMessages = {
+	ANONYMOUS_SESSION_REQUIRED:
+		"Sesi browser perlu disiapkan. Silakan coba lagi.",
 	INVALID_CHAT_REQUEST: "Permintaan percakapan tidak valid.",
 	RESOURCE_NOT_FOUND: "Sumber daya tidak ditemukan.",
 	CHAT_RESULT_NOT_AVAILABLE: "Percakapan tersedia setelah valuasi berhasil.",
@@ -46,6 +49,7 @@ const errorMessages = {
 } as const satisfies Record<ChatErrorCode, string>;
 
 const errorStatuses = {
+	ANONYMOUS_SESSION_REQUIRED: 428,
 	INVALID_CHAT_REQUEST: 400,
 	RESOURCE_NOT_FOUND: 404,
 	CHAT_RESULT_NOT_AVAILABLE: 409,
@@ -87,14 +91,6 @@ function allowedOrigin(origin: string | undefined) {
 	} catch {
 		return false;
 	}
-}
-
-function actorKey(c: { req: { header(name: string): string | undefined } }) {
-	return (
-		c.req.header("x-forwarded-for")?.split(",", 1)[0]?.trim() ||
-		c.req.header("x-real-ip")?.trim() ||
-		"anonymous"
-	);
 }
 
 function consumeRateLimit(key: string) {
@@ -238,6 +234,9 @@ export const valuationChatRouter = new Hono()
 				!allowedOrigin(c.req.header("origin"))
 			)
 				return errorResponse("INVALID_CHAT_REQUEST");
+			const owner = anonymousOwner(c);
+			if (!owner.hasValidCookie)
+				return errorResponse("ANONYMOUS_SESSION_REQUIRED");
 			const valuationId = chatRouteIdSchema.safeParse(
 				c.req.param("valuationId"),
 			);
@@ -251,7 +250,10 @@ export const valuationChatRouter = new Hono()
 			if (!createChatSessionBodySchema.safeParse(input).success)
 				return errorResponse("INVALID_CHAT_REQUEST");
 			try {
-				const result = await createOrRecoverChatSession(valuationId.data);
+				const result = await createOrRecoverChatSession(
+					owner.ownerKey,
+					valuationId.data,
+				);
 				return c.json({ session: result.session }, result.created ? 201 : 200);
 			} catch (error) {
 				return errorResponse(mapServiceError(error));
@@ -259,6 +261,8 @@ export const valuationChatRouter = new Hono()
 		},
 	)
 	.get("/sessions/:sessionId", async (c) => {
+		const owner = anonymousOwner(c);
+		if (!owner.hasValidCookie) return errorResponse("RESOURCE_NOT_FOUND");
 		const valuationId = chatRouteIdSchema.safeParse(c.req.param("valuationId"));
 		const sessionId = chatRouteIdSchema.safeParse(c.req.param("sessionId"));
 		if (!valuationId.success || !sessionId.success)
@@ -266,7 +270,9 @@ export const valuationChatRouter = new Hono()
 		if (c.req.header("origin") && !allowedOrigin(c.req.header("origin")))
 			return errorResponse("INVALID_CHAT_REQUEST");
 		try {
-			return c.json(await readChatSession(valuationId.data, sessionId.data));
+			return c.json(
+				await readChatSession(owner.ownerKey, valuationId.data, sessionId.data),
+			);
 		} catch (error) {
 			return errorResponse(mapServiceError(error));
 		}
@@ -283,6 +289,9 @@ export const valuationChatRouter = new Hono()
 				!allowedOrigin(c.req.header("origin"))
 			)
 				return errorResponse("INVALID_CHAT_REQUEST");
+			const owner = anonymousOwner(c);
+			if (!owner.hasValidCookie)
+				return errorResponse("ANONYMOUS_SESSION_REQUIRED");
 			const valuationId = chatRouteIdSchema.safeParse(
 				c.req.param("valuationId"),
 			);
@@ -300,14 +309,23 @@ export const valuationChatRouter = new Hono()
 			if (!text) return errorResponse("INVALID_CHAT_REQUEST");
 
 			try {
-				await readChatSession(valuationId.data, sessionId.data);
-				const grounding = await loadValuationGrounding(valuationId.data);
+				await readChatSession(owner.ownerKey, valuationId.data, sessionId.data);
+				const grounding = await loadValuationGrounding(
+					owner.ownerKey,
+					valuationId.data,
+				);
 				if (
-					!consumeRateLimit(`${actorKey(c)}:${valuationId.data}`) ||
-					!consumeRateLimit(`session:${sessionId.data}`)
+					!consumeRateLimit(
+						`${owner.ownerKey}:${valuationId.data}:${sessionId.data}`,
+					) ||
+					!consumeRateLimit(`${owner.ownerKey}:${sessionId.data}`)
 				)
 					return errorResponse("CHAT_RATE_LIMITED");
-				const turnId = await acquireChatTurn(valuationId.data, sessionId.data);
+				const turnId = await acquireChatTurn(
+					owner.ownerKey,
+					valuationId.data,
+					sessionId.data,
+				);
 				const abortSignal = AbortSignal.any([
 					c.req.raw.signal,
 					AbortSignal.timeout(CHAT_MODEL_TIMEOUT_MS),
@@ -370,12 +388,15 @@ export const valuationChatRouter = new Hono()
 	.delete("/sessions/:sessionId", async (c) => {
 		if (!allowedOrigin(c.req.header("origin")))
 			return errorResponse("INVALID_CHAT_REQUEST");
+		const owner = anonymousOwner(c);
+		if (!owner.hasValidCookie)
+			return errorResponse("ANONYMOUS_SESSION_REQUIRED");
 		const valuationId = chatRouteIdSchema.safeParse(c.req.param("valuationId"));
 		const sessionId = chatRouteIdSchema.safeParse(c.req.param("sessionId"));
 		if (!valuationId.success || !sessionId.success)
 			return errorResponse("INVALID_CHAT_REQUEST");
 		try {
-			await deleteChatSession(valuationId.data, sessionId.data);
+			await deleteChatSession(owner.ownerKey, valuationId.data, sessionId.data);
 			return c.body(null, 204);
 		} catch (error) {
 			return errorResponse(mapServiceError(error));

@@ -156,7 +156,7 @@ sanitized retention. Keep the local multipart adapter development-only.
 - Invalid, unauthorized, rate-limited, unsupported, or incomplete requests make no paid call.
 - Enqueue failure, single provider failure, explanation failure, timeout, or stale processing becomes
   `SERVICE_FAILURE` without fabricated fallback.
-- Successful retrieval below five accepted listings becomes `INSUFFICIENT_EVIDENCE`.
+- Successful retrieval below three accepted listings becomes `INSUFFICIENT_EVIDENCE`.
 - A malformed cache entry is discarded; expired cache is never used after provider failure.
 - Terminal writes are transactional; a terminal row cannot be overwritten by another worker.
 

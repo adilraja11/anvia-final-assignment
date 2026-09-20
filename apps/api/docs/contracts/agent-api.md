@@ -113,7 +113,7 @@ Successful response:
 		"suggestedListingPriceIdr": 7500000,
 		"observedMarketRangeIdr": { "minimum": 7000000, "maximum": 8000000 },
 		"confidence": "MEDIUM",
-		"confidenceReason": "Lima sampai 14 listing Blibli yang sebanding diterima.",
+		"confidenceReason": "Tiga sampai sembilan listing Blibli yang sebanding diterima.",
 		"acceptedComparableCount": 8,
 		"evidenceCoverage": "NATIONAL",
 		"outlierCount": 1

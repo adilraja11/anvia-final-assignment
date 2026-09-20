@@ -58,8 +58,8 @@ function safeMoney(value: bigint | null) {
 
 function confidenceReason(confidence: ValuationConfidence) {
 	return confidence === ValuationConfidence.HIGH
-		? "Setidaknya 15 listing Blibli yang sebanding diterima."
-		: "Lima sampai 14 listing Blibli yang sebanding diterima.";
+		? "Setidaknya 10 listing Blibli yang sebanding diterima."
+		: "Tiga sampai sembilan listing Blibli yang sebanding diterima.";
 }
 
 function publicState(status: ValuationStatus) {
@@ -103,7 +103,7 @@ function storedResult(
 				valuation.suggestedListingPriceIdr === null ||
 				valuation.marketRangeMinimumIdr === null ||
 				valuation.marketRangeMaximumIdr === null ||
-				acceptedComparableCount < 5
+				acceptedComparableCount < 3
 			)
 				throw new Error("Stored valuation result is incomplete.");
 			return {
@@ -175,12 +175,13 @@ export async function cleanupExpiredValuations() {
 }
 
 export async function createOrReuseValuation(
+	ownerKey: string,
 	idempotencyKey: string | undefined,
 	input: CreateValuationRequest,
 ) {
 	if (idempotencyKey) {
 		const existing = await prisma.valuation.findUnique({
-			where: { idempotencyKey },
+			where: { ownerKey_idempotencyKey: { ownerKey, idempotencyKey } },
 		});
 		if (existing) {
 			if (!requestMatches(existing, input))
@@ -201,6 +202,7 @@ export async function createOrReuseValuation(
 	try {
 		valuation = await prisma.valuation.create({
 			data: {
+				ownerKey,
 				idempotencyKey: idempotencyKey ?? createIdempotencyKey(),
 				productName: input.productName,
 				productCondition: conditionToDatabase[input.productCondition],
@@ -215,7 +217,7 @@ export async function createOrReuseValuation(
 			throw error;
 		if (!idempotencyKey) throw error;
 		const raced = await prisma.valuation.findUnique({
-			where: { idempotencyKey },
+			where: { ownerKey_idempotencyKey: { ownerKey, idempotencyKey } },
 		});
 		if (!raced || !requestMatches(raced, input))
 			throw new ValuationServiceError("IDEMPOTENCY_CONFLICT");
@@ -253,9 +255,9 @@ export function createResponse(valuation: Valuation) {
 	};
 }
 
-export async function readValuation(valuationId: string) {
+export async function readValuation(ownerKey: string, valuationId: string) {
 	const valuation = await prisma.valuation.findFirst({
-		where: { id: valuationId },
+		where: { id: valuationId, ownerKey },
 		include: {
 			_count: { select: { evidence: true } },
 			evidence: {
@@ -273,8 +275,9 @@ export async function readValuation(valuationId: string) {
 	};
 }
 
-export async function readValuations() {
+export async function readValuations(ownerKey: string) {
 	const valuations = await prisma.valuation.findMany({
+		where: { ownerKey },
 		orderBy: [{ createdAt: "desc" }, { id: "desc" }],
 		select: {
 			id: true,
@@ -346,9 +349,9 @@ export function readResponse(
 	};
 }
 
-export async function readEvidence(valuationId: string) {
+export async function readEvidence(ownerKey: string, valuationId: string) {
 	const valuation = await prisma.valuation.findFirst({
-		where: { id: valuationId },
+		where: { id: valuationId, ownerKey },
 		select: {
 			id: true,
 			status: true,

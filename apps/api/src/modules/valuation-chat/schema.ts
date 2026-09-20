@@ -43,6 +43,7 @@ export const chatHistoryResponseSchema = z
 	.strict();
 
 export const chatErrorCodeSchema = z.enum([
+	"ANONYMOUS_SESSION_REQUIRED",
 	"INVALID_CHAT_REQUEST",
 	"RESOURCE_NOT_FOUND",
 	"CHAT_RESULT_NOT_AVAILABLE",

@@ -49,6 +49,7 @@ const terminalValuationStatusSchema = z.enum([
 ]);
 
 export const valuationErrorCodeSchema = z.enum([
+	"ANONYMOUS_SESSION_REQUIRED",
 	"INVALID_REQUEST",
 	"RESOURCE_NOT_FOUND",
 	"IDEMPOTENCY_CONFLICT",

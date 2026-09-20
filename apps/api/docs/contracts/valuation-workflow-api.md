@@ -139,7 +139,7 @@ A valued terminal result has this shape:
 		"suggestedListingPriceIdr": 12999000,
 		"observedMarketRangeIdr": { "minimum": 11699000, "maximum": 14750000 },
 		"confidence": "MEDIUM",
-		"confidenceReason": "Lima sampai 14 listing Blibli yang sebanding diterima.",
+		"confidenceReason": "Tiga sampai sembilan listing Blibli yang sebanding diterima.",
 		"acceptedComparableCount": 8,
 		"evidenceCoverage": "NATIONAL",
 		"evidenceRetrievedAt": "2026-09-18T04:00:27.000Z",
@@ -160,7 +160,7 @@ Other terminal statuses are `UNSUPPORTED_CATEGORY`, `MORE_INFORMATION_REQUIRED`,
 `INSUFFICIENT_EVIDENCE`, and `SERVICE_FAILURE`. All contain a safe `explanation`;
 `MORE_INFORMATION_REQUIRED` adds `missingFields`; `INSUFFICIENT_EVIDENCE` adds accepted count but
 no price/range/confidence. A failed single MVP provider run is `SERVICE_FAILURE`; successful
-retrieval with fewer than five accepted listings is `INSUFFICIENT_EVIDENCE`.
+retrieval with fewer than three accepted listings is `INSUFFICIENT_EVIDENCE`.
 
 ## `GET /api/valuations/:valuationId/evidence`
 
