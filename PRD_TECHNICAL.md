@@ -13,14 +13,14 @@ This document specifies the intended valuation contract; it does not assert that
 ### 10.2 Calculation
 1. Validate one Blibli evidence set against schema, exact identity, positive IDR price, approved URL, availability, and duplication checks. Listing lifecycle and condition are not required for acceptance.
 2. When the set has at least four records, calculate `Q1`, `Q3`, and `IQR = Q3 - Q1`; remove prices outside `Q1 - 1.5 × IQR` and `Q3 + 1.5 × IQR`.
-3. Require at least five accepted listings after filtering.
+3. Require at least three accepted listings after filtering.
 4. Calculate `Price_suggested` as the median price of the accepted Blibli evidence. It is an advertised asking-price reference, not an official price, historical original price, or completed-sale price.
 5. Calculate the observed market range as the unweighted P25–P75 range of the same accepted evidence. It is not tailored to the submitted item's condition.
 6. Round every displayed price using deterministic half-up rounding to the nearest Rp1.000.
 ### 10.3 Confidence
-- `HIGH`: at least 15 accepted listings.
-- `MEDIUM`: five through 14 accepted listings.
-- `INSUFFICIENT_EVIDENCE`: fewer than five accepted listings remain after filtering.
+- `HIGH`: at least 10 accepted listings.
+- `MEDIUM`: three through nine accepted listings.
+- `INSUFFICIENT_EVIDENCE`: fewer than three accepted listings remain after filtering.
 The UI explains the accepted evidence count and the single-source limitation behind the confidence level.
 ## 11. Results Screen
 A successful result displays:
@@ -59,7 +59,7 @@ Pros and cons focus on transaction-relevant evidence such as condition, warranty
 - Hard timeout is 90 seconds.
 - Each failed actor may be retried once if time remains.
 - If Blibli fails after its allowed retry, return `SERVICE_FAILURE`, not `INSUFFICIENT_EVIDENCE`.
-- If Blibli succeeds but fewer than five listings remain, return `INSUFFICIENT_EVIDENCE`.
+- If Blibli succeeds but fewer than three listings remain, return `INSUFFICIENT_EVIDENCE`.
 - Malformed responses and timeouts never become pricing evidence.
 
 ## 13. Cost and Abuse Controls

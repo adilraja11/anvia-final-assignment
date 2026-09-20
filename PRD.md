@@ -117,7 +117,7 @@ The following internal statuses are distinct and must not be collapsed into a ge
 | `VALUATED` | Result and recommendation | A deterministic listing-price recommendation was produced. |
 | `UNSUPPORTED_CATEGORY` | Kategori produk belum didukung | The product is outside the five supported categories or is not second-hand. |
 | `MORE_INFORMATION_REQUIRED` | Informasi produk perlu dilengkapi | A price-critical identity field is missing. |
-| `INSUFFICIENT_EVIDENCE` | Bukti harga belum cukup | Blibli worked, but fewer than five usable identity-matched listings remained. |
+| `INSUFFICIENT_EVIDENCE` | Bukti harga belum cukup | Blibli worked, but fewer than three usable identity-matched listings remained. |
 | `SERVICE_FAILURE` | Layanan sedang bermasalah | Blibli failed after its bounded retry or the valuation job could not complete. |
 | `RATE_LIMITED` | Batas penggunaan tercapai | A user or global usage limit prevented a new paid run. |
 
