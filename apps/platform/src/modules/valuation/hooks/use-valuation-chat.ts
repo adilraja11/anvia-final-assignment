@@ -37,6 +37,7 @@ export function useValuationChat(valuationId: string, enabled: boolean) {
 	const requestIdRef = useRef(0);
 	const initializationRef = useRef<Promise<void> | null>(null);
 	const controllerRef = useRef<AbortController | null>(null);
+	const clearControllerRef = useRef<AbortController | null>(null);
 	const questionIdRef = useRef(0);
 
 	const initialize = useCallback(async () => {
@@ -84,6 +85,8 @@ export function useValuationChat(valuationId: string, enabled: boolean) {
 		requestIdRef.current += 1;
 		controllerRef.current?.abort();
 		controllerRef.current = null;
+		clearControllerRef.current?.abort();
+		clearControllerRef.current = null;
 		initializationRef.current = null;
 		setIsOpen(false);
 		setPhase("closed");
@@ -98,6 +101,8 @@ export function useValuationChat(valuationId: string, enabled: boolean) {
 		requestIdRef.current += 1;
 		controllerRef.current?.abort();
 		controllerRef.current = null;
+		clearControllerRef.current?.abort();
+		clearControllerRef.current = null;
 		initializationRef.current = null;
 		setIsOpen(false);
 		setPhase("closed");
@@ -111,6 +116,7 @@ export function useValuationChat(valuationId: string, enabled: boolean) {
 		() => () => {
 			requestIdRef.current += 1;
 			controllerRef.current?.abort();
+			clearControllerRef.current?.abort();
 		},
 		[],
 	);
@@ -135,6 +141,8 @@ export function useValuationChat(valuationId: string, enabled: boolean) {
 		requestIdRef.current += 1;
 		controllerRef.current?.abort();
 		controllerRef.current = null;
+		clearControllerRef.current?.abort();
+		clearControllerRef.current = null;
 		initializationRef.current = null;
 		setIsOpen(false);
 		setPhase("closed");
@@ -155,8 +163,25 @@ export function useValuationChat(valuationId: string, enabled: boolean) {
 	const clearSession = useCallback(
 		async (signal?: AbortSignal) => {
 			if (!session) return;
-			await valuationChatGateway.deleteSession(valuationId, session.id, signal);
-			setRequestStateAfterClear();
+			const controller = new AbortController();
+			clearControllerRef.current?.abort();
+			clearControllerRef.current = controller;
+			const actionSignal = signal
+				? AbortSignal.any([signal, controller.signal])
+				: controller.signal;
+			try {
+				await valuationChatGateway.deleteSession(
+					valuationId,
+					session.id,
+					actionSignal,
+				);
+				if (actionSignal.aborted || clearControllerRef.current !== controller)
+					return;
+				setRequestStateAfterClear();
+			} finally {
+				if (clearControllerRef.current === controller)
+					clearControllerRef.current = null;
+			}
 		},
 		[session, setRequestStateAfterClear, valuationId],
 	);

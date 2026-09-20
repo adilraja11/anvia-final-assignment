@@ -6,8 +6,15 @@ import {
 	type UIMessage,
 } from "@anvia/client";
 import { EventStreamHttpError } from "@anvia/client/transport";
+import {
+	cookieRequiredMessage,
+	credentialedFetch,
+	isAnonymousSessionRequiredStreamError,
+	retryAnonymousSessionRequired,
+} from "../api";
 
 export const chatErrorCodes = [
+	"ANONYMOUS_SESSION_REQUIRED",
 	"INVALID_CHAT_REQUEST",
 	"RESOURCE_NOT_FOUND",
 	"CHAT_RESULT_NOT_AVAILABLE",
@@ -64,6 +71,7 @@ export class ValuationChatError extends Error {
 }
 
 const chatErrorCopy: Record<ChatErrorCode, string> = {
+	ANONYMOUS_SESSION_REQUIRED: cookieRequiredMessage,
 	INVALID_CHAT_REQUEST: "Permintaan percakapan tidak valid.",
 	RESOURCE_NOT_FOUND:
 		"Hasil tersimpan atau sesi percakapan ini sudah tidak tersedia.",
@@ -220,9 +228,13 @@ async function requestJson<T>(
 	init: RequestInit,
 	decode: (value: unknown) => T,
 	signal?: AbortSignal,
+	retryAnonymousSession = false,
 ) {
 	try {
-		const response = await fetch(input, { ...init, signal });
+		const request = () => credentialedFetch(input, { ...init, signal });
+		const response = retryAnonymousSession
+			? await retryAnonymousSessionRequired(request, signal)
+			: await request();
 		if (!response.ok) return parseResponseError(response);
 		if (!response.headers.get("content-type")?.includes("application/json"))
 			return malformedResponse();
@@ -309,6 +321,7 @@ export const valuationChatGateway: ValuationChatGateway = {
 			},
 			(value) => parseSessionResponse(value, valuationId),
 			signal,
+			true,
 		);
 	},
 
@@ -324,11 +337,15 @@ export const valuationChatGateway: ValuationChatGateway = {
 	deleteSession(valuationId, sessionId, signal) {
 		return (async () => {
 			try {
-				const response = await fetch(chatPath(valuationId, sessionId), {
-					method: "DELETE",
-					headers: { accept: "application/json" },
+				const response = await retryAnonymousSessionRequired(
+					() =>
+						credentialedFetch(chatPath(valuationId, sessionId), {
+							method: "DELETE",
+							headers: { accept: "application/json" },
+							signal,
+						}),
 					signal,
-				});
+				);
 				if (!response.ok) return parseResponseError(response);
 			} catch (error) {
 				if (error instanceof ValuationChatError) throw error;
@@ -351,13 +368,30 @@ export const valuationChatGateway: ValuationChatGateway = {
 				accept: "application/jsonl",
 				"content-type": "application/json",
 			},
+			fetch: credentialedFetch,
 		});
 		return {
 			async *send(options) {
-				try {
-					yield* transport.send(options);
-				} catch (error) {
-					throw await transportError(error);
+				let retriedAnonymousSession = false;
+				while (true) {
+					try {
+						yield* transport.send(options);
+						return;
+					} catch (error) {
+						if (
+							!retriedAnonymousSession &&
+							!options.abortSignal?.aborted &&
+							error instanceof EventStreamHttpError &&
+							isAnonymousSessionRequiredStreamError(
+								error.response.status,
+								error.body,
+							)
+						) {
+							retriedAnonymousSession = true;
+							continue;
+						}
+						throw await transportError(error);
+					}
 				}
 			},
 		};

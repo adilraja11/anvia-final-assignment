@@ -11,6 +11,7 @@ export type ApiErrorCode =
 	| "RATE_LIMITED"
 	| "INTERNAL_SERVICE_FAILURE"
 	| "SERVICE_UNAVAILABLE"
+	| "ANONYMOUS_SESSION_REQUIRED"
 	| "MALFORMED_RESPONSE"
 	| "NETWORK_FAILURE";
 export class ApiError extends Error {

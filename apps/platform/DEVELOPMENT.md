@@ -47,8 +47,10 @@ Set `VITE_VALUATION_MODE=local-api` in the root `.env` and run `pnpm dev`. The V
 relative `/api` requests to `http://127.0.0.1:$PORT` (default `8000`). Do not add a `VITE_*` API base
 URL. Production builds fail closed if `local-api` is selected. Use `mock` or omit the variable for
 the labelled deterministic demo. `production-api` explicitly enables the currently implemented
-server routes in a production build; it remains an operator-enabled local-demo stage until its
-authentication, ownership, rate-limit, and secure-upload requirements are implemented.
+server routes in a production build. Those routes use an API-issued HttpOnly cookie for temporary,
+same-browser valuation continuity; the browser never reads or stores an ownership identifier. It
+remains an operator-enabled local-demo stage until its rate-limit and secure-upload requirements
+are implemented.
 
 ## Integration guardrails
 
@@ -58,6 +60,9 @@ authentication, ownership, rate-limit, and secure-upload requirements are implem
 - Keep the statement “Estimasi hanya mencakup harga barang.” and the authenticity/ownership/hidden-condition limitation on every successful result.
 - Do not turn the mock evidence into a hidden fallback when providers fail.
 - Maintain Bahasa Indonesia for all user-facing text.
+- In API modes, describe retained summaries only as temporary history for the current browser.
+  Clearing cookies, private browsing, or changing browsers starts a new history and cannot recover
+  prior valuations.
 
 ## Review questions
 

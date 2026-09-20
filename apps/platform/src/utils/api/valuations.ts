@@ -2,7 +2,7 @@ import type {
 	ProductCondition,
 	ValuationInput,
 } from "#/modules/valuation/type";
-import { api } from "../api";
+import { api, retryAnonymousSessionRequired } from "../api";
 import { decodeResponse } from "./errors";
 export type ValuationStage =
 	| "QUEUED"
@@ -149,9 +149,16 @@ export async function createValuation(
 ): Promise<ValuationProgress> {
 	const body = record(
 		await decodeResponse(
-			await api.api.valuations.$post(
-				{ json: input, header: { "idempotency-key": idempotencyKey } } as never,
-				{ init: { signal } },
+			await retryAnonymousSessionRequired(
+				() =>
+					api.api.valuations.$post(
+						{
+							json: input,
+							header: { "idempotency-key": idempotencyKey },
+						} as never,
+						{ init: { signal } },
+					),
+				signal,
 			),
 			signal,
 		),

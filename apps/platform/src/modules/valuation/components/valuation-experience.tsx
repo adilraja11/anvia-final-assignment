@@ -7,6 +7,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { cookieRequiredMessage } from "#/utils/api";
 import { ApiError } from "#/utils/api/errors";
 import {
 	createValuation,
@@ -121,10 +122,10 @@ function ValuationLayout({ children }: { children: ReactNode }) {
 		valuationRuntime.kind === "production-api"
 			? "Integrasi API server aktif"
 			: valuationRuntime.kind === "local-api"
-			? "Integrasi API lokal untuk pengembangan"
-			: valuationRuntime.kind === "mock"
-				? "Demo UI dengan data mockup (dipilih eksplisit)"
-				: "Integrasi valuasi tidak tersedia";
+				? "Integrasi API lokal untuk pengembangan"
+				: valuationRuntime.kind === "mock"
+					? "Demo UI dengan data mockup (dipilih eksplisit)"
+					: "Integrasi valuasi tidak tersedia";
 	return (
 		<div
 			className="flex min-h-dvh flex-col bg-base-100 text-base-content"
@@ -179,10 +180,10 @@ export function ValuationHomePage({
 		valuationRuntime.kind === "production-api"
 			? "Foto dan detail yang kamu konfirmasi dikirim ke layanan valuasi server."
 			: valuationRuntime.kind === "local-api"
-			? "Mode pengembangan lokal mengirim foto dan detail yang kamu konfirmasi ke API lokal."
-			: valuationRuntime.kind === "mock"
-				? "Mode mock dipilih secara eksplisit dan tidak mengirim permintaan ke layanan mana pun."
-				: valuationRuntime.reason;
+				? "Mode pengembangan lokal mengirim foto dan detail yang kamu konfirmasi ke API lokal."
+				: valuationRuntime.kind === "mock"
+					? "Mode mock dipilih secara eksplisit dan tidak mengirim permintaan ke layanan mana pun."
+					: valuationRuntime.reason;
 	return (
 		<ValuationLayout>
 			<div className="w-full max-w-4xl space-y-12 sm:space-y-16">
@@ -239,10 +240,11 @@ function ValuationSummaryList({
 	return (
 		<section className="border-2 border-base-content bg-base-100 p-5 sm:p-8">
 			<h2 className="font-display text-3xl leading-[0.92] tracking-[-0.04em] uppercase sm:text-4xl">
-				Valuasi tersimpan
+				Valuasi terbaru di browser ini
 			</h2>
 			<p className="mt-3 max-w-prose text-xs leading-6 text-base-content/75">
-				Riwayat ini berasal dari API lokal dan belum dipisahkan per akun.
+				Riwayat sementara tersimpan untuk browser ini dan dapat hilang jika
+				cookie dihapus.
 			</p>
 			{error ? (
 				<p
@@ -318,6 +320,7 @@ export function CreateValuationPage() {
 	);
 	const [details, setDetails] = useState(session.resultDetails);
 	const [imageOutcome, setImageOutcome] = useState<ImageOutcome | null>(null);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 	const controllerRef = useRef<AbortController | null>(null);
 
 	useEffect(() => {
@@ -470,12 +473,15 @@ export function CreateValuationPage() {
 		setFormError("");
 		session.setResultDetails(details);
 		setAnalysisStep(0);
-		setStep("analysing");
-		if (valuationRuntime.kind === "mock") return;
+		if (valuationRuntime.kind === "mock") {
+			setStep("analysing");
+			return;
+		}
 
 		const controller = new AbortController();
 		controllerRef.current?.abort();
 		controllerRef.current = controller;
+		setIsSubmitting(true);
 		const input: ValuationInput = {
 			productName: details.productName.trim(),
 			productCondition: details.productCondition,
@@ -493,12 +499,20 @@ export function CreateValuationPage() {
 			});
 		} catch (requestError) {
 			if (
-				requestError instanceof ValuationGatewayError &&
+				requestError instanceof ApiError &&
 				requestError.code === "REQUEST_CANCELLED"
 			) {
 				setFormError(
 					"Permintaan dibatalkan. Detail yang kamu isi tetap tersimpan.",
 				);
+				setStep("details");
+				return;
+			}
+			if (
+				requestError instanceof ApiError &&
+				requestError.code === "ANONYMOUS_SESSION_REQUIRED"
+			) {
+				setFormError(cookieRequiredMessage);
 				setStep("details");
 				return;
 			}
@@ -520,6 +534,7 @@ export function CreateValuationPage() {
 			setStep("details");
 		} finally {
 			if (controllerRef.current === controller) controllerRef.current = null;
+			setIsSubmitting(false);
 		}
 	}
 
@@ -547,7 +562,7 @@ export function CreateValuationPage() {
 			{step === "identifying" ? (
 				<LocalActivityScreen
 					title="Mengidentifikasi produk"
-						description="Layanan sedang memeriksa foto. Status rinci belum tersedia dari layanan ini."
+					description="Layanan sedang memeriksa foto. Status rinci belum tersedia dari layanan ini."
 					onCancel={cancelRequest}
 				/>
 			) : null}
@@ -559,6 +574,7 @@ export function CreateValuationPage() {
 					missingFields={missingFields}
 					previewLabel={previewLabel}
 					runtimeKind={valuationRuntime.kind}
+					isSubmitting={isSubmitting}
 					onBack={returnToUpload}
 					onChange={(field, value) => {
 						setFormError("");
@@ -837,10 +853,7 @@ function PersistentOutcome({
 					<PricePanel result={result} />
 					<ExplanationSection result={result} />
 					<RequiredDisclosures />
-					<ValuationChat
-						enabled={hasApiRuntime}
-						valuationId={valuationId}
-					/>
+					<ValuationChat enabled={hasApiRuntime} valuationId={valuationId} />
 				</div>
 			</article>
 			<aside className="card relative border-2 border-base-content bg-base-100 shadow-none">
@@ -970,10 +983,16 @@ function UploadScreen({
 }
 
 function FormError({ message }: { message: string }) {
+	const errorRef = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		if (message) errorRef.current?.focus();
+	}, [message]);
 	return message ? (
 		<div
+			ref={errorRef}
 			className="alert alert-error mt-4 rounded-none border border-base-content py-2 text-xs font-bold"
 			role="alert"
+			tabIndex={-1}
 		>
 			<span>{message}</span>
 		</div>
@@ -987,6 +1006,7 @@ function DetailsScreen({
 	missingFields,
 	previewLabel,
 	runtimeKind,
+	isSubmitting,
 	onBack,
 	onChange,
 	onSubmit,
@@ -997,6 +1017,7 @@ function DetailsScreen({
 	missingFields: string[];
 	previewLabel: string;
 	runtimeKind: "mock" | "local-api" | "production-api" | "unavailable";
+	isSubmitting: boolean;
 	onBack: () => void;
 	onChange: <Field extends keyof ValuationDetails>(
 		field: Field,
@@ -1150,9 +1171,11 @@ function DetailsScreen({
 					</button>
 					<button
 						className="btn btn-primary min-h-13 rounded-none uppercase"
+						disabled={isSubmitting}
 						type="submit"
 					>
-						<Sparkle /> Cek harga pasar
+						<Sparkle />{" "}
+						{isSubmitting ? "Menyiapkan permintaan…" : "Cek harga pasar"}
 					</button>
 				</div>
 				<p className="mt-4 text-center text-[0.62rem] leading-5 text-base-content/70">
