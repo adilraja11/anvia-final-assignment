@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { agentApiRouter } from "./modules/agents/router.js";
 import { chatRouter } from "./modules/chat/router.js";
+import { mcpRouter } from "./modules/mcp/router.js";
 import { valuationRouter } from "./modules/valuations/router.js";
 
 const app = new Hono()
@@ -26,7 +27,8 @@ const app = new Hono()
 	)
 	.route("/api/agents", agentApiRouter)
 	.route("/api/valuations", valuationRouter)
-	.route("/api/chat", chatRouter);
+	.route("/api/chat", chatRouter)
+	.route("/mcp", mcpRouter);
 
 export type AppType = typeof app;
 

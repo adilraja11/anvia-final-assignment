@@ -42,6 +42,11 @@ idempotency, credentialed CORS, or owner authorization for valuation/chat routes
 sequencing that work, also read the
 [anonymous cookie ownership implementation plan](docs/plans/anonymous-cookie-ownership.md).
 
+Before implementing or revising the public MCP endpoint or its valuation tools, read the
+[MCP valuation server API contract](docs/contracts/mcp-valuation-server-api.md). The MVP uses the
+existing queued valuation workflow; it is not an Anvia MCP-client integration and does not expose
+provider tools or deterministic calculation internals.
+
 ## Persistence and contracts
 
 - Update `prisma/schema.prisma` for data-model changes, create a migration through Prisma, then regenerate the client. Do not edit `src/generated/prisma/` or existing migration files by hand.
