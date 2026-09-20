@@ -19,7 +19,7 @@ import {
 } from "../marketplace.js";
 
 const ACTOR_ID = "fanndev/blibli-product-price-monitor";
-const MAX_ACTOR_SECONDS_PER_ATTEMPT = 60;
+const MAX_ACTOR_SECONDS_PER_ATTEMPT = 120;
 
 const inputSchema = z
 	.object({
