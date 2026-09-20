@@ -8,5 +8,9 @@ dist/
 
 *.local
 .DS_Store
+.pm2/
+DEPLOYMENT.md
+deploy/
+ecosystem.config.cjs
 
 packages/agents/src/evals/fixtures
