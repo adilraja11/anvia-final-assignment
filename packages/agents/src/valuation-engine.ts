@@ -35,7 +35,7 @@ export type CalculateValuationInput = {
 	rateLimited?: boolean;
 };
 
-const MIN_ACCEPTED_COMPARABLES = 5;
+const MIN_ACCEPTED_COMPARABLES = 3;
 
 function percentile(values: number[], fraction: number) {
 	const ordered = [...values].sort((left, right) => left - right);
@@ -136,7 +136,7 @@ export function calculateValuation(
 		};
 
 	const prices = filtered.evidence.map((item) => item.price_idr);
-	const highConfidence = filtered.evidence.length >= 15;
+	const highConfidence = filtered.evidence.length >= 10;
 	return {
 		status: "VALUATED",
 		suggested_listing_price_idr: roundIdr(percentile(prices, 0.5)),
@@ -146,8 +146,8 @@ export function calculateValuation(
 		},
 		confidence: highConfidence ? "HIGH" : "MEDIUM",
 		confidence_reason: highConfidence
-			? "Setidaknya 15 listing Blibli yang sebanding diterima."
-			: "Lima sampai 14 listing Blibli yang sebanding diterima.",
+			? "Setidaknya 10 listing Blibli yang sebanding diterima."
+			: "Tiga sampai sembilan listing Blibli yang sebanding diterima.",
 		accepted_comparable_count: filtered.evidence.length,
 		evidence_coverage: selected.coverage,
 		accepted_evidence: filtered.evidence,

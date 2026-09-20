@@ -45,8 +45,9 @@ Blibli keeps these application-owned values:
 ```
 
 Actor logs are disabled with `log: null`, and the client logger is disabled so provider payloads,
-URLs, and generated search text do not reach application logs. Each actor attempt is bounded to 40
-seconds so the one permitted retry can remain inside the 90-second job deadline.
+URLs, and generated search text do not reach application logs. Each actor attempt is bounded to 60
+seconds, matching the target valuation completion time. A retry is attempted only after a
+non-configuration failure; the job-level deadline remains the final bound.
 
 ## Normalization and validation
 
@@ -77,7 +78,7 @@ or profile data, phone numbers, photo URLs, messaging data, or raw Actor payload
 `SUCCESS` with zero evidence means the provider worked but no usable listing survived validation.
 `PROVIDER_FAILURE` covers configuration, network, timeout, Apify, malformed-response,
 missing-dataset, and unknown failures. A Blibli failure after its allowed retry becomes
-`SERVICE_FAILURE`; successful retrieval with fewer than five accepted listings becomes
+`SERVICE_FAILURE`; successful retrieval with fewer than three accepted listings becomes
 `INSUFFICIENT_EVIDENCE`.
 
 User text, listing titles, descriptions, and Actor errors cannot change tool selection,

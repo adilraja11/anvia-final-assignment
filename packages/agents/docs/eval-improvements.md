@@ -39,7 +39,7 @@ Primary sources are the Lens run/result/trace records, the [eval runner](../src/
 ### Valuation
 
 1. Add exact JSON-shaped examples for every status, especially `INSUFFICIENT_EVIDENCE` with `evidenceIds: []`. Require the English schema field names even though values are Bahasa Indonesia. This reduces extractor ambiguity behind V-06 without moving calculation into the model.
-2. State the five-evidence threshold explicitly: a successful provider response with fewer than five application-accepted IDs must be `INSUFFICIENT_EVIDENCE`; a provider error must be `SERVICE_FAILURE`.
+2. State the three-evidence threshold explicitly: a successful provider response with fewer than three application-accepted IDs must be `INSUFFICIENT_EVIDENCE`; a provider error must be `SERVICE_FAILURE`.
 3. Add freshness language: if `fetched_at` is outside the allowed cache window, describe it as `bukti tidak mutakhir`, never “pasar saat ini,” and defer acceptance to application code. Application code should normally prevent such evidence from reaching explanation.
 4. Require source-aware wording: `terlihat pada gambar` for `VISIBLE`, `menurut pengguna` for `USER_PROVIDED`, `menurut bukti Blibli` for `MARKET_EVIDENCE`, and `belum diketahui` for `UNKNOWN`. This makes V-11 reliable without inventing facts.
 5. If the supplied set has an obviously isolated price, mention an unusual spread and say application code will validate/filter it. Do not label a record an IQR outlier or calculate a result in the prompt.

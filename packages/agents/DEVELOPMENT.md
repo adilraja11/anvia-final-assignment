@@ -36,7 +36,7 @@ and the browser response. This package does not make those planned behaviors liv
 5. Application code validates exact identity, deduplicates evidence, and removes IQR outliers only
    from sets of at least four records. Lifecycle and condition do not reject an otherwise valid
    listing.
-6. The calculation requires at least five listings. It uses their median as the suggested price and
+6. The calculation requires at least three listings. It uses their median as the suggested price and
    displays their unweighted P25–P75 range separately.
 
 No paid marketplace search should begin before identity and condition confirmation. Unsupported

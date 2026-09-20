@@ -51,14 +51,14 @@ Read [APIFY_INTEGRATION.md](../../APIFY_INTEGRATION.md) for provider maintenance
 `generateValuationResult` extracts only explanation-stage output with explicit evidence IDs; it
 never adds a numeric recommendation. The application-owned engine must:
 
-1. require at least five accepted identity-matched listings;
+1. require at least three accepted identity-matched listings;
 2. apply IQR outlier filtering only when there are at least four listings;
 3. calculate the suggested listing price as the median accepted price;
 4. calculate the observed market range as the unweighted P25–P75 range of the same evidence; and
 5. round displayed prices half-up to the nearest Rp1.000.
 
-`HIGH` confidence requires at least 15 accepted listings; five through 14 is `MEDIUM`. Blibli
-failure after its allowed retry is `SERVICE_FAILURE`; successful retrieval below five listings is
+`HIGH` confidence requires at least 10 accepted listings; three through nine is `MEDIUM`. Blibli
+failure after its allowed retry is `SERVICE_FAILURE`; successful retrieval below three listings is
 `INSUFFICIENT_EVIDENCE`.
 
 ## Grounding and safety
