@@ -29,6 +29,11 @@ valuation result, read the
 [valuation chat API contract](../../apps/api/docs/contracts/valuation-chat-api.md). That explainer
 must remain separate from the marketplace-enabled valuation agent.
 
+Before exposing the valuation workflow through an MCP server, read the
+[MCP valuation server plan](docs/plans/mcp-valuation-server.md). MCP clients consume a narrow API
+surface owned by `apps/api`; do not attach an MCP client or arbitrary MCP tools to the fixed
+valuation agent.
+
 ## Verification
 
 - Create or modify automated tests only when the user explicitly requests automated-test work.
