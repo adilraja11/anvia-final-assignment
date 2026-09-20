@@ -1131,23 +1131,6 @@ function DetailsScreen({
 					Maksimal 2.000 karakter. Teks ini tidak menggantikan identitas atau
 					kondisi yang dikonfirmasi.
 				</p>
-				<Field id="item-location" label="Lokasi listing" optional>
-					<input
-						id="item-location"
-						className="input mt-2 w-full rounded-none border-base-content bg-base-100 text-base focus:border-primary"
-						value={details.location}
-						onChange={(event) => onChange("location", event.target.value)}
-						placeholder="Jakarta Selatan, Bandung, Surabaya"
-						aria-describedby="item-location-help"
-					/>
-				</Field>
-				<p
-					id="item-location-help"
-					className="mt-2 border border-base-content bg-base-200 p-3 text-[0.62rem] leading-5"
-				>
-					Kolom lokasi masih berupa UI tertunda. Nilainya tidak dikirim ke API
-					lokal dan tidak memengaruhi hasil.
-				</p>
 				{missingFields.length > 0 ? (
 					<div className="mt-4 border border-base-content bg-base-200 p-4 text-xs">
 						<strong className="uppercase">
